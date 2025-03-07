@@ -1,0 +1,16 @@
+database:
+  host: localhost
+  port: 54322
+  database: postgres
+  username: postgres
+  password: postgres
+  ssl: false
+generation:
+  output_directory: lib/generated
+  model_prefix: ''
+  model_suffix: Model
+  repository_suffix: Repository
+  exclude_tables: []
+  include_tables: []
+  generate_for_all_tables: true
+  use_null_safety: true
