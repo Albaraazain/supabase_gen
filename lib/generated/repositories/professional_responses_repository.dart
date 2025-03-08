@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/professional_responses_model.dart';
+import '../models/job_broadcasts_model.dart';
+import '../models/professional_profiles_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_responses table
@@ -12,8 +14,8 @@ class ProfessionalResponsesRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ProfessionalResponsesModel?> find(String responseId) async {
     final response = await query
-        .eq('response_id', responseId)
         .select()
+        .eq('response_id', responseId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +33,15 @@ class ProfessionalResponsesRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +60,10 @@ class ProfessionalResponsesRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ProfessionalResponsesModel?> update(ProfessionalResponsesModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('response_id', model.responseId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ProfessionalResponsesModel.fromJson(response);
@@ -80,9 +81,10 @@ class ProfessionalResponsesRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String responseId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('response_id', responseId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.job_broadcasts records
@@ -91,7 +93,7 @@ class ProfessionalResponsesRepository extends BaseRepository {
     final response = await client
         .from('job_broadcasts')
         .select()
-        .eq('broadcast_id', broadcastId);
+        .eq('broadcast_id', broadcastId as Object);
 
     return response.map((json) => JobBroadcastsModel.fromJson(json)).toList();
   }
@@ -102,7 +104,7 @@ class ProfessionalResponsesRepository extends BaseRepository {
     final response = await client
         .from('professional_profiles')
         .select()
-        .eq('professional_id', professionalId);
+        .eq('professional_id', professionalId as Object);
 
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }

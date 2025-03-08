@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/location_verifications_model.dart';
+import '../models/jobs_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the location_verifications table
@@ -12,8 +13,8 @@ class LocationVerificationsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<LocationVerificationsModel?> find(String verificationId) async {
     final response = await query
-        .eq('verification_id', verificationId)
         .select()
+        .eq('verification_id', verificationId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +32,15 @@ class LocationVerificationsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +59,10 @@ class LocationVerificationsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<LocationVerificationsModel?> update(LocationVerificationsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('verification_id', model.verificationId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return LocationVerificationsModel.fromJson(response);
@@ -80,9 +80,10 @@ class LocationVerificationsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String verificationId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('verification_id', verificationId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.jobs records
@@ -91,7 +92,7 @@ class LocationVerificationsRepository extends BaseRepository {
     final response = await client
         .from('jobs')
         .select()
-        .eq('job_id', jobId);
+        .eq('job_id', jobId as Object);
 
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }

@@ -44,7 +44,16 @@ class ModelGenerator {
     final sb = StringBuffer();
     
     // Add imports
-    sb.writeln("import 'dart:convert';");
+    final needsJsonConvert = table.columns.any((col) => 
+      col.type.toLowerCase() == 'json' || 
+      col.type.toLowerCase() == 'jsonb' ||
+      col.type.toLowerCase().startsWith('_')  // Array types start with underscore
+    );
+    
+    if (needsJsonConvert) {
+      sb.writeln("import 'dart:convert';");
+    }
+    
     // Check if we need Uint8List for bytea columns
     if (table.columns.any((col) => col.type.toLowerCase() == 'bytea')) {
       sb.writeln("import 'dart:typed_data';");
@@ -59,6 +68,9 @@ class ModelGenerator {
     // Begin class definition
     sb.writeln('class $className {');
     
+    // Create a map to track property names and ensure uniqueness
+    final propertyNameMap = <String, int>{};
+    
     // Add properties
     for (final column in table.columns) {
       final dartType = TypeConverter.postgresTypeToDart(
@@ -66,7 +78,16 @@ class ModelGenerator {
         isNullable: column.isNullable,
       );
       
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
       
       // Add property documentation if available
       if (column.comment != null) {
@@ -80,8 +101,21 @@ class ModelGenerator {
     
     // Add constructor
     sb.writeln('  const $className({');
+    
+    // Reset the property name map for reuse
+    propertyNameMap.clear();
+    
     for (final column in table.columns) {
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
       
       if (column.isNullable) {
         sb.writeln('    this.$propertyName,');
@@ -97,8 +131,21 @@ class ModelGenerator {
     sb.writeln('  factory $className.fromJson(Map<String, dynamic> json) {');
     sb.writeln('    return $className(');
     
+    // Reset the property name map for reuse
+    propertyNameMap.clear();
+    
     for (final column in table.columns) {
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
+      
       final dartType = TypeConverter.postgresTypeToDart(column.type);
       
       sb.write('      $propertyName: ');
@@ -157,11 +204,37 @@ class ModelGenerator {
     sb.writeln('  Map<String, dynamic> toJson() {');
     sb.writeln('    return {');
     
+    // Reset the property name map for reuse
+    propertyNameMap.clear();
+    
+    // Track used column names to ensure unique keys
+    final usedColumnNames = <String, int>{};
+    
     for (final column in table.columns) {
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      var columnKey = column.name;
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
+      
+      // Ensure column key is unique by adding a suffix if needed
+      if (usedColumnNames.containsKey(columnKey)) {
+        final count = usedColumnNames[columnKey]! + 1;
+        usedColumnNames[columnKey] = count;
+        columnKey = '${columnKey}_$count';
+      } else {
+        usedColumnNames[columnKey] = 1;
+      }
+      
       final dartType = TypeConverter.postgresTypeToDart(column.type);
       
-      sb.write('      \'${column.name}\': ');
+      sb.write('      \'$columnKey\': ');
       
       // Handle special case conversions based on type
       if (dartType.startsWith('DateTime')) {
@@ -191,16 +264,44 @@ class ModelGenerator {
     // Add copyWith method
     sb.writeln();
     sb.writeln('  $className copyWith({');
+    
+    // Reset the property name map for reuse
+    propertyNameMap.clear();
+    
     for (final column in table.columns) {
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
+      
       final dartType = TypeConverter.postgresTypeToDart(column.type, isNullable: true);
       
       sb.writeln('    $dartType $propertyName,');
     }
     sb.writeln('  }) {');
     sb.writeln('    return $className(');
+    
+    // Reset the property name map for reuse
+    propertyNameMap.clear();
+    
     for (final column in table.columns) {
-      final propertyName = StringUtils.toVariableName(column.name);
+      var propertyName = StringUtils.toVariableName(column.name);
+      
+      // Ensure property name is unique by adding a suffix if needed
+      if (propertyNameMap.containsKey(propertyName)) {
+        final count = propertyNameMap[propertyName]! + 1;
+        propertyNameMap[propertyName] = count;
+        propertyName = '${propertyName}$count';
+      } else {
+        propertyNameMap[propertyName] = 1;
+      }
+      
       sb.writeln('      $propertyName: $propertyName ?? this.$propertyName,');
     }
     sb.writeln('    );');
@@ -222,10 +323,18 @@ class ModelGenerator {
     sb.writeln('// Generated models barrel file');
     sb.writeln();
     
+    // Use a set to track unique export paths
+    final uniqueExports = <String>{};
+    
     // Add exports for each model
     for (final table in tables) {
       final fileName = '${StringUtils.toFileName(table.name)}_model.dart';
-      sb.writeln("export '$fileName';");
+      uniqueExports.add("export '$fileName';");
+    }
+    
+    // Write unique exports in sorted order
+    for (final export in uniqueExports.toList()..sort()) {
+      sb.writeln(export);
     }
     
     // Write to file

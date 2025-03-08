@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class ProfessionalProfilesBackupModel {
   final String? professionalId;

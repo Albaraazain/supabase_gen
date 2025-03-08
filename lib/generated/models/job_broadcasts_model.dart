@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class JobBroadcastsModel {
   final String broadcastId;

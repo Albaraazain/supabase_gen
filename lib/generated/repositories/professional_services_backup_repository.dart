@@ -1,16 +1,16 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/professional_responses_backup_model.dart';
+import '../models/professional_services_backup_model.dart';
 import 'base_repository.dart';
 
-/// Repository for the professional_responses_backup table
-class ProfessionalResponsesBackupRepository extends BaseRepository {
-  const ProfessionalResponsesBackupRepository(SupabaseClient client) : super(client);
+/// Repository for the professional_services_backup table
+class ProfessionalServicesBackupRepository extends BaseRepository {
+  const ProfessionalServicesBackupRepository(SupabaseClient client) : super(client);
 
   @override
-  String get tableName => 'professional_responses_backup';
+  String get tableName => 'professional_services_backup';
 
   /// Get all records from this table
-  Future<List<ProfessionalResponsesBackupModel>> findAll({
+  Future<List<ProfessionalServicesBackupModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
@@ -31,27 +31,27 @@ class ProfessionalResponsesBackupRepository extends BaseRepository {
     }
 
     final response = await query;
-    return response.map((json) => ProfessionalResponsesBackupModel.fromJson(json)).toList();
+    return response.map((json) => ProfessionalServicesBackupModel.fromJson(json)).toList();
   }
 
   /// Insert a new record
-  Future<ProfessionalResponsesBackupModel> insert(ProfessionalResponsesBackupModel model) async {
+  Future<ProfessionalServicesBackupModel> insert(ProfessionalServicesBackupModel model) async {
     final response = await query
         .insert(model.toJson())
         .select()
         .single();
 
-    return ProfessionalResponsesBackupModel.fromJson(response);
+    return ProfessionalServicesBackupModel.fromJson(response);
   }
 
   /// Insert or update a record
-  Future<ProfessionalResponsesBackupModel> upsert(ProfessionalResponsesBackupModel model) async {
+  Future<ProfessionalServicesBackupModel> upsert(ProfessionalServicesBackupModel model) async {
     final response = await query
         .upsert(model.toJson())
         .select()
         .single();
 
-    return ProfessionalResponsesBackupModel.fromJson(response);
+    return ProfessionalServicesBackupModel.fromJson(response);
   }
 
 }

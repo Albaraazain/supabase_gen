@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/diagnosis_findings_model.dart';
+import '../models/jobs_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the diagnosis_findings table
@@ -12,8 +13,8 @@ class DiagnosisFindingsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<DiagnosisFindingsModel?> find(String findingId) async {
     final response = await query
-        .eq('finding_id', findingId)
         .select()
+        .eq('finding_id', findingId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +32,15 @@ class DiagnosisFindingsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +59,10 @@ class DiagnosisFindingsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<DiagnosisFindingsModel?> update(DiagnosisFindingsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('finding_id', model.findingId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return DiagnosisFindingsModel.fromJson(response);
@@ -80,9 +80,10 @@ class DiagnosisFindingsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String findingId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('finding_id', findingId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.jobs records
@@ -91,7 +92,7 @@ class DiagnosisFindingsRepository extends BaseRepository {
     final response = await client
         .from('jobs')
         .select()
-        .eq('job_id', jobId);
+        .eq('job_id', jobId as Object);
 
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }

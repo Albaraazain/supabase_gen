@@ -12,8 +12,8 @@ class TestJobsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<TestJobsModel?> find(String id) async {
     final response = await query
-        .eq('id', id)
         .select()
+        .eq('id', id)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +31,15 @@ class TestJobsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +58,10 @@ class TestJobsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<TestJobsModel?> update(TestJobsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('id', model.id)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return TestJobsModel.fromJson(response);
@@ -80,9 +79,10 @@ class TestJobsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String id) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('id', id)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
 }

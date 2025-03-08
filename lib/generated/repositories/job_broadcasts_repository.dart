@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/job_broadcasts_model.dart';
+import '../models/users_model.dart';
+import '../models/services_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the job_broadcasts table
@@ -12,8 +14,8 @@ class JobBroadcastsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<JobBroadcastsModel?> find(String broadcastId) async {
     final response = await query
-        .eq('broadcast_id', broadcastId)
         .select()
+        .eq('broadcast_id', broadcastId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +33,15 @@ class JobBroadcastsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +60,10 @@ class JobBroadcastsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<JobBroadcastsModel?> update(JobBroadcastsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('broadcast_id', model.broadcastId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return JobBroadcastsModel.fromJson(response);
@@ -80,9 +81,10 @@ class JobBroadcastsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String broadcastId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('broadcast_id', broadcastId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.users records
@@ -91,7 +93,7 @@ class JobBroadcastsRepository extends BaseRepository {
     final response = await client
         .from('users')
         .select()
-        .eq('user_id', homeownerId);
+        .eq('user_id', homeownerId as Object);
 
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }
@@ -102,7 +104,7 @@ class JobBroadcastsRepository extends BaseRepository {
     final response = await client
         .from('services')
         .select()
-        .eq('service_id', serviceId);
+        .eq('service_id', serviceId as Object);
 
     return response.map((json) => ServicesModel.fromJson(json)).toList();
   }

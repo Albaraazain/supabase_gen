@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 /// Tracks individual tasks within a job
 class JobTasksModel {

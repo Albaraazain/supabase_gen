@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class JobsModel {
   final String jobId;

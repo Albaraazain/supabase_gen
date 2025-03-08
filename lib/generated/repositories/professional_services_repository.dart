@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/professional_services_model.dart';
+import '../models/professional_profiles_model.dart';
+import '../models/services_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_services table
@@ -12,8 +14,8 @@ class ProfessionalServicesRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ProfessionalServicesModel?> find(String id) async {
     final response = await query
-        .eq('id', id)
         .select()
+        .eq('id', id)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +33,15 @@ class ProfessionalServicesRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +60,10 @@ class ProfessionalServicesRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ProfessionalServicesModel?> update(ProfessionalServicesModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('id', model.id)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ProfessionalServicesModel.fromJson(response);
@@ -80,9 +81,10 @@ class ProfessionalServicesRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String id) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('id', id)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.professional_profiles records
@@ -91,7 +93,7 @@ class ProfessionalServicesRepository extends BaseRepository {
     final response = await client
         .from('professional_profiles')
         .select()
-        .eq('professional_id', professionalId);
+        .eq('professional_id', professionalId as Object);
 
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
@@ -102,7 +104,7 @@ class ProfessionalServicesRepository extends BaseRepository {
     final response = await client
         .from('services')
         .select()
-        .eq('service_id', serviceId);
+        .eq('service_id', serviceId as Object);
 
     return response.map((json) => ServicesModel.fromJson(json)).toList();
   }

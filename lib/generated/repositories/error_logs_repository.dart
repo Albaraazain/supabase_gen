@@ -12,8 +12,8 @@ class ErrorLogsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ErrorLogsModel?> find(int id) async {
     final response = await query
-        .eq('id', id)
         .select()
+        .eq('id', id)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +31,15 @@ class ErrorLogsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +58,10 @@ class ErrorLogsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ErrorLogsModel?> update(ErrorLogsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('id', model.id)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ErrorLogsModel.fromJson(response);
@@ -80,9 +79,10 @@ class ErrorLogsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(int id) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('id', id)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
 }

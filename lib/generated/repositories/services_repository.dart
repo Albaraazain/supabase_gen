@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/services_model.dart';
+import '../models/service_categories_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the services table
@@ -12,8 +13,8 @@ class ServicesRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ServicesModel?> find(String serviceId) async {
     final response = await query
-        .eq('service_id', serviceId)
         .select()
+        .eq('service_id', serviceId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +32,15 @@ class ServicesRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +59,10 @@ class ServicesRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ServicesModel?> update(ServicesModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('service_id', model.serviceId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ServicesModel.fromJson(response);
@@ -80,9 +80,10 @@ class ServicesRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String serviceId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('service_id', serviceId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.service_categories records
@@ -91,7 +92,7 @@ class ServicesRepository extends BaseRepository {
     final response = await client
         .from('service_categories')
         .select()
-        .eq('category_id', categoryId);
+        .eq('category_id', categoryId as Object);
 
     return response.map((json) => ServiceCategoriesModel.fromJson(json)).toList();
   }

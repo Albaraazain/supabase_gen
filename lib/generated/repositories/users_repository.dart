@@ -10,11 +10,11 @@ class UsersRepository extends BaseRepository {
   String get tableName => 'users';
 
   /// Find a record by its primary key
-  Future<UsersModel?> find(String userId, String userId) async {
+  Future<UsersModel?> find(String userId, String userId2) async {
     final response = await query
-        .eq('user_id', userId)
-        .eq('user_id', userId)
         .select()
+        .eq('user_id', userId)
+        .eq('user_id', userId2)
         .limit(1)
         .maybeSingle();
 
@@ -32,15 +32,15 @@ class UsersRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -59,12 +59,10 @@ class UsersRepository extends BaseRepository {
 
   /// Update an existing record
   Future<UsersModel?> update(UsersModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('user_id', model.userId)
-        .eq('user_id', model.userId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return UsersModel.fromJson(response);
@@ -81,11 +79,12 @@ class UsersRepository extends BaseRepository {
   }
 
   /// Delete a record by its primary key
-  Future<void> delete(String userId, String userId) async {
-    await query
+  Future<void> delete(String userId, String userId2) async {
+    final deleteQuery = query.delete()
         .eq('user_id', userId)
-        .eq('user_id', userId)
-        .delete();
+        .eq('user_id', userId2)
+    ;
+    await deleteQuery;
   }
 
 }

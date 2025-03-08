@@ -12,8 +12,8 @@ class ServiceCategoriesRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ServiceCategoriesModel?> find(String categoryId) async {
     final response = await query
-        .eq('category_id', categoryId)
         .select()
+        .eq('category_id', categoryId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +31,15 @@ class ServiceCategoriesRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +58,10 @@ class ServiceCategoriesRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ServiceCategoriesModel?> update(ServiceCategoriesModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('category_id', model.categoryId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ServiceCategoriesModel.fromJson(response);
@@ -80,9 +79,10 @@ class ServiceCategoriesRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String categoryId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('category_id', categoryId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
 }

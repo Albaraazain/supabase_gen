@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 class ProfessionalEarningsModel {
   final int id;

@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/homeowner_profiles_model.dart';
+import '../models/users_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the homeowner_profiles table
@@ -12,8 +13,8 @@ class HomeownerProfilesRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<HomeownerProfilesModel?> find(String homeownerId) async {
     final response = await query
-        .eq('homeowner_id', homeownerId)
         .select()
+        .eq('homeowner_id', homeownerId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +32,15 @@ class HomeownerProfilesRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +59,10 @@ class HomeownerProfilesRepository extends BaseRepository {
 
   /// Update an existing record
   Future<HomeownerProfilesModel?> update(HomeownerProfilesModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('homeowner_id', model.homeownerId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return HomeownerProfilesModel.fromJson(response);
@@ -80,9 +80,10 @@ class HomeownerProfilesRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String homeownerId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('homeowner_id', homeownerId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.users records
@@ -91,7 +92,7 @@ class HomeownerProfilesRepository extends BaseRepository {
     final response = await client
         .from('users')
         .select()
-        .eq('user_id', userId);
+        .eq('user_id', userId as Object);
 
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }

@@ -1,5 +1,9 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/jobs_model.dart';
+import '../models/job_broadcasts_model.dart';
+import '../models/users_model.dart';
+import '../models/professional_profiles_model.dart';
+import '../models/services_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the jobs table
@@ -12,8 +16,8 @@ class JobsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<JobsModel?> find(String jobId) async {
     final response = await query
-        .eq('job_id', jobId)
         .select()
+        .eq('job_id', jobId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +35,15 @@ class JobsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +62,10 @@ class JobsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<JobsModel?> update(JobsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('job_id', model.jobId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return JobsModel.fromJson(response);
@@ -80,9 +83,10 @@ class JobsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String jobId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('job_id', jobId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.job_broadcasts records
@@ -91,7 +95,7 @@ class JobsRepository extends BaseRepository {
     final response = await client
         .from('job_broadcasts')
         .select()
-        .eq('broadcast_id', broadcastId);
+        .eq('broadcast_id', broadcastId as Object);
 
     return response.map((json) => JobBroadcastsModel.fromJson(json)).toList();
   }
@@ -102,7 +106,7 @@ class JobsRepository extends BaseRepository {
     final response = await client
         .from('users')
         .select()
-        .eq('user_id', homeownerId);
+        .eq('user_id', homeownerId as Object);
 
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }
@@ -113,7 +117,7 @@ class JobsRepository extends BaseRepository {
     final response = await client
         .from('professional_profiles')
         .select()
-        .eq('professional_id', professionalId);
+        .eq('professional_id', professionalId as Object);
 
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
@@ -124,7 +128,7 @@ class JobsRepository extends BaseRepository {
     final response = await client
         .from('services')
         .select()
-        .eq('service_id', serviceId);
+        .eq('service_id', serviceId as Object);
 
     return response.map((json) => ServicesModel.fromJson(json)).toList();
   }
@@ -135,7 +139,7 @@ class JobsRepository extends BaseRepository {
     final response = await client
         .from('users')
         .select()
-        .eq('user_id', lastUpdatedBy);
+        .eq('user_id', lastUpdatedBy as Object);
 
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }

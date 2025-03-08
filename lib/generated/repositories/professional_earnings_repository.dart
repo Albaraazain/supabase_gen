@@ -1,5 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/professional_earnings_model.dart';
+import '../models/professional_profiles_model.dart';
+import '../models/jobs_model.dart';
+import '../models/service_categories_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_earnings table
@@ -12,8 +15,8 @@ class ProfessionalEarningsRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<ProfessionalEarningsModel?> find(int id) async {
     final response = await query
-        .eq('id', id)
         .select()
+        .eq('id', id)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +34,15 @@ class ProfessionalEarningsRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +61,10 @@ class ProfessionalEarningsRepository extends BaseRepository {
 
   /// Update an existing record
   Future<ProfessionalEarningsModel?> update(ProfessionalEarningsModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('id', model.id)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return ProfessionalEarningsModel.fromJson(response);
@@ -80,9 +82,10 @@ class ProfessionalEarningsRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(int id) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('id', id)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.professional_profiles records
@@ -91,7 +94,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     final response = await client
         .from('professional_profiles')
         .select()
-        .eq('professional_id', professionalId);
+        .eq('professional_id', professionalId as Object);
 
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
@@ -102,7 +105,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     final response = await client
         .from('jobs')
         .select()
-        .eq('job_id', jobId);
+        .eq('job_id', jobId as Object);
 
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
@@ -113,7 +116,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     final response = await client
         .from('service_categories')
         .select()
-        .eq('category_id', serviceCategoryId);
+        .eq('category_id', serviceCategoryId as Object);
 
     return response.map((json) => ServiceCategoriesModel.fromJson(json)).toList();
   }

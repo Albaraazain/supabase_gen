@@ -1,8 +1,11 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/material_usage_model.dart';
+import '../models/jobs_model.dart';
+import '../models/quote_line_items_model.dart';
+import '../models/users_model.dart';
 import 'base_repository.dart';
 
-/// Repository for Tracks real-time material usage during job execution
+/// Repository for the material_usage table
 class MaterialUsageRepository extends BaseRepository {
   const MaterialUsageRepository(SupabaseClient client) : super(client);
 
@@ -12,8 +15,8 @@ class MaterialUsageRepository extends BaseRepository {
   /// Find a record by its primary key
   Future<MaterialUsageModel?> find(String usageId) async {
     final response = await query
-        .eq('usage_id', usageId)
         .select()
+        .eq('usage_id', usageId)
         .limit(1)
         .maybeSingle();
 
@@ -31,15 +34,15 @@ class MaterialUsageRepository extends BaseRepository {
     var query = this.query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending);
+      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (limit != null) {
-      query = query.limit(limit);
+      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1);
+      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
     }
 
     final response = await query;
@@ -58,11 +61,10 @@ class MaterialUsageRepository extends BaseRepository {
 
   /// Update an existing record
   Future<MaterialUsageModel?> update(MaterialUsageModel model) async {
-    final response = await query
+    final updateQuery = query.update(model.toJson())
         .eq('usage_id', model.usageId)
-        .update(model.toJson())
-        .select()
-        .maybeSingle();
+    ;
+    final response = await updateQuery.select().maybeSingle();
 
     if (response == null) return null;
     return MaterialUsageModel.fromJson(response);
@@ -80,9 +82,10 @@ class MaterialUsageRepository extends BaseRepository {
 
   /// Delete a record by its primary key
   Future<void> delete(String usageId) async {
-    await query
+    final deleteQuery = query.delete()
         .eq('usage_id', usageId)
-        .delete();
+    ;
+    await deleteQuery;
   }
 
   /// Find related public.jobs records
@@ -91,7 +94,7 @@ class MaterialUsageRepository extends BaseRepository {
     final response = await client
         .from('jobs')
         .select()
-        .eq('job_id', jobId);
+        .eq('job_id', jobId as Object);
 
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
@@ -102,7 +105,7 @@ class MaterialUsageRepository extends BaseRepository {
     final response = await client
         .from('quote_line_items')
         .select()
-        .eq('line_item_id', quoteLineItemId);
+        .eq('line_item_id', quoteLineItemId as Object);
 
     return response.map((json) => QuoteLineItemsModel.fromJson(json)).toList();
   }
@@ -113,7 +116,7 @@ class MaterialUsageRepository extends BaseRepository {
     final response = await client
         .from('users')
         .select()
-        .eq('user_id', updatedBy);
+        .eq('user_id', updatedBy as Object);
 
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }
