@@ -55,7 +55,7 @@ class RepositoryGenerator {
     sb.writeln('  String get tableName;');
     sb.writeln();
     sb.writeln('  /// Get a query builder for this table');
-    sb.writeln('  PostgrestQueryBuilder get query => client.from(tableName);');
+    sb.writeln('  PostgrestBuilder get query => client.from(tableName);');
     sb.writeln('}');
     
     // Write to file
@@ -187,15 +187,15 @@ class RepositoryGenerator {
     sb.writeln('    var query = this.query.select();');
     sb.writeln();
     sb.writeln('    if (orderBy != null) {');
-    sb.writeln('      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;');
+    sb.writeln('      query = query.order(orderBy, ascending: ascending);');
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (limit != null) {');
-    sb.writeln('      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;');
+    sb.writeln('      query = query.limit(limit);');
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (offset != null) {');
-    sb.writeln('      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;');
+    sb.writeln('      query = query.range(offset, offset + (limit ?? 10) - 1);');
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    final response = await query;');
@@ -219,9 +219,8 @@ class RepositoryGenerator {
     if (hasPrimaryKey) {
       sb.writeln('  /// Update an existing record');
       sb.writeln('  Future<$modelClassName?> update($modelClassName model) async {');
-      
-      // For update, we need to apply the filter before select
-      sb.writeln('    final updateQuery = query.update(model.toJson())');
+      sb.writeln('    final response = await query');
+      sb.writeln('        .update(model.toJson())');
       
       // Use a set to track field names to avoid duplicates
       final processedFields = <String>{};
@@ -234,8 +233,8 @@ class RepositoryGenerator {
         }
       }
       
-      sb.writeln('    ;');
-      sb.writeln('    final response = await updateQuery.select().maybeSingle();');
+      sb.writeln('        .select()');
+      sb.writeln('        .maybeSingle();');
       sb.writeln();
       sb.writeln('    if (response == null) return null;');
       sb.writeln('    return $modelClassName.fromJson(response);');
@@ -324,15 +323,14 @@ class RepositoryGenerator {
         final methodName = 'findBy${StringUtils.toClassName(fkColumn.name)}';
         final paramName = StringUtils.toVariableName(fkColumn.name);
         final paramType = TypeConverter.postgresTypeToDart(fkColumn.type);
-        // Add nullability to the parameter type if the column is nullable
         final nullableSuffix = fkColumn.isNullable ? '?' : '';
         
         sb.writeln('  Future<List<$foreignModelName>> $methodName($paramType$nullableSuffix $paramName) async {');
         sb.writeln('    final response = await client');
         sb.writeln('        .from(\'$foreignTableName\')');
         sb.writeln('        .select()');
-        // Handle nullable parameters by using null-aware operators
-        sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName as Object);');
+        sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName)');
+        sb.writeln('        ;');
         sb.writeln();
         sb.writeln('    return response.map((json) => $foreignModelName.fromJson(json)).toList();');
         sb.writeln('  }');

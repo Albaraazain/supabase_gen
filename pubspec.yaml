@@ -1,6 +1,6 @@
 name: supabase_gen
-description: A Dart package that generates Flutter repositories and models from Supabase database
-version: 1.0.0
+description: A Dart package that generates Flutter repositories and models from Supabase database. Compatible with latest Supabase Flutter SDK.
+version: 1.0.1
 repository: https://github.com/albaraazain/supabase_gen
 
 environment:
@@ -13,8 +13,11 @@ dependencies:
   path: ^1.9.0
   yaml: ^3.1.2
   logging: ^1.2.0
-  supabase_flutter: ^2.3.4
   
 dev_dependencies:
   lints: ^3.0.0
   test: ^1.25.2
+
+# Note: Your app needs these peer dependencies
+peer_dependencies:
+  supabase_flutter: ^2.3.0

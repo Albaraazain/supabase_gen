@@ -1,0 +1,35 @@
+database:
+  host: localhost
+  port: 54322
+  database: postgres
+  username: postgres
+  password: postgres
+  ssl: false
+generation:
+  output_directory: lib/generated
+  model_prefix: ''
+  model_suffix: Model
+  repository_suffix: Repository
+  exclude_tables: 
+    # Exclude system schemas
+    - '_realtime.*'
+    - 'auth.*'
+    - 'net.*'
+    - 'pgsodium.*'
+    - 'realtime.*'
+    - 'storage.*'
+    - 'supabase_functions.*'
+    - 'vault.*'
+    # Exclude views and system tables from public schema
+    - 'public.active_broadcasts_view'
+    - 'public.get_enum_types'
+    - 'public.get_table_indexes'
+    - 'public.homeowner_active_jobs'
+    - 'public.job_progress_view'
+    - 'public.professional_current_job'
+    - 'public.professional_services_view'
+    - 'public.professional_statistics'
+  include_tables: 
+    - 'public.*'  # Include all tables from public schema
+  generate_for_all_tables: false  # Only generate for explicitly included tables
+  use_null_safety: true
