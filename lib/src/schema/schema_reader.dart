@@ -63,7 +63,7 @@ class SchemaReader {
       final schemaName = tableRow[1] as String;
       final tableComment = tableRow[2] as String?;
 
-      if (!_shouldProcessTable(tableName)) {
+      if (!_shouldProcessTable(schemaName, tableName)) {
         _logger.info('Skipping table $schemaName.$tableName');
         continue;
       }
@@ -190,15 +190,51 @@ class SchemaReader {
     return columns;
   }
 
-  bool _shouldProcessTable(String tableName) {
+  bool _shouldProcessTable(String schema, String tableName) {
+    final fullyQualifiedName = '$schema.$tableName';
+
+    // If include patterns are specified, check if the table matches any of them
     if (config.includeTables.isNotEmpty) {
-      return config.includeTables.contains(tableName);
+      return _matchesAnyPattern(schema, tableName, fullyQualifiedName, config.includeTables);
     }
     
-    if (config.excludeTables.contains(tableName)) {
-      return false;
+    // If exclude patterns are specified, check if the table matches any of them
+    if (config.excludeTables.isNotEmpty) {
+      return !_matchesAnyPattern(schema, tableName, fullyQualifiedName, config.excludeTables);
     }
     
+    // If no include or exclude patterns are specified, use the generateForAllTables flag
     return config.generateForAllTables;
+  }
+
+  /// Checks if a table matches any of the given patterns
+  bool _matchesAnyPattern(String schema, String tableName, String fullyQualifiedName, List<String> patterns) {
+    for (final pattern in patterns) {
+      if (_matchesPattern(schema, tableName, fullyQualifiedName, pattern)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// Checks if a table matches a specific pattern
+  bool _matchesPattern(String schema, String tableName, String fullyQualifiedName, String pattern) {
+    // Exact match for fully qualified name
+    if (pattern == fullyQualifiedName) {
+      return true;
+    }
+    
+    // Handle wildcard patterns like 'schema.*'
+    if (pattern.endsWith('.*')) {
+      final schemaPattern = pattern.substring(0, pattern.length - 2);
+      return schema == schemaPattern;
+    }
+    
+    // Handle table name only (no schema)
+    if (!pattern.contains('.')) {
+      return tableName == pattern;
+    }
+    
+    return false;
   }
 }
