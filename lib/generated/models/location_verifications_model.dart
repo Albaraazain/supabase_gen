@@ -10,7 +10,7 @@ class LocationVerificationsModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const LocationVerificationsModel({
+  LocationVerificationsModel({
     required this.verificationId,
     this.jobId,
     this.verifiedLat,

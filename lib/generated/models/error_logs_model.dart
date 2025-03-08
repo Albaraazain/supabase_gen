@@ -11,7 +11,7 @@ class ErrorLogsModel {
   final String? environment;
   final String? operation;
 
-  const ErrorLogsModel({
+  ErrorLogsModel({
     required this.id,
     this.errorCode,
     this.errorMessage,

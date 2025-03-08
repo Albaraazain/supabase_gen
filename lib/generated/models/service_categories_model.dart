@@ -6,7 +6,7 @@ class ServiceCategoriesModel {
   final String? iconUrl;
   final String? status;
 
-  const ServiceCategoriesModel({
+  ServiceCategoriesModel({
     required this.categoryId,
     required this.name,
     this.description,

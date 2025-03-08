@@ -11,7 +11,7 @@ class ProfessionalResponsesBackupModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const ProfessionalResponsesBackupModel({
+  ProfessionalResponsesBackupModel({
     this.responseId,
     this.broadcastId,
     this.professionalId,

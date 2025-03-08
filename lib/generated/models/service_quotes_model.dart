@@ -20,7 +20,7 @@ class ServiceQuotesModel {
   final bool? notifyOnUpdate;
   final String? discountType;
 
-  const ServiceQuotesModel({
+  ServiceQuotesModel({
     required this.quoteId,
     required this.jobId,
     required this.totalAmount,

@@ -19,7 +19,7 @@ class UsersModel {
   final String? status;
   final String? status2;
 
-  const UsersModel({
+  UsersModel({
     required this.userId,
     required this.userId2,
     required this.email,

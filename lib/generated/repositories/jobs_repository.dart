@@ -89,7 +89,7 @@ class JobsRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.job_broadcasts records
+  /// Find related job_broadcasts records
   /// based on the broadcast_id foreign key
   Future<List<JobBroadcastsModel>> findByBroadcastId(String? broadcastId) async {
     final response = await client
@@ -100,7 +100,7 @@ class JobsRepository extends BaseRepository {
     return response.map((json) => JobBroadcastsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.users records
+  /// Find related users records
   /// based on the homeowner_id foreign key
   Future<List<UsersModel>> findByHomeownerId(String homeownerId) async {
     final response = await client
@@ -111,7 +111,7 @@ class JobsRepository extends BaseRepository {
     return response.map((json) => UsersModel.fromJson(json)).toList();
   }
 
-  /// Find related public.professional_profiles records
+  /// Find related professional_profiles records
   /// based on the professional_id foreign key
   Future<List<ProfessionalProfilesModel>> findByProfessionalId(String professionalId) async {
     final response = await client
@@ -122,7 +122,7 @@ class JobsRepository extends BaseRepository {
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
 
-  /// Find related public.services records
+  /// Find related services records
   /// based on the service_id foreign key
   Future<List<ServicesModel>> findByServiceId(String serviceId) async {
     final response = await client
@@ -133,7 +133,7 @@ class JobsRepository extends BaseRepository {
     return response.map((json) => ServicesModel.fromJson(json)).toList();
   }
 
-  /// Find related public.users records
+  /// Find related users records
   /// based on the last_updated_by foreign key
   Future<List<UsersModel>> findByLastUpdatedBy(String? lastUpdatedBy) async {
     final response = await client

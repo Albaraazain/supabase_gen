@@ -16,4 +16,4 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dev_dependencies:
-  supabase_gen: ^0.1.0
+  supabase_gen: ^1.0.0

@@ -86,7 +86,7 @@ class ServicesRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.service_categories records
+  /// Find related service_categories records
   /// based on the category_id foreign key
   Future<List<ServiceCategoriesModel>> findByCategoryId(String categoryId) async {
     final response = await client

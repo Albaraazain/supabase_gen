@@ -11,7 +11,7 @@ class ProfessionalResponsesModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const ProfessionalResponsesModel({
+  ProfessionalResponsesModel({
     required this.responseId,
     required this.broadcastId,
     required this.professionalId,

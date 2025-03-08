@@ -86,7 +86,7 @@ class SafetyChecksRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.jobs records
+  /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String? jobId) async {
     final response = await client

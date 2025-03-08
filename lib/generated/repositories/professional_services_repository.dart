@@ -87,7 +87,7 @@ class ProfessionalServicesRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.professional_profiles records
+  /// Find related professional_profiles records
   /// based on the professional_id foreign key
   Future<List<ProfessionalProfilesModel>> findByProfessionalId(String professionalId) async {
     final response = await client
@@ -98,7 +98,7 @@ class ProfessionalServicesRepository extends BaseRepository {
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
 
-  /// Find related public.services records
+  /// Find related services records
   /// based on the service_id foreign key
   Future<List<ServicesModel>> findByServiceId(String serviceId) async {
     final response = await client

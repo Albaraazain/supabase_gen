@@ -88,7 +88,7 @@ class MaterialUsageRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.jobs records
+  /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String? jobId) async {
     final response = await client
@@ -99,7 +99,7 @@ class MaterialUsageRepository extends BaseRepository {
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.quote_line_items records
+  /// Find related quote_line_items records
   /// based on the quote_line_item_id foreign key
   Future<List<QuoteLineItemsModel>> findByQuoteLineItemId(String? quoteLineItemId) async {
     final response = await client
@@ -110,7 +110,7 @@ class MaterialUsageRepository extends BaseRepository {
     return response.map((json) => QuoteLineItemsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.users records
+  /// Find related users records
   /// based on the updated_by foreign key
   Future<List<UsersModel>> findByUpdatedBy(String? updatedBy) async {
     final response = await client

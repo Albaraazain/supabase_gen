@@ -100,7 +100,7 @@ class ModelGenerator {
     sb.writeln();
     
     // Add constructor
-    sb.writeln('  const $className({');
+    sb.writeln('  $className({');
     
     // Reset the property name map for reuse
     propertyNameMap.clear();

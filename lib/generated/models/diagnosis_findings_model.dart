@@ -10,7 +10,7 @@ class DiagnosisFindingsModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const DiagnosisFindingsModel({
+  DiagnosisFindingsModel({
     required this.findingId,
     required this.jobId,
     required this.title,

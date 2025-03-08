@@ -88,7 +88,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.professional_profiles records
+  /// Find related professional_profiles records
   /// based on the professional_id foreign key
   Future<List<ProfessionalProfilesModel>> findByProfessionalId(String professionalId) async {
     final response = await client
@@ -99,7 +99,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
   }
 
-  /// Find related public.jobs records
+  /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String jobId) async {
     final response = await client
@@ -110,7 +110,7 @@ class ProfessionalEarningsRepository extends BaseRepository {
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.service_categories records
+  /// Find related service_categories records
   /// based on the service_category_id foreign key
   Future<List<ServiceCategoriesModel>> findByServiceCategoryId(String? serviceCategoryId) async {
     final response = await client

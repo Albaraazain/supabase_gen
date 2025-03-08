@@ -318,7 +318,7 @@ class RepositoryGenerator {
           suffix: config.modelSuffix,
         );
         
-        sb.writeln('  /// Find related ${fkColumn.foreignTable} records');
+        sb.writeln('  /// Find related $foreignTableName records');
         sb.writeln('  /// based on the ${fkColumn.name} foreign key');
         
         final methodName = 'findBy${StringUtils.toClassName(fkColumn.name)}';
@@ -329,7 +329,7 @@ class RepositoryGenerator {
         
         sb.writeln('  Future<List<$foreignModelName>> $methodName($paramType$nullableSuffix $paramName) async {');
         sb.writeln('    final response = await client');
-        sb.writeln('        .from(\'${foreignTableName}\')');
+        sb.writeln('        .from(\'$foreignTableName\')');
         sb.writeln('        .select()');
         // Handle nullable parameters by using null-aware operators
         sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName as Object);');

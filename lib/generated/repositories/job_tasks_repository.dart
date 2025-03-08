@@ -87,7 +87,7 @@ class JobTasksRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.jobs records
+  /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String? jobId) async {
     final response = await client
@@ -98,7 +98,7 @@ class JobTasksRepository extends BaseRepository {
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.quote_line_items records
+  /// Find related quote_line_items records
   /// based on the quote_line_item_id foreign key
   Future<List<QuoteLineItemsModel>> findByQuoteLineItemId(String? quoteLineItemId) async {
     final response = await client

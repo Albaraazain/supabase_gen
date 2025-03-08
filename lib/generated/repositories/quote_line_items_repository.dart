@@ -86,7 +86,7 @@ class QuoteLineItemsRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.service_quotes records
+  /// Find related service_quotes records
   /// based on the quote_id foreign key
   Future<List<ServiceQuotesModel>> findByQuoteId(String quoteId) async {
     final response = await client

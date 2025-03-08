@@ -8,7 +8,7 @@ class HomeownerProfilesModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const HomeownerProfilesModel({
+  HomeownerProfilesModel({
     required this.homeownerId,
     required this.userId,
     this.preferredLanguage,

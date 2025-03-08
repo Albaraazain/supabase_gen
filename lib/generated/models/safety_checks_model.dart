@@ -9,7 +9,7 @@ class SafetyChecksModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const SafetyChecksModel({
+  SafetyChecksModel({
     required this.checkId,
     this.jobId,
     required this.checkType,

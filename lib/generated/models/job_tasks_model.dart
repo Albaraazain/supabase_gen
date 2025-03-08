@@ -14,7 +14,7 @@ class JobTasksModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const JobTasksModel({
+  JobTasksModel({
     required this.taskId,
     this.jobId,
     this.quoteLineItemId,

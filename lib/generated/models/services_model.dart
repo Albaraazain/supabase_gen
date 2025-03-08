@@ -9,7 +9,7 @@ class ServicesModel {
   final String? status;
   final String priceType;
 
-  const ServicesModel({
+  ServicesModel({
     required this.serviceId,
     required this.categoryId,
     required this.name,

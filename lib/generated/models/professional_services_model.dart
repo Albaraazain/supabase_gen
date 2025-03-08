@@ -6,7 +6,7 @@ class ProfessionalServicesModel {
   final double priceRate;
   final bool? isAvailable;
 
-  const ProfessionalServicesModel({
+  ProfessionalServicesModel({
     required this.id,
     required this.professionalId,
     required this.serviceId,

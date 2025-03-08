@@ -15,7 +15,7 @@ class ProfessionalProfilesBackupModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const ProfessionalProfilesBackupModel({
+  ProfessionalProfilesBackupModel({
     this.professionalId,
     this.userId,
     this.businessName,

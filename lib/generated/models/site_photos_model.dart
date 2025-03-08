@@ -8,7 +8,7 @@ class SitePhotosModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const SitePhotosModel({
+  SitePhotosModel({
     required this.photoId,
     this.jobId,
     required this.photoUrl,

@@ -19,7 +19,7 @@ class JobsModel {
 /// Accumulated duration of all pause periods
   final String? totalPauseDuration;
 
-  const JobsModel({
+  JobsModel({
     required this.jobId,
     this.broadcastId,
     required this.homeownerId,

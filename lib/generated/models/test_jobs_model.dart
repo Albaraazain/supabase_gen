@@ -3,7 +3,7 @@ class TestJobsModel {
   final String id;
   final String currentStage;
 
-  const TestJobsModel({
+  TestJobsModel({
     required this.id,
     required this.currentStage,
   });

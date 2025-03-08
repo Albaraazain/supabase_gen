@@ -1,8 +1,10 @@
 // example/lib/main.dart
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:example/generated/models/models.dart';
-import 'package:example/generated/repositories/repositories.dart';
+
+// These imports will be available after running the code generator
+// import 'package:example/generated/models/models.dart';
+// import 'package:example/generated/repositories/repositories.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +18,15 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Supabase Flutter Demo',
+      title: 'Supabase Gen Example',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
       home: const HomePage(),
     );
@@ -31,70 +34,72 @@ class MyApp extends StatelessWidget {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final _usersRepository = UsersRepository(Supabase.instance.client);
-  List<UsersModel> _users = [];
-  bool _loading = true;
+  final _client = Supabase.instance.client;
+  
+  // Example: After running the generator, you can use the generated repositories like this:
+  // late final _usersRepo = UsersRepository(_client);
+  // List<UsersModel> _users = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    // Example: Load users
+    // _loadUsers();
   }
 
-  Future<void> _loadUsers() async {
-    try {
-      final users = await _usersRepository.findAll();
-      setState(() {
-        _users = users;
-        _loading = false;
-      });
-    } catch (e) {
-      print('Error loading users: $e');
-      setState(() {
-        _loading = false;
-      });
-    }
-  }
+  // Example: Load users using the generated repository
+  // Future<void> _loadUsers() async {
+  //   try {
+  //     final users = await _usersRepo.findAll();
+  //     setState(() {
+  //       _users = users;
+  //     });
+  //   } catch (e) {
+  //     // Handle error
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Users'),
+        title: const Text('Supabase Gen Example'),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: _users.length,
-              itemBuilder: (context, index) {
-                final user = _users[index];
-                return ListTile(
-                  title: Text(user.name),
-                  subtitle: Text(user.email),
-                );
-              },
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'After running the code generator, uncomment the code to see it in action!',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16),
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // Example of creating a new user
-          final newUser = UsersModel(
-            id: 'new-uuid', // In a real app, you'd generate this or let Supabase do it
-            name: 'New User',
-            email: 'newuser@example.com',
-            createdAt: DateTime.now(),
-          );
-          
-          await _usersRepository.insert(newUser);
-          await _loadUsers();
-        },
-        child: const Icon(Icons.add),
+            const SizedBox(height: 20),
+            // Example: Display users
+            // if (_users.isEmpty)
+            //   const CircularProgressIndicator()
+            // else
+            //   Expanded(
+            //     child: ListView.builder(
+            //       itemCount: _users.length,
+            //       itemBuilder: (context, index) {
+            //         final user = _users[index];
+            //         return ListTile(
+            //           title: Text(user.name ?? 'No name'),
+            //           subtitle: Text(user.email),
+            //         );
+            //       },
+            //     ),
+            //   ),
+          ],
+        ),
       ),
     );
   }

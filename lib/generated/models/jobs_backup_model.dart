@@ -16,7 +16,7 @@ class JobsBackupModel {
   final DateTime? workPausedAt;
   final String? totalPauseDuration;
 
-  const JobsBackupModel({
+  JobsBackupModel({
     this.jobId,
     this.broadcastId,
     this.homeownerId,

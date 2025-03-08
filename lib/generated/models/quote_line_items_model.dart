@@ -15,7 +15,7 @@ class QuoteLineItemsModel {
   final String? category;
   final String? tempItemType;
 
-  const QuoteLineItemsModel({
+  QuoteLineItemsModel({
     required this.lineItemId,
     required this.quoteId,
     required this.itemType,

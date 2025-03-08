@@ -86,7 +86,7 @@ class ProfessionalProfilesRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.users records
+  /// Find related users records
   /// based on the user_id foreign key
   Future<List<UsersModel>> findByUserId(String userId) async {
     final response = await client

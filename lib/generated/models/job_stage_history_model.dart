@@ -7,7 +7,7 @@ class JobStageHistoryModel {
   final String createdBy;
   final DateTime? timestamp;
 
-  const JobStageHistoryModel({
+  JobStageHistoryModel({
     required this.historyId,
     required this.jobId,
     required this.stage,

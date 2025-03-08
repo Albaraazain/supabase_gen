@@ -87,7 +87,7 @@ class JobStageHistoryRepository extends BaseRepository {
     await deleteQuery;
   }
 
-  /// Find related public.jobs records
+  /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String jobId) async {
     final response = await client
@@ -98,7 +98,7 @@ class JobStageHistoryRepository extends BaseRepository {
     return response.map((json) => JobsModel.fromJson(json)).toList();
   }
 
-  /// Find related public.users records
+  /// Find related users records
   /// based on the created_by foreign key
   Future<List<UsersModel>> findByCreatedBy(String createdBy) async {
     final response = await client

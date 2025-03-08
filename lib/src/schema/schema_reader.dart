@@ -1,12 +1,12 @@
 // lib/src/schema/schema_reader.dart
 import 'package:postgres/postgres.dart';
+import '../utils/logger.dart';
 import '../config/config_model.dart';
 import 'table_info.dart';
-import '../utils/logger.dart';
 
 class SchemaReader {
   final SupabaseGenConfig config;
-  late PostgreSQLConnection _connection;
+  Connection? _connection;
   final Logger _logger = Logger('SchemaReader');
 
   SchemaReader(this.config);
@@ -14,17 +14,19 @@ class SchemaReader {
   Future<void> connect() async {
     _logger.info('Connecting to ${config.host}:${config.port}/${config.database}');
     
-    _connection = PostgreSQLConnection(
-      config.host,
-      config.port,
-      config.database,
-      username: config.username,
-      password: config.password,
-      useSSL: config.ssl,
-    );
-
     try {
-      await _connection.open();
+      _connection = await Connection.open(
+        Endpoint(
+          host: config.host,
+          port: config.port,
+          database: config.database,
+          username: config.username,
+          password: config.password,
+        ),
+        settings: ConnectionSettings(
+          sslMode: SslMode.disable,
+        ),
+      );
       _logger.info('Connected successfully');
     } catch (e) {
       _logger.severe('Connection failed: $e');
@@ -33,122 +35,94 @@ class SchemaReader {
   }
 
   Future<void> disconnect() async {
-    await _connection.close();
+    await _connection?.close();
+    _connection = null;
     _logger.info('Disconnected from database');
   }
 
   Future<List<TableInfo>> readTables() async {
+    if (_connection == null) {
+      throw StateError('Database connection not initialized. Call connect() first.');
+    }
+    
+    _logger.info('Reading tables from database');
+    
     final tables = <TableInfo>[];
+    
+    final result = await _connection!.execute(
+      'SELECT t.table_schema, t.table_name, obj_description(pgc.oid) as table_comment '
+      'FROM information_schema.tables t '
+      'JOIN pg_class pgc ON pgc.relname = t.table_name '
+      'WHERE t.table_schema NOT IN (\'information_schema\', \'pg_catalog\') '
+      'AND t.table_type = \'BASE TABLE\' '
+      'ORDER BY t.table_schema, t.table_name',
+    );
 
-    // Get a list of tables in the database (excluding system tables)
-    final tablesResult = await _connection.query('''
-      SELECT 
-        t.table_name, 
-        t.table_schema,
-        obj_description(pgc.oid) as table_comment
-      FROM 
-        information_schema.tables t
-      JOIN 
-        pg_class pgc ON pgc.relname = t.table_name
-      WHERE 
-        t.table_schema NOT IN ('pg_catalog', 'information_schema')
-        AND t.table_type = 'BASE TABLE'
-      ORDER BY 
-        t.table_schema, t.table_name
-    ''');
+    for (final row in result) {
+      final schema = row[0] as String;
+      final name = row[1] as String;
+      final comment = row[2] as String?;
 
-    // Filter tables based on configuration
-    for (final tableRow in tablesResult) {
-      final tableName = tableRow[0] as String;
-      final schemaName = tableRow[1] as String;
-      final tableComment = tableRow[2] as String?;
-
-      if (!_shouldProcessTable(schemaName, tableName)) {
-        _logger.info('Skipping table $schemaName.$tableName');
+      if (!_shouldProcessTable(schema, name)) {
+        _logger.info('Skipping table $schema.$name');
         continue;
       }
 
-      _logger.info('Reading schema for table $schemaName.$tableName');
+      _logger.info('Reading schema for table $schema.$name');
 
-      final columnsResult = await _readTableColumns(schemaName, tableName);
+      final columns = await _readTableColumns(schema, name);
       
       tables.add(TableInfo(
-        name: tableName,
-        schema: schemaName,
-        columns: columnsResult,
-        comment: tableComment,
+        name: name,
+        schema: schema,
+        columns: columns,
+        comment: comment,
       ));
     }
 
     return tables;
   }
 
-  Future<List<ColumnInfo>> _readTableColumns(String schema, String table) async {
+  Future<List<ColumnInfo>> _readTableColumns(String schema, String tableName) async {
+    if (_connection == null) {
+      throw StateError('Database connection not initialized. Call connect() first.');
+    }
+
+    _logger.info('Reading columns for $schema.$tableName');
+
     final columns = <ColumnInfo>[];
 
     // Get column information
-    final columnsResult = await _connection.query('''
-      SELECT 
-        c.column_name,
-        c.data_type,
-        c.is_nullable = 'YES' as is_nullable,
-        c.column_default,
-        col_description(pgc.oid, c.ordinal_position) as column_comment,
-        (
-          SELECT 
-            TRUE 
-          FROM 
-            information_schema.table_constraints tc
-          JOIN 
-            information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-          WHERE 
-            tc.table_schema = c.table_schema
-            AND tc.table_name = c.table_name
-            AND ccu.column_name = c.column_name
-            AND tc.constraint_type = 'PRIMARY KEY'
-        ) as is_primary_key,
-        (
-          SELECT 
-            TRUE 
-          FROM 
-            information_schema.table_constraints tc
-          JOIN 
-            information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
-          WHERE 
-            tc.table_schema = c.table_schema
-            AND tc.table_name = c.table_name
-            AND ccu.column_name = c.column_name
-            AND tc.constraint_type = 'UNIQUE'
-        ) as is_unique
-      FROM 
-        information_schema.columns c
-      JOIN 
-        pg_class pgc ON pgc.relname = c.table_name
-      WHERE 
-        c.table_schema = @schema
-        AND c.table_name = @table
-      ORDER BY 
-        c.ordinal_position
-    ''', substitutionValues: {'schema': schema, 'table': table});
+    final columnsResult = await _connection!.execute(
+      'SELECT c.column_name, c.data_type, c.is_nullable, c.column_default, '
+      'col_description(pgc.oid, c.ordinal_position) as column_comment, '
+      '(SELECT TRUE FROM information_schema.table_constraints tc '
+      'JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name '
+      'WHERE tc.table_schema = c.table_schema AND tc.table_name = c.table_name '
+      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'PRIMARY KEY\') as is_primary_key, '
+      '(SELECT TRUE FROM information_schema.table_constraints tc '
+      'JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name '
+      'WHERE tc.table_schema = c.table_schema AND tc.table_name = c.table_name '
+      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'UNIQUE\') as is_unique '
+      'FROM information_schema.columns c '
+      'JOIN pg_class pgc ON pgc.relname = c.table_name '
+      'WHERE c.table_schema = \$1 AND c.table_name = \$2 '
+      'ORDER BY c.ordinal_position',
+      parameters: [schema, tableName],
+    );
 
     // Get foreign key information
-    final foreignKeysResult = await _connection.query('''
-      SELECT
-        kcu.column_name,
-        ccu.table_schema AS foreign_table_schema,
-        ccu.table_name AS foreign_table_name,
-        ccu.column_name AS foreign_column_name
-      FROM
-        information_schema.table_constraints AS tc
-      JOIN
-        information_schema.key_column_usage AS kcu ON tc.constraint_name = kcu.constraint_name
-      JOIN
-        information_schema.constraint_column_usage AS ccu ON ccu.constraint_name = tc.constraint_name
-      WHERE
-        tc.constraint_type = 'FOREIGN KEY'
-        AND tc.table_schema = @schema
-        AND tc.table_name = @table
-    ''', substitutionValues: {'schema': schema, 'table': table});
+    final foreignKeysResult = await _connection!.execute(
+      'SELECT kcu.column_name, ccu.table_schema AS foreign_table_schema, '
+      'ccu.table_name AS foreign_table_name, ccu.column_name AS foreign_column_name '
+      'FROM information_schema.table_constraints AS tc '
+      'JOIN information_schema.key_column_usage AS kcu '
+      'ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema '
+      'JOIN information_schema.constraint_column_usage AS ccu '
+      'ON ccu.constraint_name = tc.constraint_name '
+      'WHERE tc.constraint_type = \'FOREIGN KEY\' AND tc.table_schema = \$1 AND tc.table_name = \$2',
+      parameters: [schema, tableName],
+    );
 
     // Create a map of column name to foreign key information
     final foreignKeyMap = <String, Map<String, String>>{};
@@ -166,7 +140,7 @@ class SchemaReader {
     for (final columnRow in columnsResult) {
       final columnName = columnRow[0] as String;
       final dataType = columnRow[1] as String;
-      final isNullable = columnRow[2] as bool;
+      final isNullable = columnRow[2] == 'YES';
       final defaultValue = columnRow[3] as String?;
       final comment = columnRow[4] as String?;
       final isPrimaryKey = columnRow[5] as bool? ?? false;
@@ -191,50 +165,46 @@ class SchemaReader {
   }
 
   bool _shouldProcessTable(String schema, String tableName) {
-    final fullyQualifiedName = '$schema.$tableName';
-
-    // If include patterns are specified, check if the table matches any of them
     if (config.includeTables.isNotEmpty) {
-      return _matchesAnyPattern(schema, tableName, fullyQualifiedName, config.includeTables);
+      for (final pattern in config.includeTables) {
+        final parts = pattern.split('.');
+        if (parts.length == 2) {
+          final schemaPattern = parts[0];
+          final tablePattern = parts[1];
+          if (_matchesPattern(schema, schemaPattern) && _matchesPattern(tableName, tablePattern)) {
+            return true;
+          }
+        } else if (_matchesPattern(tableName, pattern)) {
+          return true;
+        }
+      }
+      return false;
     }
-    
-    // If exclude patterns are specified, check if the table matches any of them
+
     if (config.excludeTables.isNotEmpty) {
-      return !_matchesAnyPattern(schema, tableName, fullyQualifiedName, config.excludeTables);
+      for (final pattern in config.excludeTables) {
+        final parts = pattern.split('.');
+        if (parts.length == 2) {
+          final schemaPattern = parts[0];
+          final tablePattern = parts[1];
+          if (_matchesPattern(schema, schemaPattern) && _matchesPattern(tableName, tablePattern)) {
+            return false;
+          }
+        } else if (_matchesPattern(tableName, pattern)) {
+          return false;
+        }
+      }
     }
-    
-    // If no include or exclude patterns are specified, use the generateForAllTables flag
+
     return config.generateForAllTables;
   }
 
-  /// Checks if a table matches any of the given patterns
-  bool _matchesAnyPattern(String schema, String tableName, String fullyQualifiedName, List<String> patterns) {
-    for (final pattern in patterns) {
-      if (_matchesPattern(schema, tableName, fullyQualifiedName, pattern)) {
-        return true;
-      }
+  bool _matchesPattern(String text, String pattern) {
+    if (pattern == '*') return true;
+    if (pattern.contains('*')) {
+      final regex = RegExp('^${pattern.replaceAll('*', '.*')}\$');
+      return regex.hasMatch(text);
     }
-    return false;
-  }
-
-  /// Checks if a table matches a specific pattern
-  bool _matchesPattern(String schema, String tableName, String fullyQualifiedName, String pattern) {
-    // Exact match for fully qualified name
-    if (pattern == fullyQualifiedName) {
-      return true;
-    }
-    
-    // Handle wildcard patterns like 'schema.*'
-    if (pattern.endsWith('.*')) {
-      final schemaPattern = pattern.substring(0, pattern.length - 2);
-      return schema == schemaPattern;
-    }
-    
-    // Handle table name only (no schema)
-    if (!pattern.contains('.')) {
-      return tableName == pattern;
-    }
-    
-    return false;
+    return text == pattern;
   }
 }

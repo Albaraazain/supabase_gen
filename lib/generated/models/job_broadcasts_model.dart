@@ -17,7 +17,7 @@ class JobBroadcastsModel {
   final DateTime? createdAt;
   final DateTime? expiryTime;
 
-  const JobBroadcastsModel({
+  JobBroadcastsModel({
     required this.broadcastId,
     required this.homeownerId,
     required this.serviceId,

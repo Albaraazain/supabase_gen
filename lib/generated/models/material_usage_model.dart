@@ -9,7 +9,7 @@ class MaterialUsageModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const MaterialUsageModel({
+  MaterialUsageModel({
     required this.usageId,
     this.jobId,
     this.quoteLineItemId,

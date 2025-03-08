@@ -7,7 +7,7 @@ class ProfessionalEarningsBackupModel {
   final DateTime? earningsDate;
   final String? serviceCategoryId;
 
-  const ProfessionalEarningsBackupModel({
+  ProfessionalEarningsBackupModel({
     this.id,
     this.professionalId,
     this.jobId,

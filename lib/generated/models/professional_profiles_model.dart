@@ -15,7 +15,7 @@ class ProfessionalProfilesModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  const ProfessionalProfilesModel({
+  ProfessionalProfilesModel({
     required this.professionalId,
     required this.userId,
     this.businessName,
