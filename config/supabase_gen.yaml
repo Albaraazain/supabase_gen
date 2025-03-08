@@ -10,7 +10,25 @@ generation:
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
-  exclude_tables: []
+  exclude_tables: 
+    # Exclude system schemas
+    - '_realtime.*'
+    - 'auth.*'
+    - 'net.*'
+    - 'pgsodium.*'
+    - 'realtime.*'
+    - 'storage.*'
+    - 'supabase_functions.*'
+    - 'vault.*'
+    # Exclude views
+    - 'public.active_broadcasts_view'
+    - 'public.get_enum_types'
+    - 'public.get_table_indexes'
+    - 'public.homeowner_active_jobs'
+    - 'public.job_progress_view'
+    - 'public.professional_current_job'
+    - 'public.professional_services_view'
+    - 'public.professional_statistics'
   include_tables: []
-  generate_for_all_tables: true
+  generate_for_all_tables: true  # Generate for all tables except excluded ones
   use_null_safety: true
