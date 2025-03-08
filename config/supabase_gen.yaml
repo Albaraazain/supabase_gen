@@ -20,7 +20,7 @@ generation:
     - 'storage.*'
     - 'supabase_functions.*'
     - 'vault.*'
-    # Exclude views
+    # Exclude views and system tables from public schema
     - 'public.active_broadcasts_view'
     - 'public.get_enum_types'
     - 'public.get_table_indexes'
@@ -29,6 +29,7 @@ generation:
     - 'public.professional_current_job'
     - 'public.professional_services_view'
     - 'public.professional_statistics'
-  include_tables: []
-  generate_for_all_tables: true  # Generate for all tables except excluded ones
+  include_tables: 
+    - 'public.*'  # Include all tables from public schema
+  generate_for_all_tables: false  # Only generate for explicitly included tables
   use_null_safety: true
