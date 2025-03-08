@@ -4,68 +4,63 @@ import '../models/jobs_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the service_quotes table
-class ServiceQuotesRepository extends BaseRepository {
-  const ServiceQuotesRepository(SupabaseClient client) : super(client);
+class ServiceQuotesRepository extends BaseRepository<ServiceQuotesModel> {
+  const ServiceQuotesRepository(SupabaseClient client) : super(client, 'service_quotes');
 
   @override
-  String get tableName => 'service_quotes';
+  ServiceQuotesModel fromJson(Map<String, dynamic> json) => ServiceQuotesModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<ServiceQuotesModel?> find(String quoteId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('quote_id', quoteId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return ServiceQuotesModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<ServiceQuotesModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => ServiceQuotesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<ServiceQuotesModel> insert(ServiceQuotesModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return ServiceQuotesModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<ServiceQuotesModel?> update(ServiceQuotesModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('quote_id', model.quoteId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return ServiceQuotesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,26 +70,27 @@ class ServiceQuotesRepository extends BaseRepository {
         .select()
         .single();
 
-    return ServiceQuotesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String quoteId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('quote_id', quoteId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String jobId) async {
-    final response = await client
+    final queryBuilder = client
         .from('jobs')
         .select()
-        .eq('job_id', jobId as Object);
+        .eq('job_id', jobId);
 
-    return response.map((json) => JobsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => JobsModel.fromJson(json)).toList();
   }
 
 }

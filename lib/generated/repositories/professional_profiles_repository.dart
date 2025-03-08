@@ -4,68 +4,63 @@ import '../models/users_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_profiles table
-class ProfessionalProfilesRepository extends BaseRepository {
-  const ProfessionalProfilesRepository(SupabaseClient client) : super(client);
+class ProfessionalProfilesRepository extends BaseRepository<ProfessionalProfilesModel> {
+  const ProfessionalProfilesRepository(SupabaseClient client) : super(client, 'professional_profiles');
 
   @override
-  String get tableName => 'professional_profiles';
+  ProfessionalProfilesModel fromJson(Map<String, dynamic> json) => ProfessionalProfilesModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<ProfessionalProfilesModel?> find(String professionalId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('professional_id', professionalId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return ProfessionalProfilesModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<ProfessionalProfilesModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => ProfessionalProfilesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<ProfessionalProfilesModel> insert(ProfessionalProfilesModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return ProfessionalProfilesModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<ProfessionalProfilesModel?> update(ProfessionalProfilesModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('professional_id', model.professionalId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return ProfessionalProfilesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,26 +70,27 @@ class ProfessionalProfilesRepository extends BaseRepository {
         .select()
         .single();
 
-    return ProfessionalProfilesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String professionalId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('professional_id', professionalId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related users records
   /// based on the user_id foreign key
   Future<List<UsersModel>> findByUserId(String userId) async {
-    final response = await client
+    final queryBuilder = client
         .from('users')
         .select()
-        .eq('user_id', userId as Object);
+        .eq('user_id', userId);
 
-    return response.map((json) => UsersModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => UsersModel.fromJson(json)).toList();
   }
 
 }

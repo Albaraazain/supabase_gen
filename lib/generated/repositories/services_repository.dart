@@ -4,68 +4,63 @@ import '../models/service_categories_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the services table
-class ServicesRepository extends BaseRepository {
-  const ServicesRepository(SupabaseClient client) : super(client);
+class ServicesRepository extends BaseRepository<ServicesModel> {
+  const ServicesRepository(SupabaseClient client) : super(client, 'services');
 
   @override
-  String get tableName => 'services';
+  ServicesModel fromJson(Map<String, dynamic> json) => ServicesModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<ServicesModel?> find(String serviceId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('service_id', serviceId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return ServicesModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<ServicesModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => ServicesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<ServicesModel> insert(ServicesModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return ServicesModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<ServicesModel?> update(ServicesModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('service_id', model.serviceId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return ServicesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,26 +70,27 @@ class ServicesRepository extends BaseRepository {
         .select()
         .single();
 
-    return ServicesModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String serviceId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('service_id', serviceId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related service_categories records
   /// based on the category_id foreign key
   Future<List<ServiceCategoriesModel>> findByCategoryId(String categoryId) async {
-    final response = await client
+    final queryBuilder = client
         .from('service_categories')
         .select()
-        .eq('category_id', categoryId as Object);
+        .eq('category_id', categoryId);
 
-    return response.map((json) => ServiceCategoriesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => ServiceCategoriesModel.fromJson(json)).toList();
   }
 
 }

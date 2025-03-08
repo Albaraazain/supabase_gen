@@ -1,3 +1,12 @@
+## 1.1.0
+
+- Fixed type mismatches with Supabase Flutter SDK v2 query builders
+- Improved handling of nullable parameters in foreign key relationships
+- Removed all unnecessary type casting in generated code
+- Fixed all linter errors in generated repositories
+- Enhanced type safety in query method signatures
+- Optimized code generation for cleaner output
+
 ## 1.0.1
 
 - Fixed compatibility with latest Supabase Flutter SDK query builder types

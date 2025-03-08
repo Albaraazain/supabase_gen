@@ -3,68 +3,63 @@ import '../models/test_jobs_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the test_jobs table
-class TestJobsRepository extends BaseRepository {
-  const TestJobsRepository(SupabaseClient client) : super(client);
+class TestJobsRepository extends BaseRepository<TestJobsModel> {
+  const TestJobsRepository(SupabaseClient client) : super(client, 'test_jobs');
 
   @override
-  String get tableName => 'test_jobs';
+  TestJobsModel fromJson(Map<String, dynamic> json) => TestJobsModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<TestJobsModel?> find(String id) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('id', id)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return TestJobsModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<TestJobsModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => TestJobsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<TestJobsModel> insert(TestJobsModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return TestJobsModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<TestJobsModel?> update(TestJobsModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('id', model.id)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return TestJobsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -74,15 +69,15 @@ class TestJobsRepository extends BaseRepository {
         .select()
         .single();
 
-    return TestJobsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String id) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('id', id)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
 }

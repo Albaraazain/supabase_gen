@@ -4,68 +4,63 @@ import '../models/service_quotes_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the quote_line_items table
-class QuoteLineItemsRepository extends BaseRepository {
-  const QuoteLineItemsRepository(SupabaseClient client) : super(client);
+class QuoteLineItemsRepository extends BaseRepository<QuoteLineItemsModel> {
+  const QuoteLineItemsRepository(SupabaseClient client) : super(client, 'quote_line_items');
 
   @override
-  String get tableName => 'quote_line_items';
+  QuoteLineItemsModel fromJson(Map<String, dynamic> json) => QuoteLineItemsModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<QuoteLineItemsModel?> find(String lineItemId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('line_item_id', lineItemId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return QuoteLineItemsModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<QuoteLineItemsModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => QuoteLineItemsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<QuoteLineItemsModel> insert(QuoteLineItemsModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return QuoteLineItemsModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<QuoteLineItemsModel?> update(QuoteLineItemsModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('line_item_id', model.lineItemId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return QuoteLineItemsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,26 +70,27 @@ class QuoteLineItemsRepository extends BaseRepository {
         .select()
         .single();
 
-    return QuoteLineItemsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String lineItemId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('line_item_id', lineItemId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related service_quotes records
   /// based on the quote_id foreign key
   Future<List<ServiceQuotesModel>> findByQuoteId(String quoteId) async {
-    final response = await client
+    final queryBuilder = client
         .from('service_quotes')
         .select()
-        .eq('quote_id', quoteId as Object);
+        .eq('quote_id', quoteId);
 
-    return response.map((json) => ServiceQuotesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => ServiceQuotesModel.fromJson(json)).toList();
   }
 
 }

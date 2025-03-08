@@ -3,45 +3,41 @@ import '../models/professional_responses_backup_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_responses_backup table
-class ProfessionalResponsesBackupRepository extends BaseRepository {
-  const ProfessionalResponsesBackupRepository(SupabaseClient client) : super(client);
+class ProfessionalResponsesBackupRepository extends BaseRepository<ProfessionalResponsesBackupModel> {
+  const ProfessionalResponsesBackupRepository(SupabaseClient client) : super(client, 'professional_responses_backup');
 
   @override
-  String get tableName => 'professional_responses_backup';
+  ProfessionalResponsesBackupModel fromJson(Map<String, dynamic> json) => ProfessionalResponsesBackupModel.fromJson(json);
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<ProfessionalResponsesBackupModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => ProfessionalResponsesBackupModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<ProfessionalResponsesBackupModel> insert(ProfessionalResponsesBackupModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return ProfessionalResponsesBackupModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -51,7 +47,7 @@ class ProfessionalResponsesBackupRepository extends BaseRepository {
         .select()
         .single();
 
-    return ProfessionalResponsesBackupModel.fromJson(response);
+    return fromJson(response);
   }
 
 }

@@ -6,68 +6,63 @@ import '../models/users_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the material_usage table
-class MaterialUsageRepository extends BaseRepository {
-  const MaterialUsageRepository(SupabaseClient client) : super(client);
+class MaterialUsageRepository extends BaseRepository<MaterialUsageModel> {
+  const MaterialUsageRepository(SupabaseClient client) : super(client, 'material_usage');
 
   @override
-  String get tableName => 'material_usage';
+  MaterialUsageModel fromJson(Map<String, dynamic> json) => MaterialUsageModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<MaterialUsageModel?> find(String usageId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('usage_id', usageId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return MaterialUsageModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<MaterialUsageModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => MaterialUsageModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<MaterialUsageModel> insert(MaterialUsageModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return MaterialUsageModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<MaterialUsageModel?> update(MaterialUsageModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('usage_id', model.usageId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return MaterialUsageModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -77,48 +72,51 @@ class MaterialUsageRepository extends BaseRepository {
         .select()
         .single();
 
-    return MaterialUsageModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String usageId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('usage_id', usageId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String? jobId) async {
-    final response = await client
+    final queryBuilder = client
         .from('jobs')
         .select()
         .eq('job_id', jobId as Object);
 
-    return response.map((json) => JobsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => JobsModel.fromJson(json)).toList();
   }
 
   /// Find related quote_line_items records
   /// based on the quote_line_item_id foreign key
   Future<List<QuoteLineItemsModel>> findByQuoteLineItemId(String? quoteLineItemId) async {
-    final response = await client
+    final queryBuilder = client
         .from('quote_line_items')
         .select()
         .eq('line_item_id', quoteLineItemId as Object);
 
-    return response.map((json) => QuoteLineItemsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => QuoteLineItemsModel.fromJson(json)).toList();
   }
 
   /// Find related users records
   /// based on the updated_by foreign key
   Future<List<UsersModel>> findByUpdatedBy(String? updatedBy) async {
-    final response = await client
+    final queryBuilder = client
         .from('users')
         .select()
         .eq('user_id', updatedBy as Object);
 
-    return response.map((json) => UsersModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => UsersModel.fromJson(json)).toList();
   }
 
 }

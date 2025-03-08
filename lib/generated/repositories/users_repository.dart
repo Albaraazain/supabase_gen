@@ -3,69 +3,64 @@ import '../models/users_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the users table
-class UsersRepository extends BaseRepository {
-  const UsersRepository(SupabaseClient client) : super(client);
+class UsersRepository extends BaseRepository<UsersModel> {
+  const UsersRepository(SupabaseClient client) : super(client, 'users');
 
   @override
-  String get tableName => 'users';
+  UsersModel fromJson(Map<String, dynamic> json) => UsersModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<UsersModel?> find(String userId, String userId2) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('user_id', userId)
         .eq('user_id', userId2)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return UsersModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<UsersModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => UsersModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<UsersModel> insert(UsersModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return UsersModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<UsersModel?> update(UsersModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('user_id', model.userId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return UsersModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,16 +70,16 @@ class UsersRepository extends BaseRepository {
         .select()
         .single();
 
-    return UsersModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String userId, String userId2) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('user_id', userId)
         .eq('user_id', userId2)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
 }

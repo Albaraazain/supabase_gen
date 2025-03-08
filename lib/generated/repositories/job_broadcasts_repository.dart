@@ -5,68 +5,63 @@ import '../models/services_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the job_broadcasts table
-class JobBroadcastsRepository extends BaseRepository {
-  const JobBroadcastsRepository(SupabaseClient client) : super(client);
+class JobBroadcastsRepository extends BaseRepository<JobBroadcastsModel> {
+  const JobBroadcastsRepository(SupabaseClient client) : super(client, 'job_broadcasts');
 
   @override
-  String get tableName => 'job_broadcasts';
+  JobBroadcastsModel fromJson(Map<String, dynamic> json) => JobBroadcastsModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<JobBroadcastsModel?> find(String broadcastId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('broadcast_id', broadcastId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return JobBroadcastsModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<JobBroadcastsModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => JobBroadcastsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<JobBroadcastsModel> insert(JobBroadcastsModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return JobBroadcastsModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<JobBroadcastsModel?> update(JobBroadcastsModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('broadcast_id', model.broadcastId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return JobBroadcastsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -76,37 +71,39 @@ class JobBroadcastsRepository extends BaseRepository {
         .select()
         .single();
 
-    return JobBroadcastsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String broadcastId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('broadcast_id', broadcastId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related users records
   /// based on the homeowner_id foreign key
   Future<List<UsersModel>> findByHomeownerId(String homeownerId) async {
-    final response = await client
+    final queryBuilder = client
         .from('users')
         .select()
-        .eq('user_id', homeownerId as Object);
+        .eq('user_id', homeownerId);
 
-    return response.map((json) => UsersModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => UsersModel.fromJson(json)).toList();
   }
 
   /// Find related services records
   /// based on the service_id foreign key
   Future<List<ServicesModel>> findByServiceId(String serviceId) async {
-    final response = await client
+    final queryBuilder = client
         .from('services')
         .select()
-        .eq('service_id', serviceId as Object);
+        .eq('service_id', serviceId);
 
-    return response.map((json) => ServicesModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => ServicesModel.fromJson(json)).toList();
   }
 
 }

@@ -3,45 +3,41 @@ import '../models/professional_profiles_backup_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the professional_profiles_backup table
-class ProfessionalProfilesBackupRepository extends BaseRepository {
-  const ProfessionalProfilesBackupRepository(SupabaseClient client) : super(client);
+class ProfessionalProfilesBackupRepository extends BaseRepository<ProfessionalProfilesBackupModel> {
+  const ProfessionalProfilesBackupRepository(SupabaseClient client) : super(client, 'professional_profiles_backup');
 
   @override
-  String get tableName => 'professional_profiles_backup';
+  ProfessionalProfilesBackupModel fromJson(Map<String, dynamic> json) => ProfessionalProfilesBackupModel.fromJson(json);
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<ProfessionalProfilesBackupModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => ProfessionalProfilesBackupModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<ProfessionalProfilesBackupModel> insert(ProfessionalProfilesBackupModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return ProfessionalProfilesBackupModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -51,7 +47,7 @@ class ProfessionalProfilesBackupRepository extends BaseRepository {
         .select()
         .single();
 
-    return ProfessionalProfilesBackupModel.fromJson(response);
+    return fromJson(response);
   }
 
 }

@@ -4,68 +4,63 @@ import '../models/jobs_model.dart';
 import 'base_repository.dart';
 
 /// Repository for the diagnosis_findings table
-class DiagnosisFindingsRepository extends BaseRepository {
-  const DiagnosisFindingsRepository(SupabaseClient client) : super(client);
+class DiagnosisFindingsRepository extends BaseRepository<DiagnosisFindingsModel> {
+  const DiagnosisFindingsRepository(SupabaseClient client) : super(client, 'diagnosis_findings');
 
   @override
-  String get tableName => 'diagnosis_findings';
+  DiagnosisFindingsModel fromJson(Map<String, dynamic> json) => DiagnosisFindingsModel.fromJson(json);
 
   /// Find a record by its primary key
   Future<DiagnosisFindingsModel?> find(String findingId) async {
-    final response = await query
-        .select()
+    final response = await query.select()
         .eq('finding_id', findingId)
-        .limit(1)
         .maybeSingle();
 
     if (response == null) return null;
-    return DiagnosisFindingsModel.fromJson(response);
+    return fromJson(response);
   }
 
-  /// Get all records from this table
+  /// Get all records from this table with pagination and sorting
   Future<List<DiagnosisFindingsModel>> findAll({
     int? limit,
     int? offset,
     String? orderBy,
     bool ascending = true,
   }) async {
-    var query = this.query.select();
+    dynamic queryBuilder = query.select();
 
     if (orderBy != null) {
-      query = query.order(orderBy, ascending: ascending) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
     }
 
     if (limit != null) {
-      query = query.limit(limit) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.limit(limit);
     }
 
     if (offset != null) {
-      query = query.range(offset, offset + (limit ?? 10) - 1) as PostgrestFilterBuilder<PostgrestList>;
+      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
     }
 
-    final response = await query;
-    return response.map((json) => DiagnosisFindingsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => fromJson(json)).toList();
   }
 
   /// Insert a new record
   Future<DiagnosisFindingsModel> insert(DiagnosisFindingsModel model) async {
-    final response = await query
-        .insert(model.toJson())
-        .select()
-        .single();
-
-    return DiagnosisFindingsModel.fromJson(response);
+    final response = await query.insert(model.toJson()).select().single();
+    return fromJson(response);
   }
 
   /// Update an existing record
   Future<DiagnosisFindingsModel?> update(DiagnosisFindingsModel model) async {
-    final updateQuery = query.update(model.toJson())
+    final queryBuilder = query.update(model.toJson())
         .eq('finding_id', model.findingId)
-    ;
-    final response = await updateQuery.select().maybeSingle();
+        .select()
+        .maybeSingle();
 
+    final response = await queryBuilder;
     if (response == null) return null;
-    return DiagnosisFindingsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Insert or update a record
@@ -75,26 +70,27 @@ class DiagnosisFindingsRepository extends BaseRepository {
         .select()
         .single();
 
-    return DiagnosisFindingsModel.fromJson(response);
+    return fromJson(response);
   }
 
   /// Delete a record by its primary key
   Future<void> delete(String findingId) async {
-    final deleteQuery = query.delete()
+    final queryBuilder = query.delete()
         .eq('finding_id', findingId)
-    ;
-    await deleteQuery;
+        ;
+    await queryBuilder;
   }
 
   /// Find related jobs records
   /// based on the job_id foreign key
   Future<List<JobsModel>> findByJobId(String jobId) async {
-    final response = await client
+    final queryBuilder = client
         .from('jobs')
         .select()
-        .eq('job_id', jobId as Object);
+        .eq('job_id', jobId);
 
-    return response.map((json) => JobsModel.fromJson(json)).toList();
+    final response = await queryBuilder;
+    return (response as List).map((json) => JobsModel.fromJson(json)).toList();
   }
 
 }

@@ -1,14 +1,15 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Base repository class that all generated repositories extend
-abstract class BaseRepository {
+abstract class BaseRepository<T> {
   final SupabaseClient client;
+  final String tableName;
 
-  const BaseRepository(this.client);
+  const BaseRepository(this.client, this.tableName);
 
-  /// Get the table name for this repository
-  String get tableName;
+  /// Get the base query builder for this table
+  SupabaseQueryBuilder get query => client.from(tableName);
 
-  /// Get a query builder for this table
-  PostgrestQueryBuilder get query => client.from(tableName);
+  /// Convert a JSON map to a model instance
+  T fromJson(Map<String, dynamic> json);
 }

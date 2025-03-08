@@ -46,16 +46,17 @@ class RepositoryGenerator {
     
     // Begin abstract class definition
     sb.writeln('/// Base repository class that all generated repositories extend');
-    sb.writeln('abstract class BaseRepository {');
+    sb.writeln('abstract class BaseRepository<T> {');
     sb.writeln('  final SupabaseClient client;');
+    sb.writeln('  final String tableName;');
     sb.writeln();
-    sb.writeln('  const BaseRepository(this.client);');
+    sb.writeln('  const BaseRepository(this.client, this.tableName);');
     sb.writeln();
-    sb.writeln('  /// Get the table name for this repository');
-    sb.writeln('  String get tableName;');
+    sb.writeln('  /// Get the base query builder for this table');
+    sb.writeln('  SupabaseQueryBuilder get query => client.from(tableName);');
     sb.writeln();
-    sb.writeln('  /// Get a query builder for this table');
-    sb.writeln('  PostgrestBuilder get query => client.from(tableName);');
+    sb.writeln('  /// Convert a JSON map to a model instance');
+    sb.writeln('  T fromJson(Map<String, dynamic> json);');
     sb.writeln('}');
     
     // Write to file
@@ -113,11 +114,11 @@ class RepositoryGenerator {
     
     // Begin class definition
     sb.writeln('/// Repository for the ${table.name} table');
-    sb.writeln('class $repoClassName extends BaseRepository {');
-    sb.writeln('  const $repoClassName(SupabaseClient client) : super(client);');
+    sb.writeln('class $repoClassName extends BaseRepository<$modelClassName> {');
+    sb.writeln('  const $repoClassName(SupabaseClient client) : super(client, \'${table.name}\');');
     sb.writeln();
     sb.writeln('  @override');
-    sb.writeln('  String get tableName => \'${table.name}\';');
+    sb.writeln('  $modelClassName fromJson(Map<String, dynamic> json) => $modelClassName.fromJson(json);');
     sb.writeln();
     
     // Find function for primary key
@@ -146,8 +147,7 @@ class RepositoryGenerator {
       
       sb.writeln('  /// Find a record by its primary key');
       sb.writeln('  Future<$modelClassName?> find($pkParams) async {');
-      sb.writeln('    final response = await query');
-      sb.writeln('        .select()');
+      sb.writeln('    final response = await query.select()');
       
       // Reset the map for reuse
       paramNameMap.clear();
@@ -167,51 +167,46 @@ class RepositoryGenerator {
         sb.writeln('        .eq(\'${pk.name}\', $paramName)');
       }
       
-      sb.writeln('        .limit(1)');
       sb.writeln('        .maybeSingle();');
       sb.writeln();
       sb.writeln('    if (response == null) return null;');
-      sb.writeln('    return $modelClassName.fromJson(response);');
+      sb.writeln('    return fromJson(response);');
       sb.writeln('  }');
       sb.writeln();
     }
     
-    // FindAll function
-    sb.writeln('  /// Get all records from this table');
+    // FindAll function with pagination and sorting
+    sb.writeln('  /// Get all records from this table with pagination and sorting');
     sb.writeln('  Future<List<$modelClassName>> findAll({');
     sb.writeln('    int? limit,');
     sb.writeln('    int? offset,');
     sb.writeln('    String? orderBy,');
     sb.writeln('    bool ascending = true,');
     sb.writeln('  }) async {');
-    sb.writeln('    var query = this.query.select();');
+    sb.writeln('    dynamic queryBuilder = query.select();');
     sb.writeln();
     sb.writeln('    if (orderBy != null) {');
-    sb.writeln('      query = query.order(orderBy, ascending: ascending);');
+    sb.writeln('      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);');
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (limit != null) {');
-    sb.writeln('      query = query.limit(limit);');
+    sb.writeln('      queryBuilder = queryBuilder.limit(limit);');
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (offset != null) {');
-    sb.writeln('      query = query.range(offset, offset + (limit ?? 10) - 1);');
+    sb.writeln('      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);');
     sb.writeln('    }');
     sb.writeln();
-    sb.writeln('    final response = await query;');
-    sb.writeln('    return response.map((json) => $modelClassName.fromJson(json)).toList();');
+    sb.writeln('    final response = await queryBuilder;');
+    sb.writeln('    return (response as List).map((json) => fromJson(json)).toList();');
     sb.writeln('  }');
     sb.writeln();
     
     // Insert function
     sb.writeln('  /// Insert a new record');
     sb.writeln('  Future<$modelClassName> insert($modelClassName model) async {');
-    sb.writeln('    final response = await query');
-    sb.writeln('        .insert(model.toJson())');
-    sb.writeln('        .select()');
-    sb.writeln('        .single();');
-    sb.writeln();
-    sb.writeln('    return $modelClassName.fromJson(response);');
+    sb.writeln('    final response = await query.insert(model.toJson()).select().single();');
+    sb.writeln('    return fromJson(response);');
     sb.writeln('  }');
     sb.writeln();
     
@@ -219,8 +214,7 @@ class RepositoryGenerator {
     if (hasPrimaryKey) {
       sb.writeln('  /// Update an existing record');
       sb.writeln('  Future<$modelClassName?> update($modelClassName model) async {');
-      sb.writeln('    final response = await query');
-      sb.writeln('        .update(model.toJson())');
+      sb.writeln('    final queryBuilder = query.update(model.toJson())');
       
       // Use a set to track field names to avoid duplicates
       final processedFields = <String>{};
@@ -236,8 +230,9 @@ class RepositoryGenerator {
       sb.writeln('        .select()');
       sb.writeln('        .maybeSingle();');
       sb.writeln();
+      sb.writeln('    final response = await queryBuilder;');
       sb.writeln('    if (response == null) return null;');
-      sb.writeln('    return $modelClassName.fromJson(response);');
+      sb.writeln('    return fromJson(response);');
       sb.writeln('  }');
       sb.writeln();
     }
@@ -250,7 +245,7 @@ class RepositoryGenerator {
     sb.writeln('        .select()');
     sb.writeln('        .single();');
     sb.writeln();
-    sb.writeln('    return $modelClassName.fromJson(response);');
+    sb.writeln('    return fromJson(response);');
     sb.writeln('  }');
     sb.writeln();
     
@@ -277,7 +272,7 @@ class RepositoryGenerator {
       
       sb.writeln('  /// Delete a record by its primary key');
       sb.writeln('  Future<void> delete($pkParams) async {');
-      sb.writeln('    final deleteQuery = query.delete()');
+      sb.writeln('    final queryBuilder = query.delete()');
       
       // Reset the map for reuse
       paramNameMap.clear();
@@ -297,8 +292,8 @@ class RepositoryGenerator {
         sb.writeln('        .eq(\'${pk.name}\', $paramName)');
       }
       
-      sb.writeln('    ;');
-      sb.writeln('    await deleteQuery;');
+      sb.writeln('        ;');
+      sb.writeln('    await queryBuilder;');
       sb.writeln('  }');
       sb.writeln();
     }
@@ -326,13 +321,20 @@ class RepositoryGenerator {
         final nullableSuffix = fkColumn.isNullable ? '?' : '';
         
         sb.writeln('  Future<List<$foreignModelName>> $methodName($paramType$nullableSuffix $paramName) async {');
-        sb.writeln('    final response = await client');
+        sb.writeln('    final queryBuilder = client');
         sb.writeln('        .from(\'$foreignTableName\')');
         sb.writeln('        .select()');
-        sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName)');
-        sb.writeln('        ;');
+        
+        if (fkColumn.isNullable) {
+          // Handle nullable parameters correctly by using a non-null value for the query
+          sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName as Object);');
+        } else {
+          sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName);');
+        }
+        
         sb.writeln();
-        sb.writeln('    return response.map((json) => $foreignModelName.fromJson(json)).toList();');
+        sb.writeln('    final response = await queryBuilder;');
+        sb.writeln('    return (response as List).map((json) => $foreignModelName.fromJson(json)).toList();');
         sb.writeln('  }');
         sb.writeln();
       }
