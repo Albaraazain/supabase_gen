@@ -40,6 +40,19 @@ class UsersModel {
     this.status2,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory UsersModel.fromJson(Map<String, dynamic> json) {
     return UsersModel(
       userId: json['user_id'] ?? '',

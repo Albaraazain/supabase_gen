@@ -23,13 +23,26 @@ class ErrorLogsModel {
     this.operation,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory ErrorLogsModel.fromJson(Map<String, dynamic> json) {
     return ErrorLogsModel(
       id: json['id'] ?? 0,
       errorCode: json['error_code'],
       errorMessage: json['error_message'],
       functionName: json['function_name'],
-      parameters: json['parameters'] != null ? json['parameters'] is String ? jsonDecode(json['parameters']) : json['parameters'] : null,
+      parameters: json['parameters'] != null ? (json['parameters'] is String ? jsonDecode(json['parameters']) : json['parameters']) : null,
       timestamp: json['timestamp'] != null ? DateTime.parse(json['timestamp'].toString()) : null,
       appVersion: json['app_version'],
       environment: json['environment'],

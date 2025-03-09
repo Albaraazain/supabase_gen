@@ -32,15 +32,28 @@ class QuoteLineItemsModel {
     this.tempItemType,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory QuoteLineItemsModel.fromJson(Map<String, dynamic> json) {
     return QuoteLineItemsModel(
       lineItemId: json['line_item_id'] ?? '',
       quoteId: json['quote_id'] ?? '',
       itemType: json['item_type'] ?? '',
       description: json['description'] ?? '',
-      quantity: json['quantity'] ?? 0.0,
-      unitPrice: json['unit_price'] ?? 0.0,
-      totalPrice: json['total_price'] ?? 0.0,
+      quantity: _toDouble(json['quantity']) ?? 0.0,
+      unitPrice: _toDouble(json['unit_price']) ?? 0.0,
+      totalPrice: _toDouble(json['total_price']) ?? 0.0,
       isMandatory: json['is_mandatory'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,

@@ -42,15 +42,28 @@ class ServiceQuotesModel {
     this.discountType,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory ServiceQuotesModel.fromJson(Map<String, dynamic> json) {
     return ServiceQuotesModel(
       quoteId: json['quote_id'] ?? '',
       jobId: json['job_id'] ?? '',
-      totalAmount: json['total_amount'] ?? 0.0,
-      materialsCost: json['materials_cost'],
-      laborCost: json['labor_cost'],
-      taxAmount: json['tax_amount'],
-      serviceFee: json['service_fee'],
+      totalAmount: _toDouble(json['total_amount']) ?? 0.0,
+      materialsCost: json['materials_cost'] != null ? _toDouble(json['materials_cost']) : null,
+      laborCost: json['labor_cost'] != null ? _toDouble(json['labor_cost']) : null,
+      taxAmount: json['tax_amount'] != null ? _toDouble(json['tax_amount']) : null,
+      serviceFee: json['service_fee'] != null ? _toDouble(json['service_fee']) : null,
       estimatedDuration: json['estimated_duration'],
       validityPeriod: json['validity_period'],
       expiryTime: json['expiry_time'] != null ? DateTime.parse(json['expiry_time'].toString()) : null,
@@ -58,8 +71,8 @@ class ServiceQuotesModel {
       status: json['status'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,
-      taxRate: json['tax_rate'],
-      discountAmount: json['discount_amount'],
+      taxRate: json['tax_rate'] != null ? _toDouble(json['tax_rate']) : null,
+      discountAmount: json['discount_amount'] != null ? _toDouble(json['discount_amount']) : null,
       notifyOnExpiry: json['notify_on_expiry'],
       notifyOnUpdate: json['notify_on_update'],
       discountType: json['discount_type'],

@@ -8,12 +8,13 @@ import '../services/logger_service.dart';
 class AuthProvider extends ChangeNotifier {
   final SupabaseClient _client;
   final LoggerService _logger = LoggerService();
+  final UsersRepository _repository;
   User? _user;
   bool _isLoading = false;
   String? _error;
   String? _userType;
 
-  AuthProvider(this._client) {
+  AuthProvider(this._client) : _repository = UsersRepository(_client) {
     _init();
   }
 
@@ -27,21 +28,31 @@ class AuthProvider extends ChangeNotifier {
 
   void _init() {
     _user = _client.auth.currentUser;
-    _logger.info('AuthProvider initialized, current user: ${_user?.email ?? 'null'}', tag: 'AuthProvider');
-    
+    _logger.info(
+      'AuthProvider initialized, current user: ${_user?.email ?? 'null'}',
+      tag: 'AuthProvider',
+    );
+
     if (_user != null) {
       _fetchUserType();
     }
-    
+
     _client.auth.onAuthStateChange.listen((data) {
       final AuthChangeEvent event = data.event;
       final Session? session = data.session;
-      
-      _logger.info('Auth state changed: $event, user: ${session?.user?.email ?? 'null'}', tag: 'AuthProvider');
-      
-      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.userUpdated) {
+
+      _logger.info(
+        'Auth state changed: $event, user: ${session?.user.email ?? 'null'}',
+        tag: 'AuthProvider',
+      );
+
+      if (event == AuthChangeEvent.signedIn ||
+          event == AuthChangeEvent.userUpdated) {
         _user = session?.user;
-        _logger.info('User signed in/updated: ${_user?.email}', tag: 'AuthProvider');
+        _logger.info(
+          'User signed in/updated: ${_user?.email}',
+          tag: 'AuthProvider',
+        );
         _fetchUserType();
         notifyListeners();
       } else if (event == AuthChangeEvent.signedOut) {
@@ -56,39 +67,51 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> _fetchUserType() async {
-    _logger.debug('Fetching user type for: ${_user?.email}', tag: 'AuthProvider');
-    
+    _logger.debug(
+      'Fetching user type for: ${_user?.email}',
+      tag: 'AuthProvider',
+    );
+
     try {
       // First try to get from metadata
       final userType = _user?.userMetadata?['user_type'];
       if (userType != null) {
         _userType = userType.toString();
-        _logger.info('User type from metadata: $_userType', tag: 'AuthProvider');
+        _logger.info(
+          'User type from metadata: $_userType',
+          tag: 'AuthProvider',
+        );
         notifyListeners();
         return;
       }
-      
+
       // If not in metadata, try to get from database
       final userId = _user?.id;
       if (userId != null) {
-        final response = await _client
-            .from('users')
-            .select('user_type')
-            .eq('id', userId)
-            .single();
-        
-        if (response != null) {
-          _userType = response['user_type'];
-          _logger.info('User type from database: $_userType', tag: 'AuthProvider');
+        final user = await _repository.find(userId, userId);
+
+        if (user != null) {
+          _userType = user.userType;
+          _logger.info(
+            'User type from database: $_userType',
+            tag: 'AuthProvider',
+          );
           notifyListeners();
         } else {
-          _logger.warning('No user type found in database', tag: 'AuthProvider');
+          _logger.warning(
+            'No user type found in database',
+            tag: 'AuthProvider',
+          );
         }
       } else {
         _logger.warning('User ID is null', tag: 'AuthProvider');
       }
     } catch (e) {
-      _logger.error('Error fetching user type: ${e.toString()}', tag: 'AuthProvider', error: e);
+      _logger.error(
+        'Error fetching user type: ${e.toString()}',
+        tag: 'AuthProvider',
+        error: e,
+      );
     }
   }
 
@@ -103,19 +126,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _logger.info('Attempting to sign up user: $email with type: $userType', tag: 'AuthProvider');
-      
+      _logger.info(
+        'Attempting to sign up user: $email with type: $userType',
+        tag: 'AuthProvider',
+      );
+
       // Sign up the user
       final response = await _client.auth.signUp(
         email: email,
         password: password,
-        data: {
-          'full_name': fullName,
-          'user_type': userType,
-        },
+        data: {'full_name': fullName, 'user_type': userType},
       );
 
-      _logger.debug('Sign up response: user=${response.user != null}, session=${response.session != null}', tag: 'AuthProvider');
+      _logger.debug(
+        'Sign up response: user=${response.user != null}, session=${response.session != null}',
+        tag: 'AuthProvider',
+      );
 
       if (response.user == null) {
         throw Exception('Failed to sign up');
@@ -123,28 +149,47 @@ class AuthProvider extends ChangeNotifier {
 
       _user = response.user;
       _userType = userType; // Set user type immediately
-      _logger.info('User signed up successfully: ${_user?.email} as $userType', tag: 'AuthProvider');
-      
+      _logger.info(
+        'User signed up successfully: ${_user?.email} as $userType',
+        tag: 'AuthProvider',
+      );
+
       // Check if email confirmation is required
       if (response.session == null) {
-        _logger.info('Email confirmation required for: ${_user?.email}', tag: 'AuthProvider');
+        _logger.info(
+          'Email confirmation required for: ${_user?.email}',
+          tag: 'AuthProvider',
+        );
       }
-      
+
       // Insert user data into the users table
       if (response.user != null) {
         try {
-          await _client.from('users').insert({
-            'user_id': response.user!.id,
-            'email': email,
-            'full_name': fullName,
-            'user_type': userType,
-          });
+          final userModel = UsersModel(
+            userId: response.user!.id,
+            userId2: response.user!.id,
+            email: email,
+            email2: email,
+            fullName: fullName,
+            fullName2: fullName,
+            userType: userType,
+            userType2: userType,
+            createdAt: DateTime.now(),
+            createdAt2: DateTime.now(),
+            updatedAt: DateTime.now(),
+            updatedAt2: DateTime.now(),
+          );
+          await _repository.insert(userModel);
           _logger.info('User data inserted into database', tag: 'AuthProvider');
         } catch (dbError) {
-          _logger.error('Error inserting user data: ${dbError.toString()}', tag: 'AuthProvider', error: dbError);
+          _logger.error(
+            'Error inserting user data: ${dbError.toString()}',
+            tag: 'AuthProvider',
+            error: dbError,
+          );
         }
       }
-      
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -163,24 +208,30 @@ class AuthProvider extends ChangeNotifier {
 
     try {
       _logger.info('Attempting to sign in user: $email', tag: 'AuthProvider');
-      
+
       final response = await _client.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
-      _logger.debug('Sign in response: user=${response.user != null}, session=${response.session != null}', tag: 'AuthProvider');
+      _logger.debug(
+        'Sign in response: user=${response.user != null}, session=${response.session != null}',
+        tag: 'AuthProvider',
+      );
 
       if (response.user == null) {
         throw Exception('Failed to sign in');
       }
 
       _user = response.user;
-      _logger.info('User signed in successfully: ${_user?.email}', tag: 'AuthProvider');
-      
+      _logger.info(
+        'User signed in successfully: ${_user?.email}',
+        tag: 'AuthProvider',
+      );
+
       // Fetch user type after sign in
       await _fetchUserType();
-      
+
       _isLoading = false;
       notifyListeners();
     } catch (e) {
@@ -197,7 +248,10 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _logger.info('Attempting to sign out user: ${_user?.email}', tag: 'AuthProvider');
+      _logger.info(
+        'Attempting to sign out user: ${_user?.email}',
+        tag: 'AuthProvider',
+      );
       await _client.auth.signOut();
       _user = null;
       _userType = null;
@@ -219,14 +273,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _logger.info('Attempting to reset password for: $email', tag: 'AuthProvider');
+      _logger.info(
+        'Attempting to reset password for: $email',
+        tag: 'AuthProvider',
+      );
       await _client.auth.resetPasswordForEmail(email);
       _logger.info('Password reset email sent to: $email', tag: 'AuthProvider');
       _isLoading = false;
       notifyListeners();
     } catch (e) {
       _error = e.toString();
-      _logger.error('Password reset error: $_error', tag: 'AuthProvider', error: e);
+      _logger.error(
+        'Password reset error: $_error',
+        tag: 'AuthProvider',
+        error: e,
+      );
       _isLoading = false;
       notifyListeners();
       rethrow;
@@ -237,4 +298,4 @@ class AuthProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-} 
+}

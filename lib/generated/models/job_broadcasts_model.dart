@@ -36,6 +36,19 @@ class JobBroadcastsModel {
     this.expiryTime,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory JobBroadcastsModel.fromJson(Map<String, dynamic> json) {
     return JobBroadcastsModel(
       broadcastId: json['broadcast_id'] ?? '',
@@ -45,12 +58,12 @@ class JobBroadcastsModel {
       title: json['title'] ?? '',
       description: json['description'],
       locationAddress: json['location_address'],
-      locationLat: json['location_lat'],
-      locationLng: json['location_lng'],
+      locationLat: json['location_lat'] != null ? _toDouble(json['location_lat']) : null,
+      locationLng: json['location_lng'] != null ? _toDouble(json['location_lng']) : null,
       urgencyLevel: json['urgency_level'],
       preferredSchedule: json['preferred_schedule'] != null ? DateTime.parse(json['preferred_schedule'].toString()) : null,
-      budgetRangeMin: json['budget_range_min'],
-      budgetRangeMax: json['budget_range_max'],
+      budgetRangeMin: json['budget_range_min'] != null ? _toDouble(json['budget_range_min']) : null,
+      budgetRangeMax: json['budget_range_max'] != null ? _toDouble(json['budget_range_max']) : null,
       broadcastRadius: json['broadcast_radius'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       expiryTime: json['expiry_time'] != null ? DateTime.parse(json['expiry_time'].toString()) : null,

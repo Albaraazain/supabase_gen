@@ -22,12 +22,25 @@ class LocationVerificationsModel {
     this.updatedAt,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory LocationVerificationsModel.fromJson(Map<String, dynamic> json) {
     return LocationVerificationsModel(
       verificationId: json['verification_id'] ?? '',
       jobId: json['job_id'],
-      verifiedLat: json['verified_lat'],
-      verifiedLng: json['verified_lng'],
+      verifiedLat: json['verified_lat'] != null ? _toDouble(json['verified_lat']) : null,
+      verifiedLng: json['verified_lng'] != null ? _toDouble(json['verified_lng']) : null,
       verificationMethod: json['verification_method'],
       status: json['status'],
       notes: json['notes'],

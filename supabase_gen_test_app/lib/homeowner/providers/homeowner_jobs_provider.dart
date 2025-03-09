@@ -44,13 +44,15 @@ class HomeownerJobsProvider extends ChangeNotifier {
     try {
       _logger.info('Loading jobs for homeowner: $homeownerId', tag: 'HomeownerJobsProvider');
       
-      final response = await _client
-          .from('jobs')
+      // Use repository to get jobs with their services
+      final response = await _repository.query
           .select('*, services(*)')
           .eq('homeowner_id', homeownerId)
           .order('created_at', ascending: false);
       
-      _jobs = response.map((job) => JobsModel.fromJson(job)).toList();
+      _jobs = (response as List)
+          .map((job) => JobsModel.fromJson(job))
+          .toList();
       
       _logger.info('Loaded ${_jobs.length} jobs for homeowner', tag: 'HomeownerJobsProvider');
       
@@ -196,7 +198,10 @@ class HomeownerJobsProvider extends ChangeNotifier {
 
   /// Gets a job by ID
   JobsModel? getJobById(String jobId) {
-    return _jobs.firstWhere((job) => job.jobId == jobId, orElse: () => null as JobsModel);
+    return _jobs.firstWhere(
+      (job) => job.jobId == jobId,
+      orElse: () => null as JobsModel,
+    );
   }
 
   /// Clears any error message
@@ -215,10 +220,9 @@ class HomeownerJobsProvider extends ChangeNotifier {
   }
   
   void _handleError(String message, dynamic error) {
-    final errorMessage = error.toString();
-    _error = errorMessage;
-    _logger.error('$message: $errorMessage', tag: 'HomeownerJobsProvider', error: error);
-    _isLoading = false;
+    _logger.error('$message: $error', tag: 'HomeownerJobsProvider', error: error);
+    _error = message;
+    _setLoading(false);
     notifyListeners();
   }
 } 

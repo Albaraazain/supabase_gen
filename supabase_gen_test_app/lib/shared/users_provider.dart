@@ -36,12 +36,10 @@ class UsersProvider extends ChangeNotifier {
     try {
       _logger.info('Loading users', tag: 'UsersProvider');
       
-      final response = await _client
-          .from('users')
-          .select()
-          .order('created_at', ascending: false);
-      
-      _users = response.map((user) => UsersModel.fromJson(user)).toList();
+      _users = await _repository.findAll(
+        orderBy: 'created_at',
+        ascending: false
+      );
       
       _logger.info('Loaded ${_users.length} users', tag: 'UsersProvider');
       
@@ -75,10 +73,9 @@ class UsersProvider extends ChangeNotifier {
   }
   
   void _handleError(String message, dynamic error) {
-    final errorMessage = error.toString();
-    _error = errorMessage;
-    _logger.error('$message: $errorMessage', tag: 'UsersProvider', error: error);
-    _isLoading = false;
+    _logger.error('$message: $error', tag: 'UsersProvider', error: error);
+    _error = message;
+    _setLoading(false);
     notifyListeners();
   }
 } 

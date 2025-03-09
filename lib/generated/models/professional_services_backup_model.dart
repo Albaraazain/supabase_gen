@@ -14,12 +14,25 @@ class ProfessionalServicesBackupModel {
     this.isAvailable,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory ProfessionalServicesBackupModel.fromJson(Map<String, dynamic> json) {
     return ProfessionalServicesBackupModel(
       id: json['id'],
       professionalId: json['professional_id'],
       serviceId: json['service_id'],
-      priceRate: json['price_rate'],
+      priceRate: json['price_rate'] != null ? _toDouble(json['price_rate']) : null,
       isAvailable: json['is_available'],
     );
   }

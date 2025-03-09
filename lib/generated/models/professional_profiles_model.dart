@@ -32,6 +32,19 @@ class ProfessionalProfilesModel {
     this.updatedAt,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory ProfessionalProfilesModel.fromJson(Map<String, dynamic> json) {
     return ProfessionalProfilesModel(
       professionalId: json['professional_id'] ?? '',
@@ -40,11 +53,11 @@ class ProfessionalProfilesModel {
       experienceYears: json['experience_years'],
       licenseNumber: json['license_number'],
       serviceRadius: json['service_radius'],
-      currentLocationLat: json['current_location_lat'],
-      currentLocationLng: json['current_location_lng'],
-      rating: json['rating'],
+      currentLocationLat: json['current_location_lat'] != null ? _toDouble(json['current_location_lat']) : null,
+      currentLocationLng: json['current_location_lng'] != null ? _toDouble(json['current_location_lng']) : null,
+      rating: json['rating'] != null ? _toDouble(json['rating']) : null,
       totalJobsCompleted: json['total_jobs_completed'],
-      acceptanceRate: json['acceptance_rate'],
+      acceptanceRate: json['acceptance_rate'] != null ? _toDouble(json['acceptance_rate']) : null,
       availabilityStatus: json['availability_status'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,

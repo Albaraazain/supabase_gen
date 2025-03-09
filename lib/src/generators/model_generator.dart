@@ -127,6 +127,21 @@ class ModelGenerator {
     
     sb.writeln();
     
+    // Add helper method for numeric conversion
+    sb.writeln('  // Helper method to safely convert numeric values');
+    sb.writeln('  static double? _toDouble(dynamic value) {');
+    sb.writeln('    if (value == null) return null;');
+    sb.writeln('    if (value is double) return value;');
+    sb.writeln('    if (value is int) return value.toDouble();');
+    sb.writeln('    if (value is String) {');
+    sb.writeln('      try {');
+    sb.writeln('        return double.parse(value);');
+    sb.writeln('      } catch (_) {}');
+    sb.writeln('    }');
+    sb.writeln('    return null;');
+    sb.writeln('  }');
+    sb.writeln();
+    
     // Add fromJson factory
     sb.writeln('  factory $className.fromJson(Map<String, dynamic> json) {');
     sb.writeln('    return $className(');
@@ -146,52 +161,13 @@ class ModelGenerator {
         propertyNameMap[propertyName] = 1;
       }
       
-      final dartType = TypeConverter.postgresTypeToDart(column.type);
-      
       sb.write('      $propertyName: ');
-      
-      // Handle special case conversions based on type
-      if (dartType.startsWith('DateTime')) {
-        sb.write('json[\'${column.name}\'] != null ? ');
-        sb.write('DateTime.parse(json[\'${column.name}\'].toString()) : ');
-        sb.write(column.isNullable ? 'null' : 'DateTime.now()');
-      } 
-      else if (dartType.startsWith('Map<String, dynamic>')) {
-        sb.write('json[\'${column.name}\'] != null ? ');
-        sb.write('json[\'${column.name}\'] is String ? ');
-        sb.write('jsonDecode(json[\'${column.name}\']) : ');
-        sb.write('json[\'${column.name}\'] : ');
-        sb.write(column.isNullable ? 'null' : '{}');
-      }
-      else if (dartType.startsWith('List<')) {
-        sb.write('json[\'${column.name}\'] != null ? ');
-        sb.write('(json[\'${column.name}\'] as List).cast<${dartType.substring(5, dartType.length - 1)}>() : ');
-        sb.write(column.isNullable ? 'null' : '[]');
-      }
-      else if (dartType.startsWith('Uint8List')) {
-        sb.write('json[\'${column.name}\'] != null ? ');
-        sb.write('Uint8List.fromList(List<int>.from(json[\'${column.name}\'])) : ');
-        sb.write(column.isNullable ? 'null' : 'Uint8List(0)');
-      }
-      else {
-        sb.write('json[\'${column.name}\']');
-        if (!column.isNullable) {
-          String defaultValue;
-          if (dartType == 'String') {
-            defaultValue = "''";
-          } else if (dartType == 'int') {
-            defaultValue = '0';
-          } else if (dartType == 'double') {
-            defaultValue = '0.0';
-          } else if (dartType == 'bool') {
-            defaultValue = 'false';
-          } else {
-            defaultValue = 'null!';
-          }
-          sb.write(' ?? $defaultValue');
-        }
-      }
-      
+      sb.write(TypeConverter.generateJsonConversion(
+        column.name, 
+        propertyName, 
+        column.type, 
+        column.isNullable
+      ));
       sb.writeln(',');
     }
     

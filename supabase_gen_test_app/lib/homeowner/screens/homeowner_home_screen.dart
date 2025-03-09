@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flashy_tab_bar2/flashy_tab_bar2.dart';
+import '../providers/homeowner_navigation_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../auth/auth_provider.dart';
 import '../../generated/repositories/service_categories_repository.dart';
 import '../../generated/models/service_categories_model.dart';
 import '../../services/logger_service.dart';
@@ -20,42 +21,110 @@ class _HomeownerHomeScreenState extends State<HomeownerHomeScreen> {
   List<ServiceCategoriesModel> _categories = [];
   bool _isLoading = true;
 
+  // Map service category names to their corresponding image assets
+  String _getCategoryImagePath(String categoryName) {
+    final name = categoryName.toLowerCase();
+    switch (name) {
+      case 'appliance repair':
+        return 'assets/images/appliance_repair_services.png';
+      case 'carpentry':
+        return 'assets/images/carbentry_services.png';
+      case 'cleaning':
+        return 'assets/images/home_cleaning_services.png';
+      case 'electrical':
+        return 'assets/images/electrical_services.png';
+      case 'hvac':
+        return 'assets/images/hvac_services.png';
+      case 'landscaping':
+        return 'assets/images/landscaping_services.png';
+      case 'painting':
+        return 'assets/images/painting_services.png';
+      case 'plumbing':
+        return 'assets/images/plumbing_services.png';
+      default:
+        return 'assets/images/home_cleaning_services.png';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    _serviceCategoriesRepository = ServiceCategoriesRepository(Supabase.instance.client);
+    _serviceCategoriesRepository = ServiceCategoriesRepository(
+      Supabase.instance.client,
+    );
     _loadServiceCategories();
   }
 
   Future<void> _loadServiceCategories() async {
     try {
       _logger.info('Loading service categories', tag: 'HomeownerHomeScreen');
-      // Direct Supabase query instead of using the generated repository
-      final response = await Supabase.instance.client
-          .from('service_categories')
-          .select()
-          .order('name', ascending: true);
-      
-      final categories = response
-          .map((json) => ServiceCategoriesModel.fromJson(json))
-          .toList();
+
+      _categories = await _serviceCategoriesRepository.findAll(
+        orderBy: 'name',
+        ascending: true,
+      );
 
       setState(() {
-        _categories = categories;
         _isLoading = false;
       });
     } catch (e) {
-      _logger.error('Error loading service categories: $e', tag: 'HomeownerHomeScreen');
+      _logger.error(
+        'Error loading service categories: $e',
+        tag: 'HomeownerHomeScreen',
+      );
       setState(() {
         _isLoading = false;
       });
     }
   }
 
-  @override
-  void dispose() {
-    _logger.info('HomeownerHomeScreen disposed', tag: 'HomeownerHomeScreen');
-    super.dispose();
+  Widget _buildServiceCard(
+    String title,
+    String imagePath, {
+    VoidCallback? onTap,
+  }) {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(15),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(15),
+            image: DecorationImage(
+              image: AssetImage(imagePath),
+              fit: BoxFit.cover,
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+              ),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -103,177 +172,112 @@ class _HomeownerHomeScreenState extends State<HomeownerHomeScreen> {
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Service Location Card
-                    Container(
-                      width: double.infinity,
-                      height: 100,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFFC107),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Service Location Card
+                      Container(
+                        width: double.infinity,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFC107),
                           borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            // TODO: Handle location tap
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 60,
-                                  height: 60,
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.3),
-                                    borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () {
+                              // TODO: Handle location tap
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.3),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Icon(
+                                      Icons.location_on,
+                                      color: Colors.white,
+                                      size: 30,
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.location_on,
+                                  const SizedBox(width: 16),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Text(
+                                          'Service Location Set',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          'Your service area is ready',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right,
                                     color: Colors.white,
                                     size: 30,
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                const Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Text(
-                                        'Service Location Set',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Text(
-                                        'Your service area is ready',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 16,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(
-                                  Icons.chevron_right,
-                                  color: Colors.white,
-                                  size: 30,
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Service Categories Grid
-                    GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1,
-                      children: _categories.map((category) {
-                        String imagePath = 'assets/images/${category.name.toLowerCase().replaceAll(' ', '_')}_services.png';
-                        return _buildServiceCard(
-                          category.name,
-                          imagePath,
-                          onTap: () {
-                            // TODO: Navigate to service category details
-                            _logger.info('Selected service category: ${category.name}', tag: 'HomeownerHomeScreen');
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work_outline),
-            label: 'Jobs',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: 'Profile',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildServiceCard(String title, String imagePath, {required VoidCallback onTap}) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.7),
-                ],
-              ),
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                      const SizedBox(height: 24),
+                      // Service Categories Grid
+                      GridView.count(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 1,
+                        children:
+                            _categories.map((category) {
+                              return _buildServiceCard(
+                                category.name,
+                                _getCategoryImagePath(category.name),
+                                onTap: () {
+                                  // TODO: Navigate to service category details
+                                  _logger.info(
+                                    'Selected service category: ${category.name}',
+                                    tag: 'HomeownerHomeScreen',
+                                  );
+                                },
+                              );
+                            }).toList(),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
+              ),
     );
   }
-} 
+}

@@ -36,13 +36,15 @@ class HomeownerServicesProvider extends ChangeNotifier {
     try {
       _logger.info('Loading available services', tag: 'HomeownerServicesProvider');
       
-      final response = await _client
-          .from('services')
+      // Use repository to get active services with their categories
+      final response = await _repository.query
           .select('*, service_categories(*)')
           .eq('is_active', true)
           .order('name');
       
-      _availableServices = response.map((service) => ServicesModel.fromJson(service)).toList();
+      _availableServices = (response as List)
+          .map((service) => ServicesModel.fromJson(service))
+          .toList();
       
       _logger.info('Loaded ${_availableServices.length} available services', tag: 'HomeownerServicesProvider');
       
@@ -53,30 +55,15 @@ class HomeownerServicesProvider extends ChangeNotifier {
   }
 
   /// Searches for services by name
-  Future<List<ServicesModel>> searchServices(String query) async {
+  List<ServicesModel> searchServices(String query) {
     if (query.isEmpty) {
       return _availableServices;
     }
     
-    try {
-      _logger.info('Searching services with query: $query', tag: 'HomeownerServicesProvider');
-      
-      final response = await _client
-          .from('services')
-          .select('*, service_categories(*)')
-          .eq('is_active', true)
-          .ilike('name', '%$query%')
-          .order('name');
-      
-      final results = response.map((service) => ServicesModel.fromJson(service)).toList();
-      
-      _logger.info('Found ${results.length} services matching query', tag: 'HomeownerServicesProvider');
-      
-      return results;
-    } catch (e) {
-      _logger.error('Error searching services: ${e.toString()}', tag: 'HomeownerServicesProvider', error: e);
-      return [];
-    }
+    final lowercaseQuery = query.toLowerCase();
+    return _availableServices.where((service) => 
+      service.name.toLowerCase().contains(lowercaseQuery)
+    ).toList();
   }
 
   /// Gets services by category
@@ -131,10 +118,9 @@ class HomeownerServicesProvider extends ChangeNotifier {
   }
   
   void _handleError(String message, dynamic error) {
-    final errorMessage = error.toString();
-    _error = errorMessage;
-    _logger.error('$message: $errorMessage', tag: 'HomeownerServicesProvider', error: error);
-    _isLoading = false;
+    _logger.error('$message: $error', tag: 'HomeownerServicesProvider', error: error);
+    _error = message;
+    _setLoading(false);
     notifyListeners();
   }
 } 

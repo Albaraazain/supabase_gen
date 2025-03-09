@@ -43,3 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+windows/CMakeLists.txt
+windows/runner/CMakeLists.txt
+windows/runner/utils.cpp
+macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png

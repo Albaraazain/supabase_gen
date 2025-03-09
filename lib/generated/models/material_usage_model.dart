@@ -19,12 +19,25 @@ class MaterialUsageModel {
     this.updatedAt,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory MaterialUsageModel.fromJson(Map<String, dynamic> json) {
     return MaterialUsageModel(
       usageId: json['usage_id'] ?? '',
       jobId: json['job_id'],
       quoteLineItemId: json['quote_line_item_id'],
-      quantityUsed: json['quantity_used'] ?? 0.0,
+      quantityUsed: _toDouble(json['quantity_used']) ?? 0.0,
       updatedBy: json['updated_by'],
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,

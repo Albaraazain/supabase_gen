@@ -45,8 +45,7 @@ class ProfessionalProfileProvider extends ChangeNotifier {
       _logger.info('Loading professional profile for user: $userId', tag: 'ProfessionalProfileProvider');
       
       // First, try to find an existing profile
-      final response = await _client
-          .from('professional_profiles')
+      final response = await _repository.query
           .select()
           .eq('user_id', userId)
           .maybeSingle();

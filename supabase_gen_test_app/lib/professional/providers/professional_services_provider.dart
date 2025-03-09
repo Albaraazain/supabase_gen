@@ -49,12 +49,13 @@ class ProfessionalServicesProvider extends ChangeNotifier {
     try {
       _logger.info('Loading services for professional: $professionalId', tag: 'ProfessionalServicesProvider');
       
-      final response = await _client
-          .from('professional_services')
+      final response = await _professionalServicesRepository.query
           .select('*, services(*)')
           .eq('professional_id', professionalId);
       
-      _myServices = response.map((service) => ProfessionalServicesModel.fromJson(service)).toList();
+      _myServices = (response as List)
+          .map((service) => ProfessionalServicesModel.fromJson(service))
+          .toList();
       
       _logger.info('Loaded ${_myServices.length} services for professional', tag: 'ProfessionalServicesProvider');
       
@@ -71,13 +72,14 @@ class ProfessionalServicesProvider extends ChangeNotifier {
     try {
       _logger.info('Loading available services', tag: 'ProfessionalServicesProvider');
       
-      final response = await _client
-          .from('services')
+      final response = await _servicesRepository.query
           .select('*, service_categories(*)')
           .eq('is_active', true)
           .order('name');
       
-      _availableServices = response.map((service) => ServicesModel.fromJson(service)).toList();
+      _availableServices = (response as List)
+          .map((service) => ServicesModel.fromJson(service))
+          .toList();
       
       _logger.info('Loaded ${_availableServices.length} available services', tag: 'ProfessionalServicesProvider');
       

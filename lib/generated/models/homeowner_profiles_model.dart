@@ -17,12 +17,25 @@ class HomeownerProfilesModel {
     this.updatedAt,
   });
 
+  // Helper method to safely convert numeric values
+  static double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
+      } catch (_) {}
+    }
+    return null;
+  }
+
   factory HomeownerProfilesModel.fromJson(Map<String, dynamic> json) {
     return HomeownerProfilesModel(
       homeownerId: json['homeowner_id'] ?? '',
       userId: json['user_id'] ?? '',
       preferredLanguage: json['preferred_language'],
-      notificationPreferences: json['notification_preferences'] != null ? json['notification_preferences'] is String ? jsonDecode(json['notification_preferences']) : json['notification_preferences'] : null,
+      notificationPreferences: json['notification_preferences'] != null ? (json['notification_preferences'] is String ? jsonDecode(json['notification_preferences']) : json['notification_preferences']) : null,
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,
     );
