@@ -7,3 +7,4 @@
 pubspec.lock
 .history/
 
+.supabase_gen_test_app/
