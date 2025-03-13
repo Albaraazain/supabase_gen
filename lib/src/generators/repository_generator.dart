@@ -14,7 +14,9 @@ class RepositoryGenerator {
   RepositoryGenerator(this.config);
 
   Future<void> generateRepositories(List<TableInfo> tables) async {
-    final reposDir = Directory(path.join(config.outputDirectory, 'repositories'));
+    final reposDir = Directory(
+      path.join(config.outputDirectory, 'repositories'),
+    );
     if (!reposDir.existsSync()) {
       reposDir.createSync(recursive: true);
     }
@@ -35,17 +37,19 @@ class RepositoryGenerator {
 
   Future<void> _generateBaseRepository(String outputDir) async {
     final filePath = path.join(outputDir, 'base_repository.dart');
-    
+
     _logger.info('Generating base repository');
 
     final sb = StringBuffer();
-    
+
     // Add imports
     sb.writeln("import 'package:supabase_flutter/supabase_flutter.dart';");
     sb.writeln();
-    
+
     // Begin abstract class definition
-    sb.writeln('/// Base repository class that all generated repositories extend');
+    sb.writeln(
+      '/// Base repository class that all generated repositories extend',
+    );
     sb.writeln('abstract class BaseRepository<T> {');
     sb.writeln('  final SupabaseClient client;');
     sb.writeln('  final String tableName;');
@@ -58,115 +62,142 @@ class RepositoryGenerator {
     sb.writeln('  /// Convert a JSON map to a model instance');
     sb.writeln('  T fromJson(Map<String, dynamic> json);');
     sb.writeln('}');
-    
+
     // Write to file
     await File(filePath).writeAsString(sb.toString());
-    
+
     _logger.info('Generated base repository file: $filePath');
   }
 
-  Future<void> _generateRepositoryForTable(TableInfo table, String outputDir) async {
+  Future<void> _generateRepositoryForTable(
+    TableInfo table,
+    String outputDir,
+  ) async {
     final modelClassName = StringUtils.toClassName(
       table.name,
       prefix: config.modelPrefix,
       suffix: config.modelSuffix,
     );
-    
+
     final repoClassName = StringUtils.toClassName(
       table.name,
       prefix: '',
       suffix: config.repositorySuffix,
     );
-    
+
     final fileName = '${StringUtils.toFileName(table.name)}_repository.dart';
     final filePath = path.join(outputDir, fileName);
-    
+
     _logger.info('Generating repository for ${table.name} as $repoClassName');
 
     final sb = StringBuffer();
-    
+
     // Collect all foreign key tables to add imports
-    final foreignKeyColumns = table.columns.where((col) => col.foreignKey != null && col.foreignTable != null).toList();
+    final foreignKeyColumns =
+        table.columns
+            .where((col) => col.foreignKey != null && col.foreignTable != null)
+            .toList();
     final foreignTableImports = <String>{};
-    
+
     for (final fkColumn in foreignKeyColumns) {
       if (fkColumn.foreignTable != null) {
         // Extract the table name from the fully qualified name (schema.table)
         final foreignTableParts = fkColumn.foreignTable!.split('.');
-        final foreignTableName = foreignTableParts.length > 1 ? foreignTableParts[1] : foreignTableParts[0];
-        
+        final foreignTableName =
+            foreignTableParts.length > 1
+                ? foreignTableParts[1]
+                : foreignTableParts[0];
+
         // Add import for the foreign model
-        foreignTableImports.add("import '../models/${StringUtils.toFileName(foreignTableName)}_model.dart';");
+        foreignTableImports.add(
+          "import '../models/${StringUtils.toFileName(foreignTableName)}_model.dart';",
+        );
       }
     }
-    
+
     // Add imports
     sb.writeln("import 'package:supabase_flutter/supabase_flutter.dart';");
-    sb.writeln("import '../models/${StringUtils.toFileName(table.name)}_model.dart';");
-    
+    sb.writeln(
+      "import '../models/${StringUtils.toFileName(table.name)}_model.dart';",
+    );
+
     // Add imports for foreign key models
     for (final import in foreignTableImports) {
       sb.writeln(import);
     }
-    
+
     sb.writeln("import 'base_repository.dart';");
     sb.writeln();
-    
+
     // Begin class definition
     sb.writeln('/// Repository for the ${table.name} table');
-    sb.writeln('class $repoClassName extends BaseRepository<$modelClassName> {');
-    sb.writeln('  const $repoClassName(SupabaseClient client) : super(client, \'${table.name}\');');
+    sb.writeln(
+      'class $repoClassName extends BaseRepository<$modelClassName> {',
+    );
+    sb.writeln(
+      '  const $repoClassName(SupabaseClient client) : super(client, \'${table.name}\');',
+    );
     sb.writeln();
     sb.writeln('  @override');
-    sb.writeln('  $modelClassName fromJson(Map<String, dynamic> json) => $modelClassName.fromJson(json);');
+    sb.writeln(
+      '  $modelClassName fromJson(Map<String, dynamic> json) => $modelClassName.fromJson(json);',
+    );
     sb.writeln();
-    
+
     // Find function for primary key
     final primaryKeys = table.columns.where((col) => col.isPrimaryKey).toList();
     final hasPrimaryKey = primaryKeys.isNotEmpty;
-    
+
+    // Create a map to track property names and ensure uniqueness
+    // This map will store the mapping from database column names to Dart property names
+    final propertyNameMap = <String, String>{};
+
+    // First pass: generate unique property names for all columns
+    for (final column in table.columns) {
+      var propertyName = StringUtils.toVariableName(column.name);
+
+      // Check if this property name is already used
+      if (propertyNameMap.values.contains(propertyName)) {
+        // Find a unique name by adding a suffix
+        var suffix = 1;
+        var uniquePropertyName = propertyName;
+        while (propertyNameMap.values.contains(uniquePropertyName)) {
+          uniquePropertyName = '$propertyName$suffix';
+          suffix++;
+        }
+        propertyName = uniquePropertyName;
+      }
+
+      // Store the mapping from column name to property name
+      propertyNameMap[column.name] = propertyName;
+    }
+
     if (hasPrimaryKey) {
       // Create a map to track parameter names and ensure uniqueness
-      final paramNameMap = <String, int>{};
-      
-      final pkParams = primaryKeys.map((pk) {
-        final dartType = TypeConverter.postgresTypeToDart(pk.type);
-        var paramName = StringUtils.toVariableName(pk.name);
-        
-        // Ensure parameter name is unique by adding a suffix if needed
-        if (paramNameMap.containsKey(paramName)) {
-          final count = paramNameMap[paramName]! + 1;
-          paramNameMap[paramName] = count;
-          paramName = '${paramName}$count';
-        } else {
-          paramNameMap[paramName] = 1;
-        }
-        
-        return '$dartType $paramName';
-      }).join(', ');
-      
+      final pkParams = primaryKeys
+          .map((pk) {
+            // For UUID primary keys, we need to use non-nullable types in method parameters
+            // even though they're nullable in the model
+            final isUuidPrimaryKey = TypeConverter.isUuidPrimaryKey(pk);
+            final dartType = TypeConverter.postgresTypeToDart(
+              pk.type,
+              isNullable: false,
+            );
+            var paramName = propertyNameMap[pk.name]!;
+
+            return '$dartType $paramName';
+          })
+          .join(', ');
+
       sb.writeln('  /// Find a record by its primary key');
       sb.writeln('  Future<$modelClassName?> find($pkParams) async {');
       sb.writeln('    final response = await query.select()');
-      
-      // Reset the map for reuse
-      paramNameMap.clear();
-      
+
       for (final pk in primaryKeys) {
-        var paramName = StringUtils.toVariableName(pk.name);
-        
-        // Ensure parameter name is unique by adding a suffix if needed
-        if (paramNameMap.containsKey(paramName)) {
-          final count = paramNameMap[paramName]! + 1;
-          paramNameMap[paramName] = count;
-          paramName = '${paramName}$count';
-        } else {
-          paramNameMap[paramName] = 1;
-        }
-        
+        var paramName = propertyNameMap[pk.name]!;
         sb.writeln('        .eq(\'${pk.name}\', $paramName)');
       }
-      
+
       sb.writeln('        .maybeSingle();');
       sb.writeln();
       sb.writeln('    if (response == null) return null;');
@@ -174,9 +205,11 @@ class RepositoryGenerator {
       sb.writeln('  }');
       sb.writeln();
     }
-    
+
     // FindAll function with pagination and sorting
-    sb.writeln('  /// Get all records from this table with pagination and sorting');
+    sb.writeln(
+      '  /// Get all records from this table with pagination and sorting',
+    );
     sb.writeln('  Future<List<$modelClassName>> findAll({');
     sb.writeln('    int? limit,');
     sb.writeln('    int? offset,');
@@ -186,7 +219,9 @@ class RepositoryGenerator {
     sb.writeln('    dynamic queryBuilder = query.select();');
     sb.writeln();
     sb.writeln('    if (orderBy != null) {');
-    sb.writeln('      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);');
+    sb.writeln(
+      '      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);',
+    );
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (limit != null) {');
@@ -194,39 +229,67 @@ class RepositoryGenerator {
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    if (offset != null) {');
-    sb.writeln('      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);');
+    sb.writeln(
+      '      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);',
+    );
     sb.writeln('    }');
     sb.writeln();
     sb.writeln('    final response = await queryBuilder;');
-    sb.writeln('    return (response as List).map((json) => fromJson(json)).toList();');
+    sb.writeln(
+      '    return (response as List).map((json) => fromJson(json)).toList();',
+    );
     sb.writeln('  }');
     sb.writeln();
-    
+
     // Insert function
     sb.writeln('  /// Insert a new record');
-    sb.writeln('  Future<$modelClassName> insert($modelClassName model) async {');
-    sb.writeln('    final response = await query.insert(model.toJson()).select().single();');
+    sb.writeln(
+      '  Future<$modelClassName> insert($modelClassName model) async {',
+    );
+    sb.writeln(
+      '    final response = await query.insert(model.toJson()).select().single();',
+    );
     sb.writeln('    return fromJson(response);');
     sb.writeln('  }');
     sb.writeln();
-    
+
     // Update function
     if (hasPrimaryKey) {
       sb.writeln('  /// Update an existing record');
-      sb.writeln('  Future<$modelClassName?> update($modelClassName model) async {');
-      sb.writeln('    final queryBuilder = query.update(model.toJson())');
-      
-      // Use a set to track field names to avoid duplicates
-      final processedFields = <String>{};
-      
+      sb.writeln(
+        '  Future<$modelClassName?> update($modelClassName model) async {',
+      );
+
+      // Add null checks for UUID primary keys
       for (final pk in primaryKeys) {
-        final paramName = StringUtils.toVariableName(pk.name);
-        // Only add the condition if we haven't processed this field yet
-        if (processedFields.add(pk.name)) {
-          sb.writeln('        .eq(\'${pk.name}\', model.$paramName)');
+        if (TypeConverter.isUuidPrimaryKey(pk)) {
+          final paramName = propertyNameMap[pk.name]!;
+          sb.writeln('    if (model.$paramName == null) {');
+          sb.writeln(
+            '      throw ArgumentError("Primary key ${pk.name} cannot be null for update operation");',
+          );
+          sb.writeln('    }');
         }
       }
-      
+
+      sb.writeln('    final queryBuilder = query.update(model.toJson())');
+
+      // Use a set to track field names to avoid duplicates
+      final processedFields = <String>{};
+
+      for (final pk in primaryKeys) {
+        final paramName = propertyNameMap[pk.name]!;
+        // Only add the condition if we haven't processed this field yet
+        if (processedFields.add(pk.name)) {
+          // For UUID primary keys, add a null assertion since we've already checked
+          if (TypeConverter.isUuidPrimaryKey(pk)) {
+            sb.writeln('        .eq(\'${pk.name}\', model.$paramName!)');
+          } else {
+            sb.writeln('        .eq(\'${pk.name}\', model.$paramName)');
+          }
+        }
+      }
+
       sb.writeln('        .select()');
       sb.writeln('        .maybeSingle();');
       sb.writeln();
@@ -236,10 +299,12 @@ class RepositoryGenerator {
       sb.writeln('  }');
       sb.writeln();
     }
-    
+
     // Upsert function
     sb.writeln('  /// Insert or update a record');
-    sb.writeln('  Future<$modelClassName> upsert($modelClassName model) async {');
+    sb.writeln(
+      '  Future<$modelClassName> upsert($modelClassName model) async {',
+    );
     sb.writeln('    final response = await query');
     sb.writeln('        .upsert(model.toJson())');
     sb.writeln('        .select()');
@@ -248,135 +313,130 @@ class RepositoryGenerator {
     sb.writeln('    return fromJson(response);');
     sb.writeln('  }');
     sb.writeln();
-    
+
     // Delete function
     if (hasPrimaryKey) {
       // Create a map to track parameter names and ensure uniqueness
-      final paramNameMap = <String, int>{};
-      
-      final pkParams = primaryKeys.map((pk) {
-        final dartType = TypeConverter.postgresTypeToDart(pk.type);
-        var paramName = StringUtils.toVariableName(pk.name);
-        
-        // Ensure parameter name is unique by adding a suffix if needed
-        if (paramNameMap.containsKey(paramName)) {
-          final count = paramNameMap[paramName]! + 1;
-          paramNameMap[paramName] = count;
-          paramName = '${paramName}$count';
-        } else {
-          paramNameMap[paramName] = 1;
-        }
-        
-        return '$dartType $paramName';
-      }).join(', ');
-      
+      final pkParams = primaryKeys
+          .map((pk) {
+            // For UUID primary keys, we need to use non-nullable types in method parameters
+            // even though they're nullable in the model
+            final dartType = TypeConverter.postgresTypeToDart(
+              pk.type,
+              isNullable: false,
+            );
+            var paramName = propertyNameMap[pk.name]!;
+
+            return '$dartType $paramName';
+          })
+          .join(', ');
+
       sb.writeln('  /// Delete a record by its primary key');
       sb.writeln('  Future<void> delete($pkParams) async {');
       sb.writeln('    final queryBuilder = query.delete()');
-      
-      // Reset the map for reuse
-      paramNameMap.clear();
-      
+
       for (final pk in primaryKeys) {
-        var paramName = StringUtils.toVariableName(pk.name);
-        
-        // Ensure parameter name is unique by adding a suffix if needed
-        if (paramNameMap.containsKey(paramName)) {
-          final count = paramNameMap[paramName]! + 1;
-          paramNameMap[paramName] = count;
-          paramName = '${paramName}$count';
-        } else {
-          paramNameMap[paramName] = 1;
-        }
-        
+        var paramName = propertyNameMap[pk.name]!;
         sb.writeln('        .eq(\'${pk.name}\', $paramName)');
       }
-      
+
       sb.writeln('        ;');
       sb.writeln('    await queryBuilder;');
       sb.writeln('  }');
       sb.writeln();
     }
-    
+
     // Add additional utility methods for foreign key relationships
     for (final fkColumn in foreignKeyColumns) {
       if (fkColumn.foreignTable != null && fkColumn.foreignKey != null) {
         // Extract the table name from the fully qualified name (schema.table)
         final foreignTableParts = fkColumn.foreignTable!.split('.');
-        final foreignTableName = foreignTableParts.length > 1 ? foreignTableParts[1] : foreignTableParts[0];
-        
+        final foreignTableName =
+            foreignTableParts.length > 1
+                ? foreignTableParts[1]
+                : foreignTableParts[0];
+
         // Create the proper model class name
         final foreignModelName = StringUtils.toClassName(
           foreignTableName,
           prefix: config.modelPrefix,
           suffix: config.modelSuffix,
         );
-        
+
         sb.writeln('  /// Find related $foreignTableName records');
         sb.writeln('  /// based on the ${fkColumn.name} foreign key');
-        
+
         final methodName = 'findBy${StringUtils.toClassName(fkColumn.name)}';
-        final paramName = StringUtils.toVariableName(fkColumn.name);
+        final paramName = propertyNameMap[fkColumn.name]!;
         final paramType = TypeConverter.postgresTypeToDart(fkColumn.type);
         final nullableSuffix = fkColumn.isNullable ? '?' : '';
-        
-        sb.writeln('  Future<List<$foreignModelName>> $methodName($paramType$nullableSuffix $paramName) async {');
+
+        sb.writeln(
+          '  Future<List<$foreignModelName>> $methodName($paramType$nullableSuffix $paramName) async {',
+        );
         sb.writeln('    final queryBuilder = client');
         sb.writeln('        .from(\'$foreignTableName\')');
         sb.writeln('        .select()');
-        
+
         if (fkColumn.isNullable) {
           // Handle nullable parameters correctly by using a non-null value for the query
-          sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName as Object);');
+          sb.writeln(
+            '        .eq(\'${fkColumn.foreignKey}\', $paramName as Object);',
+          );
         } else {
           sb.writeln('        .eq(\'${fkColumn.foreignKey}\', $paramName);');
         }
-        
+
         sb.writeln();
         sb.writeln('    final response = await queryBuilder;');
-        sb.writeln('    return (response as List).map((json) => $foreignModelName.fromJson(json)).toList();');
+        sb.writeln(
+          '    return (response as List).map((json) => $foreignModelName.fromJson(json)).toList();',
+        );
         sb.writeln('  }');
         sb.writeln();
       }
     }
-    
+
     // Close class definition
     sb.writeln('}');
-    
+
     // Write to file
     await File(filePath).writeAsString(sb.toString());
-    
+
     _logger.info('Generated repository file: $filePath');
   }
 
-  Future<void> _generateBarrelFile(List<TableInfo> tables, String outputDir) async {
+  Future<void> _generateBarrelFile(
+    List<TableInfo> tables,
+    String outputDir,
+  ) async {
     final filePath = path.join(outputDir, 'repositories.dart');
     final sb = StringBuffer();
-    
+
     sb.writeln('// Generated repositories barrel file');
     sb.writeln();
-    
+
     // Add base repository export
     sb.writeln("export 'base_repository.dart';");
     sb.writeln();
-    
+
     // Use a set to track unique export paths
     final uniqueExports = <String>{};
-    
+
     // Add exports for each repository
     for (final table in tables) {
       final fileName = '${StringUtils.toFileName(table.name)}_repository.dart';
       uniqueExports.add("export '$fileName';");
     }
-    
+
     // Write unique exports in sorted order
     for (final export in uniqueExports.toList()..sort()) {
       sb.writeln(export);
     }
-    
+
     // Write to file
     await File(filePath).writeAsString(sb.toString());
-    
+
     _logger.info('Generated repositories barrel file: $filePath');
   }
 }

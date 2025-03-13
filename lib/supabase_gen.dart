@@ -6,4 +6,5 @@ export 'src/generators/repository_generator.dart';
 export 'src/schema/schema_reader.dart';
 export 'src/schema/table_info.dart';
 export 'src/utils/logger.dart';
+export 'src/utils/type_converter.dart' show UUID;
 export 'src/generator.dart';

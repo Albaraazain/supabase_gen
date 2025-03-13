@@ -1,3 +1,18 @@
+## 1.3.0
+
+- Added proper handling of UUID primary keys to prevent "invalid input syntax for type uuid" errors
+- Made UUID primary key fields nullable in generated models
+- Made UUID primary key fields optional in model constructors
+- Modified toJson() method to only include UUID primary keys when they're not null
+- Added UUID class for better type safety and validation
+- Fixed DateTime handling in toJson() method to properly handle null values
+- Updated repository generator to handle nullable UUID primary keys
+- Fixed handling of duplicate column names in database tables
+- Fixed handling of duplicate primary keys in database tables
+- Improved code generation to only include \_toDouble helper method when needed
+- Fixed dead null-aware expressions in DateTime handling
+- Improved documentation for UUID handling
+
 ## 1.2.0
 
 - Added comprehensive PostgreSQL type handling for all numeric types

@@ -12,8 +12,10 @@ class SchemaReader {
   SchemaReader(this.config);
 
   Future<void> connect() async {
-    _logger.info('Connecting to ${config.host}:${config.port}/${config.database}');
-    
+    _logger.info(
+      'Connecting to ${config.host}:${config.port}/${config.database}',
+    );
+
     try {
       _connection = await Connection.open(
         Endpoint(
@@ -23,9 +25,7 @@ class SchemaReader {
           username: config.username,
           password: config.password,
         ),
-        settings: ConnectionSettings(
-          sslMode: SslMode.disable,
-        ),
+        settings: ConnectionSettings(sslMode: SslMode.disable),
       );
       _logger.info('Connected successfully');
     } catch (e) {
@@ -42,15 +42,17 @@ class SchemaReader {
 
   Future<List<TableInfo>> readTables() async {
     if (_connection == null) {
-      throw StateError('Database connection not initialized. Call connect() first.');
+      throw StateError(
+        'Database connection not initialized. Call connect() first.',
+      );
     }
-    
+
     _logger.info('Reading tables from database');
-    
+
     final tables = <TableInfo>[];
-    
+
     final result = await _connection!.execute(
-      'SELECT t.table_schema, t.table_name, obj_description(pgc.oid) as table_comment '
+      'SELECT DISTINCT ON (t.table_schema, t.table_name) t.table_schema, t.table_name, obj_description(pgc.oid) as table_comment '
       'FROM information_schema.tables t '
       'JOIN pg_class pgc ON pgc.relname = t.table_name '
       'WHERE t.table_schema NOT IN (\'information_schema\', \'pg_catalog\') '
@@ -71,43 +73,64 @@ class SchemaReader {
       _logger.info('Reading schema for table $schema.$name');
 
       final columns = await _readTableColumns(schema, name);
-      
-      tables.add(TableInfo(
-        name: name,
-        schema: schema,
-        columns: columns,
-        comment: comment,
-      ));
+
+      // Deduplicate all columns, not just primary keys
+      final deduplicatedColumns = <ColumnInfo>[];
+      final processedColumnNames = <String>{};
+
+      for (final column in columns) {
+        if (processedColumnNames.contains(column.name)) {
+          // Skip duplicate column
+          continue;
+        }
+
+        processedColumnNames.add(column.name);
+        deduplicatedColumns.add(column);
+      }
+
+      tables.add(
+        TableInfo(
+          name: name,
+          schema: schema,
+          columns: deduplicatedColumns,
+          comment: comment,
+        ),
+      );
     }
 
     return tables;
   }
 
-  Future<List<ColumnInfo>> _readTableColumns(String schema, String tableName) async {
+  Future<List<ColumnInfo>> _readTableColumns(
+    String schema,
+    String tableName,
+  ) async {
     if (_connection == null) {
-      throw StateError('Database connection not initialized. Call connect() first.');
+      throw StateError(
+        'Database connection not initialized. Call connect() first.',
+      );
     }
 
     _logger.info('Reading columns for $schema.$tableName');
 
     final columns = <ColumnInfo>[];
 
-    // Get column information
+    // Get column information - Fix the subquery that's returning multiple rows
     final columnsResult = await _connection!.execute(
-      'SELECT c.column_name, c.data_type, c.is_nullable, c.column_default, '
+      'SELECT DISTINCT ON (c.column_name) c.column_name, c.data_type, c.is_nullable, c.column_default, '
       'col_description(pgc.oid, c.ordinal_position) as column_comment, '
-      '(SELECT TRUE FROM information_schema.table_constraints tc '
+      '(SELECT EXISTS (SELECT 1 FROM information_schema.table_constraints tc '
       'JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name '
       'WHERE tc.table_schema = c.table_schema AND tc.table_name = c.table_name '
-      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'PRIMARY KEY\') as is_primary_key, '
-      '(SELECT TRUE FROM information_schema.table_constraints tc '
+      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'PRIMARY KEY\' LIMIT 1)) as is_primary_key, '
+      '(SELECT EXISTS (SELECT 1 FROM information_schema.table_constraints tc '
       'JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name '
       'WHERE tc.table_schema = c.table_schema AND tc.table_name = c.table_name '
-      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'UNIQUE\') as is_unique '
+      'AND ccu.column_name = c.column_name AND tc.constraint_type = \'UNIQUE\' LIMIT 1)) as is_unique '
       'FROM information_schema.columns c '
       'JOIN pg_class pgc ON pgc.relname = c.table_name '
       'WHERE c.table_schema = \$1 AND c.table_name = \$2 '
-      'ORDER BY c.ordinal_position',
+      'ORDER BY c.column_name, c.ordinal_position',
       parameters: [schema, tableName],
     );
 
@@ -148,17 +171,19 @@ class SchemaReader {
 
       final foreignKeyInfo = foreignKeyMap[columnName];
 
-      columns.add(ColumnInfo(
-        name: columnName,
-        type: dataType,
-        isNullable: isNullable,
-        isPrimaryKey: isPrimaryKey,
-        isUnique: isUnique,
-        defaultValue: defaultValue,
-        comment: comment,
-        foreignKey: foreignKeyInfo?['foreignKey'],
-        foreignTable: foreignKeyInfo?['foreignTable'],
-      ));
+      columns.add(
+        ColumnInfo(
+          name: columnName,
+          type: dataType,
+          isNullable: isNullable,
+          isPrimaryKey: isPrimaryKey,
+          isUnique: isUnique,
+          defaultValue: defaultValue,
+          comment: comment,
+          foreignKey: foreignKeyInfo?['foreignKey'],
+          foreignTable: foreignKeyInfo?['foreignTable'],
+        ),
+      );
     }
 
     return columns;
@@ -171,7 +196,8 @@ class SchemaReader {
         if (parts.length == 2) {
           final schemaPattern = parts[0];
           final tablePattern = parts[1];
-          if (_matchesPattern(schema, schemaPattern) && _matchesPattern(tableName, tablePattern)) {
+          if (_matchesPattern(schema, schemaPattern) &&
+              _matchesPattern(tableName, tablePattern)) {
             return true;
           }
         } else if (_matchesPattern(tableName, pattern)) {
@@ -187,7 +213,8 @@ class SchemaReader {
         if (parts.length == 2) {
           final schemaPattern = parts[0];
           final tablePattern = parts[1];
-          if (_matchesPattern(schema, schemaPattern) && _matchesPattern(tableName, tablePattern)) {
+          if (_matchesPattern(schema, schemaPattern) &&
+              _matchesPattern(tableName, tablePattern)) {
             return false;
           }
         } else if (_matchesPattern(tableName, pattern)) {
