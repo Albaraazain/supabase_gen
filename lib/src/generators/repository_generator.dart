@@ -387,6 +387,7 @@ class RepositoryGenerator {
           suffix: config.modelSuffix,
         );
 
+        // Method to find parent records
         sb.writeln('  /// Find related $foreignTableName records');
         sb.writeln('  /// based on the ${fkColumn.name} foreign key');
 
@@ -416,6 +417,41 @@ class RepositoryGenerator {
         sb.writeln(
           '    return (response as List).map((json) => $foreignModelName.fromJson(json)).toList();',
         );
+        sb.writeln('  }');
+        sb.writeln();
+
+        // Method to find current table records by foreign key
+        sb.writeln('  /// Find ${table.name} records by ${fkColumn.name}');
+        sb.writeln(
+          '  /// with support for pagination, sorting, and additional filters',
+        );
+
+        final findByMethodName =
+            'findBy${StringUtils.toClassName(fkColumn.name)}Field';
+
+        sb.writeln('  Future<List<$modelClassName>> $findByMethodName(');
+        sb.writeln('    $paramType$nullableSuffix $paramName, {');
+        sb.writeln('    int? limit,');
+        sb.writeln('    int? offset,');
+        sb.writeln('    String? orderBy,');
+        sb.writeln('    bool ascending = true,');
+        sb.writeln('    Map<String, dynamic>? additionalFilters,');
+        sb.writeln('  }) async {');
+        sb.writeln('    var filters = <String, dynamic>{');
+        sb.writeln('      \'${fkColumn.name}\': $paramName,');
+        sb.writeln('    };');
+        sb.writeln();
+        sb.writeln('    if (additionalFilters != null) {');
+        sb.writeln('      filters.addAll(additionalFilters);');
+        sb.writeln('    }');
+        sb.writeln();
+        sb.writeln('    return findAll(');
+        sb.writeln('      limit: limit,');
+        sb.writeln('      offset: offset,');
+        sb.writeln('      orderBy: orderBy,');
+        sb.writeln('      ascending: ascending,');
+        sb.writeln('      filters: filters,');
+        sb.writeln('    );');
         sb.writeln('  }');
         sb.writeln();
       }
