@@ -61,6 +61,46 @@ class RepositoryGenerator {
     sb.writeln();
     sb.writeln('  /// Convert a JSON map to a model instance');
     sb.writeln('  T fromJson(Map<String, dynamic> json);');
+    sb.writeln();
+    sb.writeln(
+      '  /// Get all records from this table with pagination, sorting and filtering',
+    );
+    sb.writeln('  Future<List<T>> findAll({');
+    sb.writeln('    int? limit,');
+    sb.writeln('    int? offset,');
+    sb.writeln('    String? orderBy,');
+    sb.writeln('    bool ascending = true,');
+    sb.writeln('    Map<String, dynamic>? filters,');
+    sb.writeln('  }) async {');
+    sb.writeln('    dynamic queryBuilder = query.select();');
+    sb.writeln();
+    sb.writeln('    if (filters != null) {');
+    sb.writeln('      filters.forEach((key, value) {');
+    sb.writeln('        queryBuilder = queryBuilder.eq(key, value);');
+    sb.writeln('      });');
+    sb.writeln('    }');
+    sb.writeln();
+    sb.writeln('    if (orderBy != null) {');
+    sb.writeln(
+      '      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);',
+    );
+    sb.writeln('    }');
+    sb.writeln();
+    sb.writeln('    if (limit != null) {');
+    sb.writeln('      queryBuilder = queryBuilder.limit(limit);');
+    sb.writeln('    }');
+    sb.writeln();
+    sb.writeln('    if (offset != null) {');
+    sb.writeln(
+      '      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);',
+    );
+    sb.writeln('    }');
+    sb.writeln();
+    sb.writeln('    final response = await queryBuilder;');
+    sb.writeln(
+      '    return (response as List).map((json) => fromJson(json)).toList();',
+    );
+    sb.writeln('  }');
     sb.writeln('}');
 
     // Write to file
@@ -144,6 +184,25 @@ class RepositoryGenerator {
     );
     sb.writeln();
 
+    // FindAll function with pagination, sorting and filtering
+    sb.writeln('  @override');
+    sb.writeln('  Future<List<$modelClassName>> findAll({');
+    sb.writeln('    int? limit,');
+    sb.writeln('    int? offset,');
+    sb.writeln('    String? orderBy,');
+    sb.writeln('    bool ascending = true,');
+    sb.writeln('    Map<String, dynamic>? filters,');
+    sb.writeln('  }) async {');
+    sb.writeln('    return super.findAll(');
+    sb.writeln('      limit: limit,');
+    sb.writeln('      offset: offset,');
+    sb.writeln('      orderBy: orderBy,');
+    sb.writeln('      ascending: ascending,');
+    sb.writeln('      filters: filters,');
+    sb.writeln('    );');
+    sb.writeln('  }');
+    sb.writeln();
+
     // Find function for primary key
     final primaryKeys = table.columns.where((col) => col.isPrimaryKey).toList();
     final hasPrimaryKey = primaryKeys.isNotEmpty;
@@ -205,41 +264,6 @@ class RepositoryGenerator {
       sb.writeln('  }');
       sb.writeln();
     }
-
-    // FindAll function with pagination and sorting
-    sb.writeln(
-      '  /// Get all records from this table with pagination and sorting',
-    );
-    sb.writeln('  Future<List<$modelClassName>> findAll({');
-    sb.writeln('    int? limit,');
-    sb.writeln('    int? offset,');
-    sb.writeln('    String? orderBy,');
-    sb.writeln('    bool ascending = true,');
-    sb.writeln('  }) async {');
-    sb.writeln('    dynamic queryBuilder = query.select();');
-    sb.writeln();
-    sb.writeln('    if (orderBy != null) {');
-    sb.writeln(
-      '      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);',
-    );
-    sb.writeln('    }');
-    sb.writeln();
-    sb.writeln('    if (limit != null) {');
-    sb.writeln('      queryBuilder = queryBuilder.limit(limit);');
-    sb.writeln('    }');
-    sb.writeln();
-    sb.writeln('    if (offset != null) {');
-    sb.writeln(
-      '      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);',
-    );
-    sb.writeln('    }');
-    sb.writeln();
-    sb.writeln('    final response = await queryBuilder;');
-    sb.writeln(
-      '    return (response as List).map((json) => fromJson(json)).toList();',
-    );
-    sb.writeln('  }');
-    sb.writeln();
 
     // Insert function
     sb.writeln('  /// Insert a new record');
