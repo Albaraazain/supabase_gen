@@ -1,15 +1,39 @@
+# Supabase remote configuration - replace with your project details
 database:
-  host: localhost
-  port: 54322
-  database: postgres
-  username: postgres
-  password: postgres
-  ssl: false
+  connection_type: remote
+  supabase_url: https://your-project-id.supabase.co
+  supabase_key: your-service-role-key
+  database: postgres  # Database name is still required even for remote connection
+
 generation:
   output_directory: lib/generated
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
+  
+  # Tables to probe when using remote connection
+  probe_tables:
+    # Application tables
+    - 'users'
+    - 'games'
+    - 'notifications'
+    - 'player_stats'
+    - 'chat_messages'
+    - 'chat_rooms'
+    - 'game_players'
+    - 'match_events'
+    - 'match_highlights'
+    - 'match_results'
+    - 'player_skills'
+    
+    # Common table names that might exist in future
+    - 'profiles'
+    - 'teams'
+    - 'matches'
+    - 'events'
+    - 'messages'
+    - 'chats'
+    
   exclude_tables: 
     # Exclude system schemas
     - '_realtime.*'
@@ -21,15 +45,14 @@ generation:
     - 'supabase_functions.*'
     - 'vault.*'
     # Exclude views and system tables from public schema
-    - 'public.active_broadcasts_view'
-    - 'public.get_enum_types'
-    - 'public.get_table_indexes'
-    - 'public.homeowner_active_jobs'
-    - 'public.job_progress_view'
-    - 'public.professional_current_job'
-    - 'public.professional_services_view'
-    - 'public.professional_statistics'
+    - 'public.*_view'
+    # Exclude postgis system tables
+    - 'spatial_ref_sys'
+    - 'geography_columns'
+    - 'geometry_columns'
+    
   include_tables: 
     - 'public.*'  # Include all tables from public schema
+  
   generate_for_all_tables: false  # Only generate for explicitly included tables
   use_null_safety: true

@@ -28,13 +28,23 @@ class ConfigLoader {
     }
 
     final sampleConfig = '''
+# Local database configuration - use this for local development with Supabase CLI
 database:
+  connection_type: local
   host: localhost
-  port: 5432
-  database: supabase_db
+  port: 54322  # Default port for Supabase local development
+  database: postgres
   username: postgres
   password: postgres
   ssl: false
+
+# Remote database configuration - use this for cloud Supabase instances
+# Uncomment and fill in details to use remote mode
+# database:
+#   connection_type: remote
+#   supabase_url: https://your-project-id.supabase.co
+#   supabase_key: your-service-role-key
+#   database: postgres  # Database name is still required even for remote connection
 
 generation:
   output_directory: lib/generated
@@ -42,10 +52,20 @@ generation:
   model_suffix: Model
   repository_suffix: Repository
   exclude_tables:
-    - migrations
-    - schema_migrations
-  include_tables: []
-  generate_for_all_tables: true
+    # Exclude system schemas
+    - '_realtime.*'
+    - 'auth.*'
+    - 'net.*'
+    - 'pgsodium.*'
+    - 'realtime.*'
+    - 'storage.*'
+    - 'supabase_functions.*'
+    - 'vault.*'
+    # Exclude views and system tables from public schema
+    - 'public.*_view'
+  include_tables: 
+    - 'public.*'  # Include all tables from public schema
+  generate_for_all_tables: false  # Only generate for explicitly included tables
   use_null_safety: true
 ''';
 
