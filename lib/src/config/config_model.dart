@@ -26,6 +26,15 @@ class SupabaseGenConfig {
   final bool generateForAllTables;
   final bool useNullSafety;
 
+  /// Provider generation settings
+  final bool generateProviders;
+  final String? providerSuffix;
+  final String stateManagementType;
+  final bool useAppException;
+  final bool useKeepAlive;
+  final bool invalidateOnChange;
+  final bool generateAsyncValueWidget;
+
   const SupabaseGenConfig({
     this.connectionType = ConnectionType.local,
     this.host = 'localhost',
@@ -45,6 +54,13 @@ class SupabaseGenConfig {
     this.probeTables = const ['users', 'profiles', 'games'],
     this.generateForAllTables = true,
     this.useNullSafety = true,
+    this.generateProviders = false,
+    this.providerSuffix = 'Provider',
+    this.stateManagementType = 'riverpod',
+    this.useAppException = false,
+    this.useKeepAlive = false,
+    this.invalidateOnChange = true,
+    this.generateAsyncValueWidget = true,
   }) : assert(
          (connectionType == ConnectionType.local) || 
          (connectionType == ConnectionType.remote && 
@@ -56,6 +72,7 @@ class SupabaseGenConfig {
   factory SupabaseGenConfig.fromYaml(Map<String, dynamic> yaml) {
     final dbConfig = yaml['database'] ?? {};
     final genConfig = yaml['generation'] ?? {};
+    final providerConfig = genConfig['providers'] ?? {};
     
     // Check if remote connection settings exist
     final isRemote = dbConfig['connection_type'] == 'remote' || 
@@ -73,14 +90,59 @@ class SupabaseGenConfig {
       supabaseKey: dbConfig['supabase_key'],
       outputDirectory: genConfig['output_directory'] ?? 'lib/generated',
       modelPrefix: genConfig['model_prefix'],
-      modelSuffix: genConfig['model_suffix'],
-      repositorySuffix: genConfig['repository_suffix'],
+      modelSuffix: genConfig['model_suffix'] ?? 'Model',
+      repositorySuffix: genConfig['repository_suffix'] ?? 'Repository',
       excludeTables: List<String>.from(genConfig['exclude_tables'] ?? []),
       includeTables: List<String>.from(genConfig['include_tables'] ?? []),
       probeTables: List<String>.from(genConfig['probe_tables'] ?? []),
       generateForAllTables: genConfig['generate_for_all_tables'] ?? true,
       useNullSafety: genConfig['use_null_safety'] ?? true,
+      
+      // Provider generation options
+      generateProviders: providerConfig['generate'] ?? false,
+      providerSuffix: providerConfig['suffix'] ?? 'Provider',
+      stateManagementType: providerConfig['type'] ?? 'riverpod',
+      useAppException: providerConfig['use_app_exception'] ?? false,
+      useKeepAlive: providerConfig['use_keep_alive'] ?? false,
+      invalidateOnChange: providerConfig['invalidate_on_change'] ?? true,
+      generateAsyncValueWidget: providerConfig['generate_async_value_widget'] ?? true,
     );
+  }
+
+  /// Get the full model class name for a table
+  String getModelClassName(String tableName) {
+    // Convert snake_case to PascalCase
+    final pascalCase = tableName
+        .split('_')
+        .map((part) => part.isNotEmpty 
+            ? part.substring(0, 1).toUpperCase() + part.substring(1) 
+            : '')
+        .join('');
+    
+    return '${modelPrefix ?? ''}$pascalCase${modelSuffix ?? 'Model'}';
+  }
+
+  /// Get the repository class name for a table
+  String getRepositoryClassName(String tableName) {
+    // Convert snake_case to PascalCase
+    final pascalCase = tableName
+        .split('_')
+        .map((part) => part.isNotEmpty 
+            ? part.substring(0, 1).toUpperCase() + part.substring(1) 
+            : '')
+        .join('');
+    
+    return '${pascalCase}${repositorySuffix ?? 'Repository'}';
+  }
+
+  /// Get the provider class name for a table
+  String getProviderClassName(String tableName) {
+    return '${tableName.substring(0, 1).toUpperCase() + tableName.substring(1)}${providerSuffix ?? 'Provider'}';
+  }
+
+  /// Get the notifier class name for a table
+  String getNotifierClassName(String tableName) {
+    return '${tableName.substring(0, 1).toUpperCase() + tableName.substring(1)}Notifier';
   }
 }
 
