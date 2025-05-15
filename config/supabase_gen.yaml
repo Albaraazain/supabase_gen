@@ -1,12 +1,13 @@
-# Supabase remote configuration - replace with your project details
+# Remote database configuration - uncomment and fill in details to use remote mode
 database:
   connection_type: remote
-  supabase_url: https://your-project-id.supabase.co
-  supabase_key: your-service-role-key
+  supabase_url: https://snyslzlivseztldymgzm.supabase.co
+  supabase_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueXNsemxpdnNlenRsZHltZ3ptIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njc5ODIyNSwiZXhwIjoyMDYyMzc0MjI1fQ.2L6I1FvfvhrhFoB9FrRv32MV42jDok_S9IIW5Wrzap4
   database: postgres  # Database name is still required even for remote connection
 
+
 generation:
-  output_directory: lib/generated
+  output_directory: generated/
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
@@ -26,13 +27,10 @@ generation:
     - 'match_results'
     - 'player_skills'
     
-    # Common table names that might exist in future
-    - 'profiles'
-    - 'teams'
-    - 'matches'
-    - 'events'
-    - 'messages'
-    - 'chats'
+    # Test tables for relationships
+    - 'users'
+    - 'games'
+    - 'game_players'
     
   exclude_tables: 
     # Exclude system schemas
@@ -56,3 +54,30 @@ generation:
   
   generate_for_all_tables: false  # Only generate for explicitly included tables
   use_null_safety: true
+
+  # NEW: Provider generation options
+  providers:
+    # Set to true to enable generation of Riverpod providers
+    generate: true
+    
+    # Provider naming conventions
+    suffix: Provider
+    
+    # State management options
+    type: riverpod  # Currently only riverpod is supported
+    
+    # Use AppException class for error handling
+    # If true, imports AppException from core/errors/app_exception.dart
+    use_app_exception: true
+    
+    # Whether providers should use keepAlive to persist state
+    # When set to false, providers will be auto-disposed when no longer used
+    use_keep_alive: false
+    
+    # Whether to auto-invalidate providers on data changes
+    # When true, notifiers will refresh their state after CRUD operations
+    invalidate_on_change: true
+    
+    # Generate AsyncValueWidget for easy UI consumption
+    # Creates a standard widget for handling async states in shared/widgets/
+    generate_async_value_widget: true
