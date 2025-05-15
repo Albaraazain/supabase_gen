@@ -3,6 +3,7 @@ import 'dart:io';
 import 'config/config_model.dart';
 import 'generators/model_generator.dart';
 import 'generators/repository_generator.dart';
+import 'generators/provider_generator.dart';
 import 'schema/schema_reader.dart';
 import 'utils/logger.dart';
 
@@ -38,7 +39,14 @@ class SupabaseGenerator {
       final repositoryGenerator = RepositoryGenerator(config);
       await repositoryGenerator.generateRepositories(tables);
       
-      _logger.info('Generated code for ${tables.length} tables');
+      // Generate providers if enabled
+      if (config.generateProviders) {
+        _logger.info('Generating Riverpod providers...');
+        final providerGenerator = ProviderGenerator(config);
+        await providerGenerator.generateProviders(tables);
+      }
+      
+      _logger.success('Generated code for ${tables.length} tables');
     } finally {
       await schemaReader.disconnect();
     }
