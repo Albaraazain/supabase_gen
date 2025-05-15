@@ -30,4 +30,5 @@ class Logger {
   void warning(String message) => _logger.warning(message);
   void severe(String message) => _logger.severe(message);
   void fine(String message) => _logger.fine(message);
+  void success(String message) => _logger.info('✓ $message');
 }
