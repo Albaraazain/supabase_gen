@@ -9,3 +9,4 @@ pubspec.lock
 
 .supabase_gen_test_app/
 **/.claude/settings.local.json
+test_app/
