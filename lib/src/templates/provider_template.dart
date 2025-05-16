@@ -13,34 +13,113 @@ class ProviderTemplate {
     bool useNullSafety = true,
   }) {
     final exceptionType = useAppException ? 'AppException' : 'Exception';
-    final importAppException = useAppException 
-        ? "import '../shared/errors/app_exception.dart';\n" 
-        : '';
+    final importAppException =
+        useAppException
+            ? "import '../shared/errors/app_exception.dart';\n"
+            : '';
+    final importAppExceptionHandler =
+        useAppException
+            ? "import '../shared/errors/app_exception_handler.dart';\n"
+            : '';
 
     // Add nullability modifiers based on configuration
     final nullableMark = useNullSafety ? '?' : '';
-    
+
     return '''import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 
 import '../models/${tableName}_model.dart';
 import '../repositories/${tableName}_repository.dart';
 $importAppException
+$importAppExceptionHandler
+import '../utils/app_logger.dart';
+import '../utils/app_cache.dart';
+import '../utils/provider_logging.dart';
+import '../shared/errors/app_exception_handler.dart';
 
-// Main provider for managing ${tableName} data
+// Repository provider
+final ${camelCaseTableName}RepositoryProvider = Provider<$repositoryName>((ref) {
+  return $repositoryName(Supabase.instance.client);
+});
+
+// Main provider for managing $tableName data
 final ${camelCaseTableName}Provider = StateNotifierProvider<${pascalCaseTableName}Notifier, AsyncValue<List<$modelName>>>((ref) {
-  return ${pascalCaseTableName}Notifier(${repositoryName}(Supabase.instance.client));
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  return ${pascalCaseTableName}Notifier(repository);
 });
 
-// Provider to get a single ${tableName} by ID
-final ${camelCaseTableName}ByIdProvider = FutureProvider.family<$modelName$nullableMark, String>((ref, id) {
-  return ref.watch(${camelCaseTableName}Provider.notifier).getById(id);
+// Provider to get a single $tableName by ID with caching
+final ${camelCaseTableName}ByIdProvider = FutureProvider.family<$modelName$nullableMark, String>((ref, id) async {
+  // Create a stable cache key for this ID lookup
+  final cacheKey = '${tableName}:id:\$id';
+  
+  AppLogger.debug('${camelCaseTableName}ByIdProvider called with id: \$id', loggerName: 'Provider');
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  try {
+    // Use the app cache to prevent redundant database calls
+    final result = await AppCache().getOrFetch<$modelName$nullableMark>(
+      cacheKey,
+      () => repository.find(id),
+      duration: const Duration(minutes: 2), // Cache items briefly
+    );
+    
+    if (result == null) {
+      AppLogger.warning('No ${_singularize(tableName)} found with ID: \$id', loggerName: 'Provider');
+    } else {
+      AppLogger.debug('Found ${_singularize(tableName)} with ID: \$id', loggerName: 'Provider');
+    }
+    
+    return result;
+  } catch (e, stackTrace) {
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: '${pascalCaseTableName}ById');
+    throw $exceptionType(
+      ${useAppException ? 'message: ' : ''}'Failed to get ${_singularize(tableName)} details: \$errorMsg',
+      ${useAppException ? 'originalError: e' : ''},
+    );
+  }
 });
 
-// Provider to get filtered ${tableName}
-final filtered${pascalCaseTableName}Provider = FutureProvider.family<List<$modelName>, Map<String, dynamic>>((ref, filters) {
-  return ref.watch(${camelCaseTableName}Provider.notifier).fetchAll(filters: filters);
+// Provider to get filtered ${tableName} with proper caching
+final filtered${pascalCaseTableName}Provider = FutureProvider.family<List<$modelName>, Map<String, dynamic>>((ref, filters) async {
+  // Create a stable cache key from the filters
+  final cacheKey = _createCacheKey(filters);
+  
+  AppLogger.debug('filtered${pascalCaseTableName}Provider called with key: \$cacheKey', loggerName: 'Provider');
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  try {
+    // Use the app cache to prevent redundant calls
+    final results = await AppCache().getOrFetch<List<$modelName>>(
+      cacheKey,
+      () => repository.findAll(filters: filters),
+      duration: const Duration(seconds: 30), // Short cache time to stay fresh
+    );
+    
+    AppLogger.debug('filtered${pascalCaseTableName}Provider returned \${results.length} items for key: \$cacheKey', loggerName: 'Provider');
+    return results;
+  } catch (e, stackTrace) {
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Filtered${pascalCaseTableName}');
+    throw $exceptionType(
+      ${useAppException ? 'message: ' : ''}'Failed to load filtered ${tableName}: \$errorMsg',
+      ${useAppException ? 'originalError: e' : ''},
+    );
+  }
 });
+
+// Helper to create a stable cache key from filters
+String _createCacheKey(Map<String, dynamic> filters) {
+  // Sort the keys to ensure consistent ordering
+  final sortedKeys = filters.keys.toList()..sort();
+  final parts = <String>[];
+  
+  for (final key in sortedKeys) {
+    final value = filters[key];
+    parts.add('\$key=\${value?.toString() ?? 'null'}');
+  }
+  
+  return '${tableName}:\${parts.join(',')}';
+}
 
 /// Notifier class that handles ${tableName} operations
 class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$modelName>>> {
@@ -48,7 +127,20 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
 
   ${pascalCaseTableName}Notifier(this._repository) : super(const AsyncValue.loading()) {
     // Load initial data when created
-    fetchAll();
+    _loadInitialData();
+  }
+
+  Future<void> _loadInitialData() async {
+    try {
+      final results = await _repository.findAll();
+      if (mounted) {
+        state = AsyncValue.data(results);
+      }
+    } catch (e) {
+      if (mounted) {
+        state = AsyncValue.error(e, StackTrace.current);
+      }
+    }
   }
 
   /// Fetch all $tableName with basic sorting and filtering
@@ -78,13 +170,31 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
     }
   }
   
-  /// Get a single record by ID
+  /// Get a single record by ID with caching
   Future<$modelName$nullableMark> getById(String id) async {
     try {
-      return await _repository.find(id);
-    } catch (e) {
+      // Create a stable cache key
+      final cacheKey = '${tableName}:id:\$id';
+      
+      ProviderLogging.logStateChange('${pascalCaseTableName}Notifier', 'Getting record by ID', details: 'id: \$id');
+      
+      // Use app cache for efficient data access
+      final result = await AppCache().getOrFetch<$modelName$nullableMark>(
+        cacheKey,
+        () => _repository.find(id),
+        duration: const Duration(minutes: 2),
+      );
+      
+      if (result == null) {
+        AppLogger.warning('No ${_singularize(tableName)} found with ID: \$id', loggerName: 'Provider');
+      }
+      
+      return result;
+    } catch (e, stackTrace) {
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: '${pascalCaseTableName}');
       throw $exceptionType(
-        ${useAppException ? 'message: ' : ''}'Failed to get ${_singularize(tableName)} details: \$e',
+        ${useAppException ? 'message: ' : ''}'Failed to get ${_singularize(tableName)} details: \$errorMsg',
+        ${useAppException ? 'originalError: e' : ''},
       );
     }
   }
@@ -110,7 +220,7 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
   Future<$modelName$nullableMark> update($modelName model) async {
     try {
       final modelId = model.id;
-      if (modelId == null || (modelId is String && modelId.isEmpty)) {
+      if (modelId.isEmpty) {
         throw $exceptionType(
           ${useAppException ? 'message: ' : ''}'Cannot update ${_singularize(tableName)} without ID',
         );
@@ -163,7 +273,7 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
   /// Helper method to get singular form of a word
   static String _singularize(String word) {
     if (word.endsWith('ies')) {
-      return word.substring(0, word.length - 3) + 'y';
+      return '${word.substring(0, word.length - 3)}y';
     } else if (word.endsWith('es')) {
       return word.substring(0, word.length - 2);
     } else if (word.endsWith('s') && !word.endsWith('ss')) {
@@ -176,19 +286,19 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
   static String relationshipMethod({
     required String relationshipType,
     required String tableName,
-    required String modelName, 
+    required String modelName,
     required String relatedTable,
     required String relatedModel,
     required String columnName,
     bool useNullSafety = true,
   }) {
     final relatedTableCamel = relatedTable.toLowerCase();
-    final relatedTablePascal = relatedTable[0].toUpperCase() + relatedTable.substring(1);
-    
-    // Add nullability modifiers based on configuration
-    final nullableMark = useNullSafety ? '?' : '';
+    final relatedTablePascal =
+        '${relatedTable[0].toUpperCase()}${relatedTable.substring(1)}';
+
+    // Define exception type
     final exceptionType = 'AppException';
-    
+
     if (relationshipType == 'manyToOne') {
       return '''
   /// Get $modelName records related to a specific $relatedTable
@@ -231,7 +341,7 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
     }
   }''';
     }
-    
+
     return '';
   }
 
@@ -244,14 +354,15 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
     required String filterType,
     bool useNullSafety = true,
   }) {
-    final methodName = 'get${pascalCaseTableName}By${filterField[0].toUpperCase() + filterField.substring(1)}';
+    final methodName =
+        'get${pascalCaseTableName}By${filterField[0].toUpperCase()}${filterField.substring(1)}';
     final nullableMark = useNullSafety ? '?' : '';
-    
+
     return '''
 /// Provider for getting $tableName filtered by $filterField
 @riverpod
 Future<List<$modelName>> $methodName(
-  ${pascalCaseTableName}By${filterField[0].toUpperCase() + filterField.substring(1)}Ref ref,
+  ${pascalCaseTableName}By${filterField[0].toUpperCase()}${filterField.substring(1)}Ref ref,
   $filterType$nullableMark value,
 ) async {
   final notifier = ref.watch(${tableName}NotifierProvider.notifier);
@@ -291,7 +402,7 @@ class AppException implements Exception {
   static String asyncValueWidgetIntegration(bool useNullSafety) {
     // Add nullability modifiers based on configuration
     final nullableMark = useNullSafety ? '?' : '';
-    
+
     return '''// Integration with AsyncValueWidget for easy UI consumption
 
 import 'package:flutter/material.dart';
@@ -360,7 +471,7 @@ class AsyncValueWidget<T> extends StatelessWidget {
   }) {
     // Add nullability modifiers based on configuration
     final nullableMark = useNullSafety ? '?' : '';
-    
+
     return '''// Example usage in a screen
 
 import 'package:flutter/material.dart';

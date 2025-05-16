@@ -1,0 +1,2 @@
+tbl_name,idx_name,col_name,is_unique,is_primary
+site_photos,site_photos_pkey,photo_id,true,true

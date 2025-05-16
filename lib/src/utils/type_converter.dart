@@ -1,5 +1,7 @@
 // lib/src/utils/type_converter.dart
 import 'dart:convert';
+import 'package:supabase_gen/src/utils/string_utils.dart';
+
 import '../schema/table_info.dart';
 
 class TypeConverter {
@@ -64,17 +66,19 @@ class TypeConverter {
     }
 
     // Geographic types
-    if (lowerType == 'geography' || lowerType == 'geometry' || lowerType == 'point') {
+    if (lowerType == 'geography' ||
+        lowerType == 'geometry' ||
+        lowerType == 'point') {
       return 'Point$nullableSuffix'; // Use Point class for all geographic types
     }
 
     // Point type is already handled by geographic types above
 
     // Latitude/Longitude specific fields
-    if (lowerType == 'latitude' || 
-        lowerType == 'longitude' || 
-        lowerType.contains('lat') || 
-        lowerType.contains('lng') || 
+    if (lowerType == 'latitude' ||
+        lowerType == 'longitude' ||
+        lowerType.contains('lat') ||
+        lowerType.contains('lng') ||
         lowerType.contains('lon')) {
       return 'double$nullableSuffix';
     }
@@ -151,9 +155,28 @@ class TypeConverter {
       return 'false';
     }
 
-    // Extract quoted string literals
-    if (defaultValue.startsWith("'") && defaultValue.endsWith("'")) {
-      return defaultValue;
+    // Handle PostgreSQL type cast syntax (::type)
+    if (defaultValue.contains('::')) {
+      // Extract the value part before the :: cast operator
+      final valuePart = defaultValue.split('::').first.trim();
+      // Process the extracted value part recursively
+      return postgresDefaultToDartLiteral(valuePart, pgType);
+    }
+
+    // Handle UUID generation functions
+    if (defaultValue.contains('uuid_generate') ||
+        defaultValue.contains('gen_random_uuid')) {
+      if (pgType.toLowerCase() == 'uuid') {
+        return "''"; // Empty string for UUID defaults
+      }
+    }
+
+    // Extract quoted string literals - handle both single and double quotes
+    if ((defaultValue.startsWith("'") && defaultValue.endsWith("'")) ||
+        (defaultValue.startsWith('"') && defaultValue.endsWith('"'))) {
+      // Remove the quotes and escape any inner quotes for Dart
+      String content = defaultValue.substring(1, defaultValue.length - 1);
+      return "'$content'"; // Consistently use single quotes for Dart
     }
 
     // Numeric values
@@ -165,6 +188,14 @@ class TypeConverter {
         return '$defaultValue.0';
       }
       return defaultValue;
+    }
+
+    // JSON defaults
+    if ((defaultValue.startsWith('{') && defaultValue.endsWith('}')) ||
+        (defaultValue.startsWith('[') && defaultValue.endsWith(']'))) {
+      if (pgType.toLowerCase() == 'jsonb' || pgType.toLowerCase() == 'json') {
+        return defaultValue;
+      }
     }
 
     // Fall back to string representation
@@ -339,6 +370,41 @@ class TypeConverter {
   static bool isUuidPrimaryKey(ColumnInfo column) {
     return column.isPrimaryKey && isUuidType(column.type);
   }
+
+  // Get the appropriate Dart type validator for a constraint
+  static String getConstraintValidator(
+    ColumnInfo column,
+    ConstraintInfo? constraint,
+  ) {
+    if (constraint == null) {
+      return '';
+    }
+
+    final columnName = StringUtils.toVariableName(column.name);
+
+    switch (constraint.type.toUpperCase()) {
+      case 'CHECK':
+        // For now, just generate a comment about the CHECK constraint
+        return '// CHECK constraint: ${constraint.name}';
+
+      case 'UNIQUE':
+        return 'assert(${columnName} != null, "${column.name} must be unique")';
+
+      case 'NOT NULL':
+        return 'assert(${columnName} != null, "${column.name} cannot be null")';
+
+      case 'FOREIGN KEY':
+        final refTable = constraint.referenceTable;
+        final refColumn = constraint.referenceColumn;
+        if (refTable != null && refColumn != null) {
+          return '// References $refTable($refColumn)';
+        }
+        return '';
+
+      default:
+        return '';
+    }
+  }
 }
 
 // UUID class for better type safety
@@ -392,19 +458,23 @@ class Point {
       if (coordinates.length >= 2) {
         return Point(
           // GeoJSON uses [longitude, latitude] order
-          longitude: coordinates[0] is num ? (coordinates[0] as num).toDouble() : 0.0,
-          latitude: coordinates[1] is num ? (coordinates[1] as num).toDouble() : 0.0,
+          longitude:
+              coordinates[0] is num ? (coordinates[0] as num).toDouble() : 0.0,
+          latitude:
+              coordinates[1] is num ? (coordinates[1] as num).toDouble() : 0.0,
         );
       }
     }
     throw FormatException('Invalid GeoJSON Point format: $json');
   }
 
-  /// Create a point from WKT (Well-Known Text) format 
+  /// Create a point from WKT (Well-Known Text) format
   factory Point.fromWkt(String wkt) {
-    final pointRegex = RegExp(r'POINT\s*\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)');
+    final pointRegex = RegExp(
+      r'POINT\s*\(\s*([-+]?\d*\.?\d+)\s+([-+]?\d*\.?\d+)\s*\)',
+    );
     final match = pointRegex.firstMatch(wkt);
-    
+
     if (match != null && match.groupCount >= 2) {
       return Point(
         // WKT format is 'POINT(longitude latitude)'
@@ -418,7 +488,7 @@ class Point {
   /// Parse point from various formats
   static Point? parse(dynamic value) {
     if (value == null) return null;
-    
+
     if (value is Map<String, dynamic>) {
       // Try to parse as GeoJSON
       try {
@@ -451,7 +521,7 @@ class Point {
         } catch (_) {}
       }
     }
-    
+
     return null;
   }
 
@@ -465,28 +535,25 @@ class Point {
 
   /// Convert to a simple map
   Map<String, dynamic> toJson() {
-    return {
-      'latitude': latitude,
-      'longitude': longitude,
-    };
+    return {'latitude': latitude, 'longitude': longitude};
   }
 
   /// Convert to WKT format
   String toWkt() {
     return 'POINT($longitude $latitude)';
   }
-  
+
   @override
   String toString() => 'Point($latitude, $longitude)';
-  
+
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is Point && 
-        other.latitude == latitude && 
+    return other is Point &&
+        other.latitude == latitude &&
         other.longitude == longitude;
   }
-  
+
   @override
   int get hashCode => latitude.hashCode ^ longitude.hashCode;
 }
@@ -494,13 +561,13 @@ class Point {
 /// Helper class for handling JSON data
 class JsonData {
   final dynamic _data;
-  
+
   JsonData(this._data);
-  
+
   /// Create JSON data from various sources
   static JsonData? parse(dynamic value) {
     if (value == null) return null;
-    
+
     if (value is Map<String, dynamic>) {
       return JsonData(value);
     } else if (value is String) {
@@ -513,18 +580,18 @@ class JsonData {
     } else if (value is List) {
       return JsonData(value);
     }
-    
+
     return JsonData(value);
   }
-  
+
   /// Get the raw data
   dynamic get data => _data;
-  
+
   /// Convert to a JSON string
   String toJsonString() {
     return jsonEncode(_data);
   }
-  
+
   @override
   String toString() {
     if (_data is Map || _data is List) {
@@ -532,7 +599,7 @@ class JsonData {
     }
     return _data.toString();
   }
-  
+
   /// Convert to JSON
   dynamic toJson() => _data;
 }

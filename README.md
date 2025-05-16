@@ -1,27 +1,31 @@
 # Supabase Gen
 
-A Dart package that generates Flutter repositories and models from your Supabase database schema.
+A Dart package that generates Flutter repositories, models, and providers from your Supabase database schema.
 
 ## Features
 
-- Automatically generates Dart model classes from your database tables
-- Creates repository classes with methods for CRUD operations
-- Maintains relationships between tables
-- Type-safe code generation with smart handling of PostgreSQL types
-- Comprehensive numeric type conversion for all PostgreSQL numeric formats
-- Handles array types, JSON types, and binary data properly
-- Easy to configure and use
+- 🔄 **Auto-generated models**: Create Dart models that match your Supabase tables with proper types
+- 🗄️ **Type-safe repositories**: Generate repositories for each table with CRUD methods
+- 🧩 **Riverpod integration**: Generate Riverpod providers for state management
+- 📝 **Relationship methods**: Automatically generate methods for related tables
+- 🔍 **Schema introspection**: Directly connect to your Supabase database to read the schema
+- 🔧 **Customization options**: Configure class naming, output directories, and more
+- 📊 **Type conversions**: Proper handling of PostgreSQL types, including arrays, JSON, and dates
+- 🪵 **Comprehensive logging**: Built-in logging system for tracking operations and debugging
 
-## New in Version 1.2.0
+## New in Latest Version
 
+- **Comprehensive logging system**: Added a centralized logging system that integrates with repositories and providers
 - **Fixed the int/double type mismatch issue**: Safely handles PostgreSQL numeric/decimal/real types without runtime errors
 - **Improved type handling**: Added comprehensive support for all PostgreSQL data types
 - **Smart type conversion**: Automatically converts between similar types (int/double/string) safely
 - **Enhanced array handling**: Better support for array types with appropriate casting
+- **Repository relationship methods**: Methods to work with related tables in a type-safe way
+- **Enhanced remote schema introspection**: Added SQL functions for reliable column detection with remote Supabase instances
 
 ## UUID Primary Key Handling
 
-This package now properly handles UUID primary keys in PostgreSQL tables. When a primary key field is of type UUID:
+This package properly handles UUID primary keys in PostgreSQL tables. When a primary key field is of type UUID:
 
 1. The field is generated as nullable (`String?`) in the model class
 2. The field is optional in the constructor (not marked as `required`)
@@ -69,3 +73,299 @@ Add the package to your `pubspec.yaml`:
 dev_dependencies:
   supabase_gen: ^1.2.0
 ```
+
+## Configuration
+
+Create a `supabase_gen.yaml` file in your project's `config` directory:
+
+```yaml
+# Database connection settings - Local connection
+connection_type: local # Options: local, remote
+host: localhost
+port: 5432
+database: postgres
+user: postgres
+password: your-password
+
+# Database connection settings - Remote Supabase connection
+# connection_type: remote
+# supabase_url: https://your-project-id.supabase.co
+# supabase_key: your-supabase-key
+
+# Output settings
+output_directory: lib/generated
+use_null_safety: true
+
+# Generation options
+generate_providers: true
+generate_repositories: true
+generate_async_value_widget: true
+use_freezed: false
+use_app_exception: true
+
+# Table selection
+include_tables:
+  - users
+  - profiles
+  - posts
+  - comments
+
+exclude_tables:
+  - migrations
+  - schema_migrations
+```
+
+## Usage
+
+### Running the Generator
+
+```bash
+dart run supabase_gen
+```
+
+### Using Generated Code
+
+#### Models
+
+```dart
+// Import the generated model
+import 'package:your_app/generated/models/users_model.dart';
+
+// Create a new user
+final user = UsersModel(
+  id: '123',
+  email: 'user@example.com',
+  createdAt: DateTime.now(),
+);
+
+// Convert to JSON
+final json = user.toJson();
+```
+
+#### Repositories
+
+```dart
+// Import the repository
+import 'package:your_app/generated/repositories/users_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+final usersRepository = UsersRepository(Supabase.instance.client);
+
+// Find all users
+final users = await usersRepository.findAll();
+
+// Find by ID
+final user = await usersRepository.find('123');
+
+// Find with filters
+final admins = await usersRepository.findAll(
+  filters: {'role': 'admin'},
+  orderBy: 'created_at',
+  ascending: false,
+);
+
+// Create user
+final newUser = UsersModel(email: 'new@example.com');
+await usersRepository.insert(newUser);
+
+// Update user
+user.email = 'updated@example.com';
+await usersRepository.update(user);
+
+// Delete user
+await usersRepository.delete('123');
+```
+
+#### Providers (with Riverpod)
+
+```dart
+// Import providers
+import 'package:your_app/generated/providers/users_provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+// Read user data in a widget
+class UserListScreen extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Watch the users provider
+    final usersAsync = ref.watch(usersProvider);
+    
+    // Handle loading, error and data states
+    return usersAsync.when(
+      loading: () => CircularProgressIndicator(),
+      error: (error, stack) => Text('Error: $error'),
+      data: (users) => ListView.builder(
+        itemCount: users.length,
+        itemBuilder: (context, index) => Text(users[index].email),
+      ),
+    );
+  }
+}
+
+// Access in a provider or service
+final myServiceProvider = Provider((ref) {
+  final usersNotifier = ref.watch(usersProvider.notifier);
+  
+  return MyService(
+    createUser: (UserData userData) async {
+      final model = UsersModel(
+        email: userData.email,
+        name: userData.name,
+      );
+      return await usersNotifier.create(model);
+    },
+  );
+});
+```
+
+## Logging System
+
+The package generates a comprehensive logging system that integrates with repositories and providers.
+
+### Initialize Logging
+
+```dart
+// In your app's main.dart
+import 'package:your_app/generated/logger_init.dart';
+
+void main() {
+  // Initialize logging with appropriate level
+  initializeLogging(
+    level: kDebugMode ? Level.FINE : Level.INFO,
+    colorize: true,
+  );
+  
+  runApp(MyApp());
+}
+```
+
+### Using Logging in Your Code
+
+```dart
+import 'package:your_app/generated/utils/app_logger.dart';
+
+// Log different levels of messages
+AppLogger.info('User logged in', loggerName: 'AuthService');
+AppLogger.debug('Processing item $id', loggerName: 'SyncService');
+AppLogger.warning('Rate limit approaching', loggerName: 'ApiService');
+
+// Log errors with stack traces
+try {
+  // Some code that might throw
+} catch (e, stackTrace) {
+  AppLogger.error(
+    'Failed to process data', 
+    loggerName: 'DataProcessor', 
+    error: e, 
+    stackTrace: stackTrace
+  );
+}
+
+// Log successful operations
+AppLogger.success('Data synchronized successfully', loggerName: 'SyncService');
+```
+
+### Timing Operations
+
+```dart
+import 'package:your_app/generated/utils/repository_logging.dart';
+
+// Time an expensive operation
+final result = await RepositoryLogging.timeOperation(
+  'UserRepository', 
+  'fetchProfileData', 
+  () async {
+    // Your expensive operation here
+    return await fetchData();
+  }
+);
+```
+
+## Remote Schema Introspection
+
+When using `connection_type: remote` to connect to Supabase, the package attempts to discover tables and their columns. For the most reliable column detection, you should add two PostgreSQL functions to your Supabase database.
+
+### 1. List Tables Function
+
+This function returns all tables in the public schema:
+
+```sql
+CREATE OR REPLACE FUNCTION public.list_tables()
+RETURNS TABLE (table_name text) 
+SECURITY DEFINER
+LANGUAGE sql
+AS $$
+  SELECT table_name::text
+  FROM information_schema.tables
+  WHERE table_schema = 'public'
+  AND table_type = 'BASE TABLE';
+$$;
+```
+
+### 2. Table Definition Function
+
+This function returns detailed column information for a specified table:
+
+```sql
+CREATE OR REPLACE FUNCTION public.get_table_definition(table_name text)
+RETURNS JSONB LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT jsonb_agg(
+    jsonb_build_object(
+      'column_name', cols.column_name,
+      'data_type', cols.data_type,
+      'is_nullable', cols.is_nullable = 'YES',
+      'column_default', cols.column_default,
+      'is_primary_key', pk.is_pk IS NOT NULL,
+      'is_unique', unique_cols.is_unique IS NOT NULL,
+      'foreign_key', fk.foreign_column_name,
+      'foreign_table', CASE WHEN fk.foreign_table_name IS NOT NULL 
+                        THEN fk.foreign_table_schema || '.' || fk.foreign_table_name 
+                        ELSE NULL END
+    )
+  )
+  FROM information_schema.columns cols
+  LEFT JOIN (
+    SELECT kcu.column_name, TRUE as is_pk
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.constraint_type = 'PRIMARY KEY'
+      AND tc.table_schema = 'public'
+      AND tc.table_name = $1
+  ) pk ON cols.column_name = pk.column_name
+  LEFT JOIN (
+    SELECT kcu.column_name, TRUE as is_unique
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+    WHERE tc.constraint_type = 'UNIQUE'
+      AND tc.table_schema = 'public'
+      AND tc.table_name = $1
+  ) unique_cols ON cols.column_name = unique_cols.column_name
+  LEFT JOIN (
+    SELECT 
+      kcu.column_name,
+      ccu.table_schema AS foreign_table_schema,
+      ccu.table_name AS foreign_table_name,
+      ccu.column_name AS foreign_column_name
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+      ON tc.constraint_name = kcu.constraint_name
+    JOIN information_schema.constraint_column_usage ccu
+      ON ccu.constraint_name = tc.constraint_name
+    WHERE tc.constraint_type = 'FOREIGN KEY'
+      AND tc.table_schema = 'public'
+      AND tc.table_name = $1
+  ) fk ON cols.column_name = fk.column_name
+  WHERE cols.table_schema = 'public'
+    AND cols.table_name = $1;
+$$;
+```
+
+You can add these functions using the SQL Editor in the Supabase dashboard.
+
+Without these functions, the package will fall back to inferring column information from sample data, which may result in incomplete models if tables don't have enough data.
+
+## License
+
+MIT

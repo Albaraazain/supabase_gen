@@ -2,9 +2,11 @@ import 'dart:io';
 import 'package:path/path.dart' as path;
 
 import '../config/config_model.dart';
+import '../schema/constraint_metadata.dart';
 import '../schema/table_info.dart';
 import '../utils/logger.dart';
 import '../utils/string_utils.dart';
+import '../templates/logger_template.dart';
 
 class RepositoryGenerator {
   final SupabaseGenConfig config;
@@ -37,272 +39,14 @@ class RepositoryGenerator {
       dir.createSync(recursive: true);
     }
 
+    // Generate repository_logging.dart utility
+    final loggingFilePath = path.join(dir.path, 'repository_logging.dart');
+    await File(loggingFilePath).writeAsString(LoggerTemplate.repositoryLoggingExtension());
+    _logger.info('Generated repository logging utility: $loggingFilePath');
+
+    // Generate base repository
     final filePath = path.join(dir.path, 'base_repository.dart');
-    final content = '''import 'package:supabase_flutter/supabase_flutter.dart';
-
-/// Base repository class that all generated repositories extend
-abstract class BaseRepository<T> {
-  final SupabaseClient client;
-  final String tableName;
-
-  const BaseRepository(this.client, this.tableName);
-
-  /// Get the base query builder for this table
-  SupabaseQueryBuilder get query => client.from(tableName);
-
-  /// Convert a JSON map to a model instance
-  T fromJson(Map<String, dynamic> json);
-
-  /// Get all records from this table with pagination, sorting and filtering
-  Future<List<T>> findAll({
-    int? limit,
-    int? offset,
-    String? orderBy,
-    bool ascending = true,
-    Map<String, dynamic>? filters,
-    List<String>? select, // Fields to select
-  }) async {
-    // Start with a select query
-    dynamic queryBuilder = select != null 
-        ? query.select(select.join(','))
-        : query.select();
-    
-    // Apply filters if provided
-    if (filters != null) {
-      // Apply each filter as an equality condition
-      filters.forEach((key, value) {
-        if (value != null) {
-          queryBuilder = queryBuilder.eq(key, value);
-        }
-      });
-    }
-    
-    // Apply ordering if provided
-    if (orderBy != null) {
-      queryBuilder = queryBuilder.order(orderBy, ascending: ascending);
-    }
-
-    // Apply limit if provided
-    if (limit != null) {
-      queryBuilder = queryBuilder.limit(limit);
-    }
-
-    // Apply pagination range if provided
-    if (offset != null) {
-      queryBuilder = queryBuilder.range(offset, offset + (limit ?? 10) - 1);
-    }
-
-    // Execute the query
-    final response = await queryBuilder;
-    
-    // Convert the response to model instances
-    return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  /// Find a single record by ID
-  Future<T?> find(String id) async {
-    final response = await query.select().eq('id', id).maybeSingle();
-    if (response == null) return null;
-    return fromJson(response);
-  }
-  
-  /// Find a single record by a specific field value
-  Future<T?> findBy(String field, dynamic value) async {
-    final response = await query.select().eq(field, value).maybeSingle();
-    if (response == null) return null;
-    return fromJson(response);
-  }
-  
-  /// Find records matching multiple field values (AND condition)
-  Future<List<T>> findWhere(Map<String, dynamic> conditions) async {
-    dynamic queryBuilder = query.select();
-    
-    // Apply each condition as an equality filter
-    conditions.forEach((key, value) {
-      if (value != null) {
-        queryBuilder = queryBuilder.eq(key, value);
-      }
-    });
-    
-    final response = await queryBuilder;
-    return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
-  }
-  
-  /// Count records in this table, optionally filtered
-  Future<int> count({Map<String, dynamic>? filters}) async {
-    // Start with a select query and use count method
-    dynamic queryBuilder = query.select();
-    
-    // Apply filters if provided
-    if (filters != null) {
-      filters.forEach((key, value) {
-        if (value != null) {
-          queryBuilder = queryBuilder.eq(key, value);
-        }
-      });
-    }
-    
-    // Apply count operation after filters
-    queryBuilder = queryBuilder.count();
-    
-    final response = await queryBuilder;
-    
-    // Extract count from the response
-    if (response.count != null) {
-      return response.count;
-    } else if (response.data is List) {
-      return (response.data as List).length;
-    }
-    return 0;
-  }
-
-  /// Insert a new record
-  Future<T> insert(T model) async {
-    final dynamic json = (model as dynamic).toJson();
-    if (json is Map<String, dynamic> && json.containsKey('id') && json['id'] == null) {
-      json.remove('id'); // Remove null ID for auto-generation
-    }
-    
-    final response = await query.insert(json).select();
-    
-    if ((response as List<dynamic>).isNotEmpty) {
-      return fromJson(response.first as Map<String, dynamic>);
-    }
-    
-    throw Exception('Failed to insert record');
-  }
-  
-  /// Insert multiple records in a single operation
-  Future<List<T>> insertMany(List<T> models) async {
-    if (models.isEmpty) return [];
-    
-    final jsonList = models.map((model) {
-      final dynamic json = (model as dynamic).toJson();
-      if (json is Map<String, dynamic> && json.containsKey('id') && json['id'] == null) {
-        json.remove('id'); // Remove null ID for auto-generation
-      }
-      return json;
-    }).toList();
-    
-    final response = await query.insert(jsonList).select();
-    return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  /// Update an existing record
-  Future<T?> update(T model) async {
-    final dynamic json = (model as dynamic).toJson();
-    if (json is Map<String, dynamic> && (!json.containsKey('id') || json['id'] == null)) {
-      throw Exception('Cannot update record without ID');
-    }
-    
-    final response = await query
-        .update(json)
-        .eq('id', json['id'])
-        .select();
-    
-    final results = response as List;
-    if (results.isNotEmpty) {
-      return fromJson(results.first);
-    }
-    
-    return null;
-  }
-  
-  /// Update specific fields on records matching a condition
-  Future<List<T>> updateWhere(
-    Map<String, dynamic> values, 
-    Map<String, dynamic> conditions
-  ) async {
-    if (values.isEmpty || conditions.isEmpty) {
-      throw Exception('Both values and conditions must be provided');
-    }
-    
-    dynamic updateBuilder = query.update(values);
-    
-    // Apply conditions
-    conditions.forEach((key, value) {
-      if (value != null) {
-        updateBuilder = updateBuilder.eq(key, value);
-      }
-    });
-    
-    final response = await updateBuilder.select();
-    return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  /// Upsert a record (insert or update)
-  Future<T> upsert(T model) async {
-    final dynamic json = (model as dynamic).toJson();
-    final response = await query.upsert(json).select();
-    
-    final results = response as List;
-    if (results.isNotEmpty) {
-      return fromJson(results.first);
-    }
-    
-    throw Exception('Failed to upsert record');
-  }
-  
-  /// Upsert multiple records in a single operation
-  Future<List<T>> upsertMany(List<T> models) async {
-    if (models.isEmpty) return [];
-    
-    final jsonList = models.map((model) => (model as dynamic).toJson()).toList();
-    
-    final response = await query.upsert(jsonList).select();
-    return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
-  }
-
-  /// Delete a record by ID
-  Future<void> delete(String id) async {
-    await query.delete().eq('id', id);
-  }
-  
-  /// Delete records matching a condition
-  Future<void> deleteWhere(Map<String, dynamic> conditions) async {
-    if (conditions.isEmpty) {
-      throw Exception('Cannot delete with empty conditions - this would delete all records');
-    }
-    
-    dynamic deleteBuilder = query.delete();
-    
-    // Apply conditions
-    conditions.forEach((key, value) {
-      if (value != null) {
-        deleteBuilder = deleteBuilder.eq(key, value);
-      }
-    });
-    
-    await deleteBuilder;
-  }
-  
-  /// Check if a record exists by ID
-  Future<bool> exists(String id) async {
-    final response = await query
-        .select('id')
-        .eq('id', id)
-        .maybeSingle();
-    return response != null;
-  }
-  
-  /// Check if any records exist matching conditions
-  Future<bool> existsWhere(Map<String, dynamic> conditions) async {
-    if (conditions.isEmpty) return false;
-    
-    dynamic queryBuilder = query.select('id').limit(1);
-    
-    // Apply conditions
-    conditions.forEach((key, value) {
-      if (value != null) {
-        queryBuilder = queryBuilder.eq(key, value);
-      }
-    });
-    
-    final response = await queryBuilder;
-    return (response as List).isNotEmpty;
-  }
-}
-''';
+    final content = LoggerTemplate.modifyBaseRepository();
 
     await File(filePath).writeAsString(content);
   }
@@ -318,18 +62,41 @@ abstract class BaseRepository<T> {
       dir.createSync(recursive: true);
     }
     
+    // Create constraint metadata for enhanced type safety
+    final constraintMetadata = TableConstraintMetadata.fromTableInfo(table);
+    
     final filePath = path.join(dir.path, fileName);
-    final fileContent = _generateRepositoryClass(table, className, modelClassName, allTables);
+    final fileContent = _generateRepositoryClass(
+      table, 
+      className, 
+      modelClassName, 
+      allTables,
+      constraintMetadata
+    );
     
     await File(filePath).writeAsString(fileContent);
     _logger.info('Generated repository file: $filePath');
   }
 
-  String _generateRepositoryClass(TableInfo table, String className, String modelClassName, List<TableInfo> allTables) {
+  String _generateRepositoryClass(
+    TableInfo table, 
+    String className, 
+    String modelClassName, 
+    List<TableInfo> allTables,
+    [TableConstraintMetadata? constraints]
+  ) {
     // First import barrel file for models
     String imports = "import 'package:supabase_flutter/supabase_flutter.dart';\n";
     imports += "import '../models/models.dart';\n";
     imports += "import './base_repository.dart';\n";
+    
+    // Generate constraint-based methods
+    final constraintMethods = constraints != null 
+        ? _generateConstraintBasedMethods(table, modelClassName, constraints)
+        : '';
+        
+    // Add import for query builder if it exists
+    imports += "import '../query_builders/${table.name}_query_builder.dart';\n";
     
     return '''$imports
 
@@ -340,6 +107,27 @@ class $className extends BaseRepository<$modelClassName> {
   $modelClassName fromJson(Map<String, dynamic> json) {
     return $modelClassName.fromJson(json);
   }
+  
+  /// Create a type-safe query builder for ${table.name}
+  /// 
+  /// The query builder provides a fluent interface to build complex queries
+  /// with type safety for filtering, ordering and pagination.
+  /// 
+  /// Example:
+  /// ```dart
+  /// final users = await userRepository
+  ///   .createQueryBuilder()
+  ///   .whereNameEquals("John")
+  ///   .whereAgeGreaterThan(18)
+  ///   .orderByCreatedAtDesc()
+  ///   .limit(10)
+  ///   .get();
+  /// ```
+  ${modelClassName}QueryBuilder createQueryBuilder() {
+    return ${modelClassName}QueryBuilder(client);
+  }
+  
+${constraintMethods}
 ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
 }
 ''';
@@ -880,6 +668,99 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
     return methods.join('\n\n');
   }
   
+  /// Generate methods based on constraints
+  String _generateConstraintBasedMethods(
+    TableInfo table,
+    String modelClassName,
+    TableConstraintMetadata constraints
+  ) {
+    final methods = <String>[];
+    final methodNameTracker = <String>{};
+    
+    // Generate lookup methods based on unique constraints
+    for (final method in constraints.getLookupMethods()) {
+      // Skip if method name already exists
+      if (methodNameTracker.contains(method.methodName)) {
+        continue;
+      }
+      
+      methodNameTracker.add(method.methodName);
+      
+      if (method.isUnique) {
+        // Generate unique lookup methods
+        final paramType = method.parameterNames.length == 1 ? 'String' : 'List<String>';
+        final paramName = StringUtils.toCamelCase(method.parameterNames.join('And'));
+        final returnType = modelClassName;
+        
+        // Build the query part of the method
+        String queryPart = '';
+        if (method.parameterNames.length == 1) {
+          // Single parameter lookup
+          queryPart = '''.eq('${method.parameterNames[0]}', $paramName)''';
+        } else {
+          // Multiple parameters (composite key)
+          queryPart = method.parameterNames.asMap().entries.map((entry) {
+            final i = entry.key;
+            final column = entry.value;
+            return '''.eq('$column', $paramName[$i])''';
+          }).join('');
+        }
+        
+        // Create the method
+        methods.add('''
+  /// Get a $modelClassName by ${method.parameterNames.join(' and ')}
+  /// 
+  /// This method looks up a record using ${method.parameterNames.length == 1 ? 'a' : ''} ${method.parameterNames.join(' and ')} ${method.parameterNames.length == 1 ? 'field' : 'fields'}, which ${method.parameterNames.length == 1 ? 'has a' : 'have a'} unique constraint.
+  /// It will return null if no record is found.
+  Future<$returnType?> ${method.methodName}($paramType $paramName) async {
+    final result = await client
+        .from('${table.name}')
+        .select()$queryPart
+        .maybeSingle();
+    
+    if (result == null) return null;
+    return $modelClassName.fromJson(result);
+  }''');
+      } else {
+        // Generate non-unique lookup methods (returning lists)
+        final paramName = StringUtils.toCamelCase(method.parameterNames[0]);
+        final returnType = method.getReturnType(modelClassName);
+        
+        methods.add('''
+  /// Get $returnType by ${method.parameterNames[0]}
+  /// 
+  /// This method looks up records using the ${method.parameterNames[0]} field.
+  /// It returns a list of matching records.
+  Future<$returnType> ${method.methodName}(String $paramName) async {
+    final result = await client
+        .from('${table.name}')
+        .select()
+        .eq('${method.parameterNames[0]}', $paramName);
+    
+    return (result as List<dynamic>)
+        .map((item) => $modelClassName.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }''');
+      }
+    }
+    
+    // Add validation methods if check constraints exist
+    if (constraints.checkConstraints.isNotEmpty) {
+      methods.add('''
+  /// Validate that the model meets all check constraints
+  /// 
+  /// This method validates the model against the database check constraints.
+  /// It throws an exception if any constraint is violated.
+  void validate($modelClassName model) {
+    // Validate check constraints
+    ${constraints.checkConstraints.map((check) => '// ${check.name}: ${check.condition}').join('\n    ')}
+    // Add custom validation logic here
+  }''');
+    }
+    
+    return methods.join('\n\n');
+  }
+
   /// Determines if a table is likely a junction/pivot table based on its structure
   bool _isLikelyJunctionTable(TableInfo table) {
     // A junction table typically has at least two foreign key columns

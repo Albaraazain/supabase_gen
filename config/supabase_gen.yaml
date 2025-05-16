@@ -1,13 +1,13 @@
 # Remote database configuration - uncomment and fill in details to use remote mode
 database:
   connection_type: remote
-  supabase_url: https://snyslzlivseztldymgzm.supabase.co
-  supabase_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNueXNsemxpdnNlenRsZHltZ3ptIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Njc5ODIyNSwiZXhwIjoyMDYyMzc0MjI1fQ.2L6I1FvfvhrhFoB9FrRv32MV42jDok_S9IIW5Wrzap4
+  supabase_url: https://zfqpbxhkebliqlcggdhl.supabase.co
+  supabase_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmcXBieGhrZWJsaXFsY2dnZGhsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDY4MjEwOCwiZXhwIjoyMDU2MjU4MTA4fQ.ZFMVZzKDmfArqePKbvEywomqxfXLr992lmGLyC-JlrA
   database: postgres  # Database name is still required even for remote connection
 
 
 generation:
-  output_directory: generated/
+  output_directory: lib/generated/
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
@@ -15,22 +15,54 @@ generation:
   # Tables to probe when using remote connection
   probe_tables:
     # Application tables
-    - 'users'
-    - 'games'
-    - 'notifications'
-    - 'player_stats'
-    - 'chat_messages'
-    - 'chat_rooms'
-    - 'game_players'
-    - 'match_events'
-    - 'match_highlights'
-    - 'match_results'
-    - 'player_skills'
-    
-    # Test tables for relationships
-    - 'users'
-    - 'games'
-    - 'game_players'
+      - 'active_jobs'
+      - 'conversations'
+      - 'diagnosis_findings'
+      - 'diagnosis_findings_with_photos'
+      - 'diagnosis_phase'
+      - 'en_route_phase'
+      - 'error_logs'
+      - 'finding_photos'
+      - 'homeowner_location_updates'
+      - 'homeowner_profiles'
+      - 'job_broadcasts'
+      - 'job_stage_history'
+      - 'job_tasks'
+      - 'jobs'
+      - 'location_bookmarks'
+      - 'location_map_settings'
+      - 'location_verification_attempts'
+      - 'location_verification_summary'
+      - 'location_verifications'
+      - 'material_usage'
+      - 'messages'
+      - 'pause_periods'
+      - 'payment_methods'
+      - 'preparation_checks'
+      - 'professional_earnings'
+      - 'professional_location_updates'
+      - 'professional_profiles'
+      - 'professional_responses'
+      - 'professional_services'
+      - 'quote_history'
+      - 'quote_line_items'
+      - 'quote_phase'
+      - 'quote_summaries'
+      - 'safety_checks'
+      - 'service_categories'
+      - 'service_quotes'
+      - 'services'
+      - 'session_pause_reasons'
+      - 'site_photos'
+      - 'task_photos'
+      - 'task_progress_summary'
+      - 'test_jobs'
+      - 'users'
+      - 'work_sessions'
+      - 'work_tasks'
+      - 'work_timeline_events'
+      - 'work_updates'
+      - 'working_phase'
     
   exclude_tables: 
     # Exclude system schemas
@@ -40,7 +72,7 @@ generation:
     - 'pgsodium.*'
     - 'realtime.*'
     - 'storage.*'
-    - 'supabase_functions.*'
+    # - 'supabase_functions.*'
     - 'vault.*'
     # Exclude views and system tables from public schema
     - 'public.*_view'

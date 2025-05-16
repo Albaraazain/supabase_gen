@@ -8,6 +8,11 @@ class StringUtils {
     return '${prefix ?? ''}$className${suffix ?? ''}';
   }
 
+  // toPascalCase method
+  static String toPascalCase(String name) {
+    return ReCase(name).pascalCase;
+  }
+
   /// Convert a database name to a Dart variable name (camelCase)
   static String toVariableName(String name) {
     return ReCase(name).camelCase;

@@ -1,0 +1,489 @@
+schema_name,tbl_name,col_name,col_type,max_length,col_default,nullable,ord_position
+public,active_jobs,job_id,uuid,null,null,NO,1
+public,active_jobs,homeowner_id,uuid,null,null,NO,2
+public,active_jobs,professional_id,uuid,null,null,YES,3
+public,active_jobs,service_id,uuid,null,null,NO,4
+public,active_jobs,current_stage,text,null,null,NO,5
+public,active_jobs,created_at,timestamp with time zone,null,now(),NO,6
+public,active_jobs,updated_at,timestamp with time zone,null,now(),NO,7
+public,active_jobs,metadata,jsonb,null,null,YES,8
+public,active_jobs,stage_updated_at,timestamp with time zone,null,now(),YES,9
+public,active_jobs,scheduled_time,timestamp with time zone,null,null,YES,10
+public,active_jobs,estimated_duration,integer,null,null,YES,11
+public,active_jobs,stage_notes,text,null,null,YES,12
+public,active_jobs,stage_metadata,jsonb,null,'{}'::jsonb,YES,13
+public,conversations,conversation_id,uuid,null,uuid_generate_v4(),NO,1
+public,conversations,homeowner_id,uuid,null,null,NO,2
+public,conversations,professional_id,uuid,null,null,NO,3
+public,conversations,job_id,uuid,null,null,YES,4
+public,conversations,last_message_at,timestamp with time zone,null,now(),YES,5
+public,conversations,created_at,timestamp with time zone,null,now(),YES,6
+public,conversations,updated_at,timestamp with time zone,null,now(),YES,7
+public,diagnosis_findings,finding_id,uuid,null,uuid_generate_v4(),NO,1
+public,diagnosis_findings,job_id,uuid,null,null,NO,2
+public,diagnosis_findings,description,text,null,null,NO,3
+public,diagnosis_findings,severity,text,null,null,YES,4
+public,diagnosis_findings,recommended_action,text,null,null,YES,5
+public,diagnosis_findings,recorded_by,uuid,null,null,YES,6
+public,diagnosis_findings,created_at,timestamp with time zone,null,now(),YES,7
+public,diagnosis_findings,updated_at,timestamp with time zone,null,now(),YES,8
+public,diagnosis_findings,title,text,null,'Issue Found'::text,NO,9
+public,diagnosis_findings,icon_type,text,null,null,YES,10
+public,diagnosis_findings_with_photos,finding_id,uuid,null,null,YES,1
+public,diagnosis_findings_with_photos,job_id,uuid,null,null,YES,2
+public,diagnosis_findings_with_photos,description,text,null,null,YES,3
+public,diagnosis_findings_with_photos,severity,text,null,null,YES,4
+public,diagnosis_findings_with_photos,recommended_action,text,null,null,YES,5
+public,diagnosis_findings_with_photos,recorded_by,uuid,null,null,YES,6
+public,diagnosis_findings_with_photos,created_at,timestamp with time zone,null,null,YES,7
+public,diagnosis_findings_with_photos,updated_at,timestamp with time zone,null,null,YES,8
+public,diagnosis_findings_with_photos,title,text,null,null,YES,9
+public,diagnosis_findings_with_photos,icon_type,text,null,null,YES,10
+public,diagnosis_findings_with_photos,photos_count,bigint,null,null,YES,11
+public,diagnosis_findings_with_photos,photo_urls,text,null,null,YES,12
+public,diagnosis_phase,job_id,uuid,null,null,NO,1
+public,diagnosis_phase,diagnosis_started_at,timestamp with time zone,null,null,NO,2
+public,diagnosis_phase,diagnosis_ended_at,timestamp with time zone,null,null,YES,3
+public,diagnosis_phase,findings_summary,text,null,null,YES,4
+public,diagnosis_phase,recommended_actions,ARRAY,null,null,YES,5
+public,en_route_phase,job_id,uuid,null,null,NO,1
+public,en_route_phase,route_started_at,timestamp with time zone,null,null,NO,2
+public,en_route_phase,arrived_at,timestamp with time zone,null,null,YES,3
+public,en_route_phase,estimated_arrival,timestamp with time zone,null,null,YES,4
+public,en_route_phase,distance_km,double precision,null,null,YES,5
+public,en_route_phase,transport_mode,text,null,null,YES,6
+public,error_logs,log_id,uuid,null,uuid_generate_v4(),NO,1
+public,error_logs,error_message,text,null,null,NO,2
+public,error_logs,error_details,text,null,null,YES,3
+public,error_logs,source,text,null,null,YES,4
+public,error_logs,user_id,uuid,null,null,YES,5
+public,error_logs,created_at,timestamp with time zone,null,now(),YES,6
+public,finding_photos,finding_photo_id,uuid,null,uuid_generate_v4(),NO,1
+public,finding_photos,finding_id,uuid,null,null,NO,2
+public,finding_photos,photo_id,uuid,null,null,NO,3
+public,finding_photos,is_primary,boolean,null,false,YES,4
+public,finding_photos,created_at,timestamp with time zone,null,now(),YES,5
+public,homeowner_location_updates,id,uuid,null,uuid_generate_v4(),NO,1
+public,homeowner_location_updates,homeowner_id,uuid,null,null,NO,2
+public,homeowner_location_updates,latitude,double precision,null,null,NO,3
+public,homeowner_location_updates,longitude,double precision,null,null,NO,4
+public,homeowner_location_updates,created_at,timestamp with time zone,null,"timezone('utc'::text, now())",NO,5
+public,homeowner_profiles,homeowner_id,uuid,null,null,NO,1
+public,homeowner_profiles,address,text,null,null,YES,2
+public,homeowner_profiles,city,text,null,null,YES,3
+public,homeowner_profiles,state,text,null,null,YES,4
+public,homeowner_profiles,zip_code,text,null,null,YES,5
+public,homeowner_profiles,country,text,null,'USA'::text,YES,6
+public,homeowner_profiles,latitude,numeric,null,null,YES,7
+public,homeowner_profiles,longitude,numeric,null,null,YES,8
+public,homeowner_profiles,preferred_language,text,null,'en'::text,YES,9
+public,homeowner_profiles,notification_preferences,jsonb,null,'{}'::jsonb,YES,10
+public,homeowner_profiles,verification_status,text,null,'pending'::text,YES,11
+public,homeowner_profiles,verified_at,timestamp with time zone,null,null,YES,12
+public,homeowner_profiles,created_at,timestamp with time zone,null,now(),YES,13
+public,homeowner_profiles,updated_at,timestamp with time zone,null,now(),YES,14
+public,job_broadcasts,broadcast_id,uuid,null,uuid_generate_v4(),NO,1
+public,job_broadcasts,homeowner_id,uuid,null,null,YES,2
+public,job_broadcasts,service_id,uuid,null,null,YES,3
+public,job_broadcasts,title,text,null,null,NO,4
+public,job_broadcasts,description,text,null,null,YES,5
+public,job_broadcasts,address,text,null,null,YES,6
+public,job_broadcasts,city,text,null,null,YES,7
+public,job_broadcasts,state,text,null,null,YES,8
+public,job_broadcasts,zip_code,text,null,null,YES,9
+public,job_broadcasts,latitude,numeric,null,null,YES,10
+public,job_broadcasts,longitude,numeric,null,null,YES,11
+public,job_broadcasts,location_address,text,null,null,YES,12
+public,job_broadcasts,scheduled_time,timestamp with time zone,null,null,YES,13
+public,job_broadcasts,price_range_min,numeric,null,null,YES,14
+public,job_broadcasts,price_range_max,numeric,null,null,YES,15
+public,job_broadcasts,status,text,null,'active'::text,YES,16
+public,job_broadcasts,urgency_level,text,null,'normal'::text,YES,17
+public,job_broadcasts,created_at,timestamp with time zone,null,now(),YES,18
+public,job_broadcasts,updated_at,timestamp with time zone,null,now(),YES,19
+public,job_broadcasts,expires_at,timestamp with time zone,null,null,YES,20
+public,job_stage_history,history_id,uuid,null,uuid_generate_v4(),NO,1
+public,job_stage_history,job_id,uuid,null,null,NO,2
+public,job_stage_history,from_stage,text,null,null,YES,3
+public,job_stage_history,to_stage,text,null,null,NO,4
+public,job_stage_history,changed_by,uuid,null,null,YES,5
+public,job_stage_history,notes,text,null,null,YES,6
+public,job_stage_history,created_at,timestamp with time zone,null,now(),YES,7
+public,job_tasks,task_id,uuid,null,uuid_generate_v4(),NO,1
+public,job_tasks,job_id,uuid,null,null,NO,2
+public,job_tasks,title,text,null,null,NO,3
+public,job_tasks,description,text,null,null,YES,4
+public,job_tasks,status,text,null,'pending'::text,YES,5
+public,job_tasks,completed_at,timestamp with time zone,null,null,YES,6
+public,job_tasks,created_at,timestamp with time zone,null,now(),YES,7
+public,job_tasks,updated_at,timestamp with time zone,null,now(),YES,8
+public,job_tasks,created_by,uuid,null,null,YES,9
+public,jobs,job_id,uuid,null,uuid_generate_v4(),NO,1
+public,jobs,broadcast_id,uuid,null,null,YES,2
+public,jobs,homeowner_id,uuid,null,null,NO,3
+public,jobs,professional_id,uuid,null,null,NO,4
+public,jobs,service_id,uuid,null,null,NO,5
+public,jobs,stage_updated_at,timestamp with time zone,null,null,YES,6
+public,jobs,scheduled_time,timestamp with time zone,null,null,YES,7
+public,jobs,estimated_duration,integer,null,null,YES,8
+public,jobs,current_stage,text,null,null,NO,9
+public,jobs,work_started_at,timestamp with time zone,null,null,YES,10
+public,jobs,work_paused_at,timestamp with time zone,null,null,YES,11
+public,jobs,total_pause_duration,text,null,null,YES,12
+public,jobs,created_at,timestamp with time zone,null,now(),YES,13
+public,jobs,updated_at,timestamp with time zone,null,now(),YES,14
+public,jobs,last_updated_by,uuid,null,null,YES,15
+public,jobs,current_session_id,uuid,null,null,YES,16
+public,location_bookmarks,bookmark_id,uuid,null,uuid_generate_v4(),NO,1
+public,location_bookmarks,job_id,uuid,null,null,NO,2
+public,location_bookmarks,name,text,null,null,NO,3
+public,location_bookmarks,description,text,null,null,YES,4
+public,location_bookmarks,latitude,numeric,null,null,NO,5
+public,location_bookmarks,longitude,numeric,null,null,NO,6
+public,location_bookmarks,created_by,uuid,null,null,YES,7
+public,location_bookmarks,created_at,timestamp with time zone,null,now(),YES,8
+public,location_bookmarks,updated_at,timestamp with time zone,null,now(),YES,9
+public,location_map_settings,setting_id,uuid,null,uuid_generate_v4(),NO,1
+public,location_map_settings,job_id,uuid,null,null,NO,2
+public,location_map_settings,zoom_level,numeric,null,null,YES,3
+public,location_map_settings,center_latitude,numeric,null,null,YES,4
+public,location_map_settings,center_longitude,numeric,null,null,YES,5
+public,location_map_settings,show_terrain,boolean,null,false,YES,6
+public,location_map_settings,show_traffic,boolean,null,false,YES,7
+public,location_map_settings,created_by,uuid,null,null,YES,8
+public,location_map_settings,created_at,timestamp with time zone,null,now(),YES,9
+public,location_map_settings,updated_at,timestamp with time zone,null,now(),YES,10
+public,location_verification_attempts,attempt_id,uuid,null,uuid_generate_v4(),NO,1
+public,location_verification_attempts,verification_id,uuid,null,null,NO,2
+public,location_verification_attempts,latitude,numeric,null,null,NO,3
+public,location_verification_attempts,longitude,numeric,null,null,NO,4
+public,location_verification_attempts,accuracy_meters,numeric,null,null,YES,5
+public,location_verification_attempts,attempted_at,timestamp with time zone,null,now(),YES,6
+public,location_verification_attempts,success,boolean,null,false,NO,7
+public,location_verification_attempts,failure_reason,text,null,null,YES,8
+public,location_verification_attempts,created_at,timestamp with time zone,null,now(),YES,9
+public,location_verification_summary,verification_id,uuid,null,null,YES,1
+public,location_verification_summary,job_id,uuid,null,null,YES,2
+public,location_verification_summary,user_id,uuid,null,null,YES,3
+public,location_verification_summary,latitude,numeric,null,null,YES,4
+public,location_verification_summary,longitude,numeric,null,null,YES,5
+public,location_verification_summary,accuracy_meters,numeric,null,null,YES,6
+public,location_verification_summary,verified_at,timestamp with time zone,null,null,YES,7
+public,location_verification_summary,verification_type,text,null,null,YES,8
+public,location_verification_summary,created_at,timestamp with time zone,null,null,YES,9
+public,location_verification_summary,address_line1,text,null,null,YES,10
+public,location_verification_summary,address_line2,text,null,null,YES,11
+public,location_verification_summary,city,text,null,null,YES,12
+public,location_verification_summary,state,text,null,null,YES,13
+public,location_verification_summary,postal_code,text,null,null,YES,14
+public,location_verification_summary,country,text,null,null,YES,15
+public,location_verification_summary,address_verified,boolean,null,null,YES,16
+public,location_verification_summary,verification_status,text,null,null,YES,17
+public,location_verification_summary,failure_reason,text,null,null,YES,18
+public,location_verification_summary,total_attempts,bigint,null,null,YES,19
+public,location_verification_summary,successful_attempts,bigint,null,null,YES,20
+public,location_verification_summary,last_attempt_at,timestamp with time zone,null,null,YES,21
+public,location_verifications,verification_id,uuid,null,uuid_generate_v4(),NO,1
+public,location_verifications,job_id,uuid,null,null,NO,2
+public,location_verifications,user_id,uuid,null,null,NO,3
+public,location_verifications,latitude,numeric,null,null,NO,4
+public,location_verifications,longitude,numeric,null,null,NO,5
+public,location_verifications,accuracy_meters,numeric,null,null,YES,6
+public,location_verifications,verified_at,timestamp with time zone,null,now(),YES,7
+public,location_verifications,verification_type,text,null,null,NO,8
+public,location_verifications,created_at,timestamp with time zone,null,now(),YES,9
+public,location_verifications,address_line1,text,null,null,YES,10
+public,location_verifications,address_line2,text,null,null,YES,11
+public,location_verifications,city,text,null,null,YES,12
+public,location_verifications,state,text,null,null,YES,13
+public,location_verifications,postal_code,text,null,null,YES,14
+public,location_verifications,country,text,null,'US'::text,YES,15
+public,location_verifications,address_verified,boolean,null,false,YES,16
+public,location_verifications,verification_status,text,null,'pending'::text,NO,17
+public,location_verifications,failure_reason,text,null,null,YES,18
+public,material_usage,usage_id,uuid,null,uuid_generate_v4(),NO,1
+public,material_usage,job_id,uuid,null,null,NO,2
+public,material_usage,material_name,text,null,null,NO,3
+public,material_usage,quantity,numeric,null,null,NO,4
+public,material_usage,unit,text,null,null,YES,5
+public,material_usage,unit_cost,numeric,null,null,YES,6
+public,material_usage,total_cost,numeric,null,null,YES,7
+public,material_usage,used_at,timestamp with time zone,null,now(),YES,8
+public,material_usage,recorded_by,uuid,null,null,YES,9
+public,material_usage,created_at,timestamp with time zone,null,now(),YES,10
+public,material_usage,updated_at,timestamp with time zone,null,now(),YES,11
+public,messages,message_id,uuid,null,uuid_generate_v4(),NO,1
+public,messages,conversation_id,uuid,null,null,NO,2
+public,messages,sender_id,uuid,null,null,NO,3
+public,messages,receiver_id,uuid,null,null,NO,4
+public,messages,job_id,uuid,null,null,YES,5
+public,messages,content,text,null,null,NO,6
+public,messages,is_read,boolean,null,false,YES,7
+public,messages,read_at,timestamp with time zone,null,null,YES,8
+public,messages,created_at,timestamp with time zone,null,now(),YES,9
+public,messages,updated_at,timestamp with time zone,null,now(),YES,10
+public,pause_periods,pause_id,uuid,null,uuid_generate_v4(),NO,1
+public,pause_periods,session_id,uuid,null,null,NO,2
+public,pause_periods,start_time,timestamp with time zone,null,null,NO,3
+public,pause_periods,end_time,timestamp with time zone,null,null,YES,4
+public,pause_periods,reason,text,null,null,NO,5
+public,pause_periods,created_at,timestamp with time zone,null,now(),YES,6
+public,pause_periods,updated_at,timestamp with time zone,null,now(),YES,7
+public,payment_methods,id,uuid,null,uuid_generate_v4(),NO,1
+public,payment_methods,user_id,uuid,null,null,NO,2
+public,payment_methods,payment_type,text,null,null,NO,3
+public,payment_methods,card_last_four,text,null,null,YES,4
+public,payment_methods,card_brand,text,null,null,YES,5
+public,payment_methods,card_expiry_month,integer,null,null,YES,6
+public,payment_methods,card_expiry_year,integer,null,null,YES,7
+public,payment_methods,bank_name,text,null,null,YES,8
+public,payment_methods,bank_account_last_four,text,null,null,YES,9
+public,payment_methods,is_default,boolean,null,false,YES,10
+public,payment_methods,created_at,timestamp with time zone,null,now(),YES,11
+public,payment_methods,updated_at,timestamp with time zone,null,now(),YES,12
+public,preparation_checks,check_id,uuid,null,uuid_generate_v4(),NO,1
+public,preparation_checks,job_id,uuid,null,null,NO,2
+public,preparation_checks,check_name,text,null,null,NO,3
+public,preparation_checks,status,text,null,'pending'::text,NO,4
+public,preparation_checks,notes,text,null,null,YES,5
+public,preparation_checks,performed_by,uuid,null,null,YES,6
+public,preparation_checks,performed_at,timestamp with time zone,null,null,YES,7
+public,preparation_checks,created_at,timestamp with time zone,null,now(),YES,8
+public,preparation_checks,updated_at,timestamp with time zone,null,now(),YES,9
+public,professional_earnings,earning_id,uuid,null,uuid_generate_v4(),NO,1
+public,professional_earnings,professional_id,uuid,null,null,NO,2
+public,professional_earnings,job_id,uuid,null,null,NO,3
+public,professional_earnings,amount,numeric,null,null,NO,4
+public,professional_earnings,earnings_date,timestamp with time zone,null,now(),YES,5
+public,professional_earnings,status,text,null,'pending'::text,YES,6
+public,professional_earnings,payout_date,timestamp with time zone,null,null,YES,7
+public,professional_earnings,transaction_id,text,null,null,YES,8
+public,professional_earnings,created_at,timestamp with time zone,null,now(),YES,9
+public,professional_earnings,updated_at,timestamp with time zone,null,now(),YES,10
+public,professional_location_updates,id,uuid,null,uuid_generate_v4(),NO,1
+public,professional_location_updates,professional_id,uuid,null,null,NO,2
+public,professional_location_updates,latitude,double precision,null,null,NO,3
+public,professional_location_updates,longitude,double precision,null,null,NO,4
+public,professional_location_updates,is_online,boolean,null,true,NO,5
+public,professional_location_updates,created_at,timestamp with time zone,null,"timezone('utc'::text, now())",NO,6
+public,professional_profiles,professional_id,uuid,null,null,NO,1
+public,professional_profiles,bio,text,null,null,YES,2
+public,professional_profiles,business_name,text,null,null,YES,3
+public,professional_profiles,license_number,text,null,null,YES,4
+public,professional_profiles,license_type,text,null,null,YES,5
+public,professional_profiles,license_verified,boolean,null,false,YES,6
+public,professional_profiles,verification_status,text,null,'pending'::text,YES,7
+public,professional_profiles,verified_at,timestamp with time zone,null,null,YES,8
+public,professional_profiles,years_experience,integer,null,null,YES,9
+public,professional_profiles,experience_years,integer,null,null,YES,10
+public,professional_profiles,radius_miles,integer,null,20,YES,11
+public,professional_profiles,service_radius,integer,null,20,YES,12
+public,professional_profiles,availability,text,null,null,YES,13
+public,professional_profiles,availability_status,text,null,'offline'::text,YES,14
+public,professional_profiles,base_location_lat,numeric,null,null,YES,15
+public,professional_profiles,base_location_lng,numeric,null,null,YES,16
+public,professional_profiles,current_location_lat,numeric,null,null,YES,17
+public,professional_profiles,current_location_lng,numeric,null,null,YES,18
+public,professional_profiles,rating,numeric,null,null,YES,19
+public,professional_profiles,total_ratings,integer,null,0,YES,20
+public,professional_profiles,total_jobs_completed,integer,null,0,YES,21
+public,professional_profiles,acceptance_rate,numeric,null,0,YES,22
+public,professional_profiles,active_status,text,null,'inactive'::text,YES,23
+public,professional_profiles,created_at,timestamp with time zone,null,now(),YES,24
+public,professional_profiles,updated_at,timestamp with time zone,null,now(),YES,25
+public,professional_profiles,is_online,boolean,null,true,NO,26
+public,professional_responses,response_id,uuid,null,uuid_generate_v4(),NO,1
+public,professional_responses,broadcast_id,uuid,null,null,YES,2
+public,professional_responses,professional_id,uuid,null,null,YES,3
+public,professional_responses,price,numeric,null,null,YES,4
+public,professional_responses,arrival_window_start,timestamp with time zone,null,null,YES,5
+public,professional_responses,arrival_window_end,timestamp with time zone,null,null,YES,6
+public,professional_responses,estimated_duration,integer,null,null,YES,7
+public,professional_responses,notes,text,null,null,YES,8
+public,professional_responses,status,text,null,'pending'::text,YES,9
+public,professional_responses,created_at,timestamp with time zone,null,now(),YES,10
+public,professional_responses,updated_at,timestamp with time zone,null,now(),YES,11
+public,professional_services,id,uuid,null,uuid_generate_v4(),NO,1
+public,professional_services,professional_id,uuid,null,null,YES,2
+public,professional_services,service_id,uuid,null,null,YES,3
+public,professional_services,price_adjustment,numeric,null,0,YES,4
+public,professional_services,price_rate,numeric,null,0,YES,5
+public,professional_services,is_active,boolean,null,true,YES,6
+public,professional_services,is_available,boolean,null,true,YES,7
+public,professional_services,created_at,timestamp with time zone,null,now(),YES,8
+public,professional_services,updated_at,timestamp with time zone,null,now(),YES,9
+public,quote_history,history_id,uuid,null,uuid_generate_v4(),NO,1
+public,quote_history,quote_id,uuid,null,null,NO,2
+public,quote_history,action,text,null,null,NO,3
+public,quote_history,action_by,uuid,null,null,YES,4
+public,quote_history,action_at,timestamp with time zone,null,now(),YES,5
+public,quote_history,notes,text,null,null,YES,6
+public,quote_history,metadata,jsonb,null,null,YES,7
+public,quote_history,created_at,timestamp with time zone,null,now(),YES,8
+public,quote_line_items,line_item_id,uuid,null,uuid_generate_v4(),NO,1
+public,quote_line_items,quote_id,uuid,null,null,NO,2
+public,quote_line_items,description,text,null,null,NO,3
+public,quote_line_items,quantity,numeric,null,1,YES,4
+public,quote_line_items,unit_price,numeric,null,null,NO,5
+public,quote_line_items,amount,numeric,null,null,NO,6
+public,quote_line_items,created_at,timestamp with time zone,null,now(),YES,7
+public,quote_line_items,updated_at,timestamp with time zone,null,now(),YES,8
+public,quote_line_items,item_type,text,null,'service'::text,NO,9
+public,quote_line_items,category,text,null,null,YES,10
+public,quote_line_items,notes,text,null,null,YES,11
+public,quote_line_items,unit_type,text,null,null,YES,12
+public,quote_line_items,reference_id,uuid,null,null,YES,13
+public,quote_line_items,display_order,integer,null,0,YES,14
+public,quote_phase,job_id,uuid,null,null,NO,1
+public,quote_phase,quote_created_at,timestamp with time zone,null,null,NO,2
+public,quote_phase,quote_submitted_at,timestamp with time zone,null,null,YES,3
+public,quote_phase,quote_accepted_at,timestamp with time zone,null,null,YES,4
+public,quote_phase,total_amount,numeric,null,null,YES,5
+public,quote_phase,validity_days,integer,null,null,YES,6
+public,quote_summaries,quote_id,uuid,null,null,YES,1
+public,quote_summaries,job_id,uuid,null,null,YES,2
+public,quote_summaries,total_amount,numeric,null,null,YES,3
+public,quote_summaries,status,text,null,null,YES,4
+public,quote_summaries,valid_until,timestamp with time zone,null,null,YES,5
+public,quote_summaries,notes,text,null,null,YES,6
+public,quote_summaries,created_at,timestamp with time zone,null,null,YES,7
+public,quote_summaries,updated_at,timestamp with time zone,null,null,YES,8
+public,quote_summaries,created_by,uuid,null,null,YES,9
+public,quote_summaries,accepted_at,timestamp with time zone,null,null,YES,10
+public,quote_summaries,accepted_by,uuid,null,null,YES,11
+public,quote_summaries,rejection_reason,text,null,null,YES,12
+public,quote_summaries,rejection_notes,text,null,null,YES,13
+public,quote_summaries,tax_rate,numeric,null,null,YES,14
+public,quote_summaries,tax_amount,numeric,null,null,YES,15
+public,quote_summaries,subtotal,numeric,null,null,YES,16
+public,quote_summaries,breakdown,jsonb,null,null,YES,17
+public,safety_checks,check_id,uuid,null,uuid_generate_v4(),NO,1
+public,safety_checks,job_id,uuid,null,null,NO,2
+public,safety_checks,check_name,text,null,null,NO,3
+public,safety_checks,status,text,null,null,NO,4
+public,safety_checks,notes,text,null,null,YES,5
+public,safety_checks,performed_by,uuid,null,null,YES,6
+public,safety_checks,performed_at,timestamp with time zone,null,now(),YES,7
+public,safety_checks,created_at,timestamp with time zone,null,now(),YES,8
+public,safety_checks,updated_at,timestamp with time zone,null,now(),YES,9
+public,service_categories,category_id,uuid,null,uuid_generate_v4(),NO,1
+public,service_categories,name,text,null,null,NO,2
+public,service_categories,description,text,null,null,YES,3
+public,service_categories,icon_url,text,null,null,YES,4
+public,service_categories,created_at,timestamp with time zone,null,now(),YES,5
+public,service_categories,updated_at,timestamp with time zone,null,now(),YES,6
+public,service_quotes,quote_id,uuid,null,uuid_generate_v4(),NO,1
+public,service_quotes,job_id,uuid,null,null,NO,2
+public,service_quotes,total_amount,numeric,null,null,NO,3
+public,service_quotes,status,text,null,'pending'::text,YES,4
+public,service_quotes,valid_until,timestamp with time zone,null,null,YES,5
+public,service_quotes,notes,text,null,null,YES,6
+public,service_quotes,created_at,timestamp with time zone,null,now(),YES,7
+public,service_quotes,updated_at,timestamp with time zone,null,now(),YES,8
+public,service_quotes,created_by,uuid,null,null,YES,9
+public,service_quotes,accepted_at,timestamp with time zone,null,null,YES,10
+public,service_quotes,accepted_by,uuid,null,null,YES,11
+public,service_quotes,rejection_reason,text,null,null,YES,12
+public,service_quotes,rejection_notes,text,null,null,YES,13
+public,service_quotes,tax_rate,numeric,null,0.08,NO,14
+public,service_quotes,tax_amount,numeric,null,0,NO,15
+public,service_quotes,subtotal,numeric,null,0,NO,16
+public,services,service_id,uuid,null,uuid_generate_v4(),NO,1
+public,services,category_id,uuid,null,null,YES,2
+public,services,name,text,null,null,NO,3
+public,services,description,text,null,null,YES,4
+public,services,base_price,numeric,null,null,YES,5
+public,services,price_unit,text,null,null,YES,6
+public,services,estimated_duration,integer,null,null,YES,7
+public,services,created_at,timestamp with time zone,null,now(),YES,8
+public,services,updated_at,timestamp with time zone,null,now(),YES,9
+public,session_pause_reasons,pause_id,uuid,null,uuid_generate_v4(),NO,1
+public,session_pause_reasons,session_id,uuid,null,null,NO,2
+public,session_pause_reasons,reason,text,null,null,NO,3
+public,session_pause_reasons,details,text,null,null,YES,4
+public,session_pause_reasons,started_at,timestamp with time zone,null,now(),NO,5
+public,session_pause_reasons,ended_at,timestamp with time zone,null,null,YES,6
+public,session_pause_reasons,created_by,uuid,null,null,YES,7
+public,session_pause_reasons,created_at,timestamp with time zone,null,now(),YES,8
+public,site_photos,photo_id,uuid,null,uuid_generate_v4(),NO,1
+public,site_photos,job_id,uuid,null,null,NO,2
+public,site_photos,photo_url,text,null,null,NO,3
+public,site_photos,description,text,null,null,YES,4
+public,site_photos,photo_type,text,null,null,YES,5
+public,site_photos,taken_at,timestamp with time zone,null,now(),YES,6
+public,site_photos,uploaded_by,uuid,null,null,YES,7
+public,site_photos,created_at,timestamp with time zone,null,now(),YES,8
+public,task_photos,task_photo_id,uuid,null,uuid_generate_v4(),NO,1
+public,task_photos,task_id,uuid,null,null,NO,2
+public,task_photos,photo_id,uuid,null,null,NO,3
+public,task_photos,is_primary,boolean,null,false,YES,4
+public,task_photos,created_at,timestamp with time zone,null,now(),YES,5
+public,task_progress_summary,job_id,uuid,null,null,YES,1
+public,task_progress_summary,total_tasks,bigint,null,null,YES,2
+public,task_progress_summary,completed_tasks,bigint,null,null,YES,3
+public,task_progress_summary,in_progress_tasks,bigint,null,null,YES,4
+public,task_progress_summary,completed_duration_seconds,numeric,null,null,YES,5
+public,task_progress_summary,total_estimated_seconds,numeric,null,null,YES,6
+public,task_progress_summary,last_update,timestamp with time zone,null,null,YES,7
+public,test_jobs,job_id,uuid,null,uuid_generate_v4(),NO,1
+public,test_jobs,name,text,null,null,NO,2
+public,test_jobs,description,text,null,null,YES,3
+public,test_jobs,created_at,timestamp with time zone,null,now(),YES,4
+public,users,user_id,uuid,null,uuid_generate_v4(),NO,1
+public,users,email,text,null,null,NO,2
+public,users,full_name,text,null,null,NO,3
+public,users,phone,text,null,null,YES,4
+public,users,profile_image_url,text,null,null,YES,5
+public,users,user_type,text,null,null,NO,6
+public,users,created_at,timestamp with time zone,null,now(),YES,7
+public,users,updated_at,timestamp with time zone,null,now(),YES,8
+public,users,status,text,null,null,YES,9
+public,work_sessions,session_id,uuid,null,uuid_generate_v4(),NO,1
+public,work_sessions,job_id,uuid,null,null,NO,2
+public,work_sessions,professional_id,uuid,null,null,NO,3
+public,work_sessions,started_at,timestamp with time zone,null,null,NO,4
+public,work_sessions,ended_at,timestamp with time zone,null,null,YES,5
+public,work_sessions,total_duration,interval,null,null,YES,6
+public,work_sessions,pause_duration,interval,null,'00:00:00'::interval,YES,7
+public,work_sessions,is_paused,boolean,null,false,YES,8
+public,work_sessions,pause_start_time,timestamp with time zone,null,null,YES,9
+public,work_sessions,created_at,timestamp with time zone,null,now(),YES,10
+public,work_sessions,updated_at,timestamp with time zone,null,now(),YES,11
+public,work_sessions,session_notes,text,null,null,YES,12
+public,work_sessions,weather_conditions,jsonb,null,null,YES,13
+public,work_sessions,completion_percentage,numeric,null,null,YES,14
+public,work_sessions,status,text,null,'active'::text,YES,15
+public,work_tasks,task_id,uuid,null,uuid_generate_v4(),NO,1
+public,work_tasks,job_id,uuid,null,null,NO,2
+public,work_tasks,title,text,null,null,NO,3
+public,work_tasks,description,text,null,null,YES,4
+public,work_tasks,status,text,null,'not_started'::text,NO,5
+public,work_tasks,estimated_duration,interval,null,null,YES,6
+public,work_tasks,actual_duration,interval,null,null,YES,7
+public,work_tasks,started_at,timestamp with time zone,null,null,YES,8
+public,work_tasks,completed_at,timestamp with time zone,null,null,YES,9
+public,work_tasks,sequence_number,integer,null,null,YES,10
+public,work_tasks,created_by,uuid,null,null,YES,11
+public,work_tasks,created_at,timestamp with time zone,null,now(),YES,12
+public,work_tasks,updated_at,timestamp with time zone,null,now(),YES,13
+public,work_timeline_events,event_id,uuid,null,uuid_generate_v4(),NO,1
+public,work_timeline_events,job_id,uuid,null,null,NO,2
+public,work_timeline_events,event_type,text,null,null,NO,3
+public,work_timeline_events,event_data,jsonb,null,null,YES,4
+public,work_timeline_events,task_id,uuid,null,null,YES,5
+public,work_timeline_events,created_by,uuid,null,null,YES,6
+public,work_timeline_events,created_at,timestamp with time zone,null,now(),YES,7
+public,work_updates,update_id,uuid,null,uuid_generate_v4(),NO,1
+public,work_updates,job_id,uuid,null,null,NO,2
+public,work_updates,message,text,null,null,NO,3
+public,work_updates,update_type,text,null,null,NO,4
+public,work_updates,priority,text,null,'normal'::text,YES,5
+public,work_updates,requires_attention,boolean,null,false,YES,6
+public,work_updates,created_by,uuid,null,null,YES,7
+public,work_updates,created_at,timestamp with time zone,null,now(),YES,8
+public,working_phase,job_id,uuid,null,null,NO,1
+public,working_phase,work_started_at,timestamp with time zone,null,null,NO,2
+public,working_phase,work_paused_at,timestamp with time zone,null,null,YES,3
+public,working_phase,total_pause_duration,interval,null,null,YES,4
+public,working_phase,current_session_id,uuid,null,null,YES,5
+public,working_phase,completion_percentage,double precision,null,null,YES,6

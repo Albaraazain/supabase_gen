@@ -6,6 +6,9 @@ import '../schema/table_info.dart';
 import '../utils/logger.dart';
 import '../utils/string_utils.dart';
 import '../templates/provider_template.dart';
+import '../templates/logger_template.dart';
+import '../templates/cache_template.dart';
+import '../templates/best_practices_template.dart';
 
 /// Generates Riverpod providers for each table in the database schema
 class ProviderGenerator {
@@ -27,6 +30,31 @@ class ProviderGenerator {
     if (!providersDir.existsSync()) {
       providersDir.createSync(recursive: true);
     }
+    
+    // Create utils directory for logger
+    final utilsDir = Directory(path.join(
+      config.outputDirectory,
+      'utils',
+    ));
+    
+    if (!utilsDir.existsSync()) {
+      utilsDir.createSync(recursive: true);
+    }
+    
+    // Generate logger utility
+    final loggerPath = path.join(utilsDir.path, 'app_logger.dart');
+    await File(loggerPath).writeAsString(LoggerTemplate.loggerUtility());
+    _logger.info('Generated app logger utility: $loggerPath');
+    
+    // Generate provider logging extension
+    final providerLoggingPath = path.join(utilsDir.path, 'provider_logging.dart');
+    await File(providerLoggingPath).writeAsString(LoggerTemplate.providerLoggingExtension());
+    _logger.info('Generated provider logging utility: $providerLoggingPath');
+    
+    // Generate app cache utility
+    final appCachePath = path.join(utilsDir.path, 'app_cache.dart');
+    await File(appCachePath).writeAsString(CacheTemplate.cacheUtility());
+    _logger.info('Generated app cache utility: $appCachePath');
     
     // Create shared directory and generate AppException if needed
     if (config.useAppException) {
@@ -50,6 +78,11 @@ class ProviderGenerator {
       
       await _generateAppExceptionClass(errorsDir.path);
       _logger.info('Generated AppException class');
+      
+      // Generate exception handler
+      final exceptionHandlerPath = path.join(errorsDir.path, 'app_exception_handler.dart');
+      await File(exceptionHandlerPath).writeAsString(LoggerTemplate.exceptionHandler());
+      _logger.info('Generated exception handler: $exceptionHandlerPath');
     }
 
     // Generate AsyncValueWidget if enabled
@@ -64,6 +97,9 @@ class ProviderGenerator {
 
     // Generate barrel file
     await _generateBarrelFile(tables, providersDir.path);
+    
+    // Generate best practices documentation
+    await _generateBestPracticesDocumentation(config.outputDirectory);
 
     _logger.success('Provider generation completed.');
   }
@@ -86,15 +122,13 @@ class ProviderGenerator {
     final repositoryName = config.getRepositoryClassName(table.name);
     final camelCaseTableName = StringUtils.toVariableName(table.name);
 
-    // Generate the Riverpod provider code (using the non-annotation based approach)
-    final code = ProviderTemplate.notifierClass(
-      tableName: table.name,
-      pascalCaseTableName: className,
-      modelName: modelName,
-      repositoryName: repositoryName,
-      camelCaseTableName: camelCaseTableName,
-      useAppException: config.useAppException,
-      useNullSafety: config.useNullSafety,
+    // Generate the Riverpod provider code with logging
+    final code = LoggerTemplate.modifyProviderTemplate(
+      table.name,
+      className,
+      modelName, 
+      repositoryName,
+      camelCaseTableName
     );
 
     await File(filePath).writeAsString(code);
@@ -142,5 +176,29 @@ $exports
 ''';
 
     await File(filePath).writeAsString(content);
+  }
+  
+  /// Generate best practices documentation
+  Future<void> _generateBestPracticesDocumentation(String outputDir) async {
+    // Create docs directory
+    final docsDir = Directory(path.join(outputDir, 'docs'));
+    if (!docsDir.existsSync()) {
+      docsDir.createSync(recursive: true);
+    }
+    
+    // Generate filter usage guide
+    final filterUsagePath = path.join(docsDir.path, 'filter_usage_guide.dart');
+    await File(filterUsagePath).writeAsString(BestPracticesTemplate.filterUsageGuide());
+    _logger.info('Generated filter usage guide: $filterUsagePath');
+    
+    // Generate UI rebuilding guide
+    final uiRebuildingPath = path.join(docsDir.path, 'ui_rebuilding_guide.dart');
+    await File(uiRebuildingPath).writeAsString(BestPracticesTemplate.uiRebuildingGuide());
+    _logger.info('Generated UI rebuilding guide: $uiRebuildingPath');
+    
+    // Generate user feedback guide
+    final userFeedbackPath = path.join(docsDir.path, 'user_feedback_guide.dart');
+    await File(userFeedbackPath).writeAsString(BestPracticesTemplate.userFeedbackGuide());
+    _logger.info('Generated user feedback guide: $userFeedbackPath');
   }
 }

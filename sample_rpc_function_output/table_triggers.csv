@@ -1,0 +1,3 @@
+tbl_name,trg_name,event_type,action_time,action_stmt
+active_jobs,active_job_stage_change,UPDATE,BEFORE,EXECUTE FUNCTION handle_stage_transition()
+active_jobs,set_stage_updated_at,UPDATE,BEFORE,EXECUTE FUNCTION update_stage_updated_at()

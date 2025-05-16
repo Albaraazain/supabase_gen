@@ -1,0 +1,7 @@
+schema_name,tbl_name,constraint_name,constraint_type,col_name,ref_table,ref_column
+public,site_photos,2200_17965_1_not_null,CHECK,null,null,null
+public,site_photos,2200_17965_2_not_null,CHECK,null,null,null
+public,site_photos,2200_17965_3_not_null,CHECK,null,null,null
+public,site_photos,site_photos_job_id_fkey,FOREIGN KEY,job_id,jobs,job_id
+public,site_photos,site_photos_pkey,PRIMARY KEY,photo_id,site_photos,photo_id
+public,site_photos,site_photos_uploaded_by_fkey,FOREIGN KEY,uploaded_by,users,user_id
