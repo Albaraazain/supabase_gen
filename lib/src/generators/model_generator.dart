@@ -40,6 +40,73 @@ class ModelGenerator {
 
     _logger.info('Generated models for ${tables.length} tables');
   }
+  
+  /// Format trigger documentation with enhanced function details
+  String _formatTriggerDocumentation(TriggerInfo trigger) {
+    // Basic trigger info
+    final basicInfo = '/// - ${trigger.name}: ${trigger.eventType} ${trigger.actionTime}';
+    
+    // If we have function details, format them more helpfully
+    if (trigger.functionName != null) {
+      String doc = '$basicInfo - EXECUTE FUNCTION ${trigger.functionName}()';
+      
+      // Add function details if available
+      if (trigger.functionDefinition != null || trigger.functionParameters != null || trigger.functionReturnType != null) {
+        // Function signature and return type
+        doc += '\n///   Signature: ${trigger.functionName}';
+        
+        if (trigger.functionParameters != null && trigger.functionParameters!.isNotEmpty) {
+          doc += '(${trigger.functionParameters})';
+        } else {
+          doc += '()';
+        }
+        
+        if (trigger.functionReturnType != null) {
+          doc += ' RETURNS ${trigger.functionReturnType}';
+        } else {
+          doc += ' RETURNS trigger';
+        }
+        
+        // Language
+        if (trigger.functionLanguage != null) {
+          doc += '\n///   Language: ${trigger.functionLanguage}';
+        }
+        
+        // Description from function comment
+        if (trigger.functionComment != null && trigger.functionComment!.isNotEmpty) {
+          doc += '\n///   Description: ${trigger.functionComment}';
+        }
+        
+        // Add function body preview in a readable format
+        final functionBody = trigger.extractFunctionBody();
+        if (functionBody.isNotEmpty) {
+          // If the function body is long, truncate it with ellipsis but preserve formatting
+          String formattedBody = functionBody.replaceAll('\n', ' ');
+          if (formattedBody.length > 120) {
+            formattedBody = '${formattedBody.substring(0, 117)}...';
+          }
+          doc += '\n///   Body: $formattedBody';
+        } else if (trigger.actionStatement.contains('EXECUTE')) {
+          // If we couldn't get the function body but have an action statement with EXECUTE,
+          // extract just the function name for reference
+          final functionMatch = RegExp(r'EXECUTE(?:\s+PROCEDURE|\s+FUNCTION)?\s+(\w+)\(\)').firstMatch(trigger.actionStatement);
+          if (functionMatch != null && functionMatch.groupCount >= 1) {
+            final funcName = functionMatch.group(1);
+            doc += '\n///   Body: <Function body not available for $funcName>';
+          }
+        }
+      } else {
+        // We have a function name but no details, add a placeholder
+        doc += '\n///   Function details not available - see advanced_function_introspection.sql';
+      }
+      
+      return doc;
+    } else {
+      // Fallback to just showing the action statement
+      final cleanStatement = trigger.actionStatement.replaceAll('\n', ' ').trim();
+      return '$basicInfo - $cleanStatement';
+    }
+  }
 
   Future<void> _generateUtilityClasses() async {
     // Generate directory
@@ -670,11 +737,24 @@ Point? _toPoint(dynamic value) {
   // Primary identifier is already defined as a field''';
     }
 
+    // Generate triggers documentation
+    String triggersDoc = '';
+    if (table.triggers.isNotEmpty) {
+      final triggersList = table.triggers.map((trigger) {
+        return _formatTriggerDocumentation(trigger);
+      }).join('\n');
+      
+      triggersDoc = '''
+/// Database triggers associated with this table:
+$triggersList
+///''';
+    }
+    
     // Assemble the final class
     final classDefinition =
         '''${importSection.isNotEmpty ? '$importSection\n' : ''}
 /// Generated model class for table ${table.name}
-class $className {
+${triggersDoc.isNotEmpty ? '$triggersDoc\n' : ''}class $className {
 $properties
 
 $constructor

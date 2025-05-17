@@ -15,6 +15,8 @@ A Dart package that generates Flutter repositories, models, and providers from y
 
 ## New in Latest Version
 
+- **Enhanced trigger documentation**: Added comprehensive documentation of database triggers with their full function definitions
+- **Advanced function introspection**: SQL functions to extract database trigger functions with their complete implementations
 - **Comprehensive logging system**: Added a centralized logging system that integrates with repositories and providers
 - **Fixed the int/double type mismatch issue**: Safely handles PostgreSQL numeric/decimal/real types without runtime errors
 - **Improved type handling**: Added comprehensive support for all PostgreSQL data types
@@ -280,6 +282,40 @@ final result = await RepositoryLogging.timeOperation(
   }
 );
 ```
+
+## Database Trigger Documentation
+
+The package now provides comprehensive documentation of PostgreSQL triggers in your generated models and repositories. This helps you understand the automatic behaviors that happen in your database when data changes.
+
+```dart
+/// Represents a profile in the database
+/// ...
+/// Database triggers associated with this table:
+/// - update_profile_timestamp: UPDATE BEFORE - EXECUTE FUNCTION update_timestamp()
+///   Signature: update_timestamp() RETURNS trigger
+///   Language: plpgsql
+///   Body: BEGIN NEW.updated_at = now(); RETURN NEW; END;
+```
+
+To enable full function body extraction, deploy the advanced function introspection SQL file to your Supabase project:
+
+```sql
+-- From lib/generated/docs/advanced_function_introspection.sql
+CREATE OR REPLACE FUNCTION public.get_function_details(p_function_name text)
+RETURNS TABLE (
+    function_id oid,
+    schema_name text,
+    function_name text,
+    -- More fields...
+) 
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS $$
+-- Function implementation...
+$$;
+```
+
+For more information, see the documentation in `lib/generated/docs/database_triggers.md` after running the generator.
 
 ## Remote Schema Introspection
 

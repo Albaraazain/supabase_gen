@@ -98,6 +98,18 @@ class RepositoryGenerator {
     // Add import for query builder if it exists
     imports += "import '../query_builders/${table.name}_query_builder.dart';\n";
     
+    // Generate triggers documentation
+    String triggersDoc = '';
+    if (table.triggers.isNotEmpty) {
+      final triggersList = table.triggers.map((trigger) {
+        return _formatTriggerDocumentation(trigger);
+      }).join('\n');
+      
+      triggersDoc = '''
+  /// Note: This table has the following database triggers that may affect operations:
+  $triggersList''';
+    }
+
     return '''$imports
 
 class $className extends BaseRepository<$modelClassName> {
@@ -107,7 +119,7 @@ class $className extends BaseRepository<$modelClassName> {
   $modelClassName fromJson(Map<String, dynamic> json) {
     return $modelClassName.fromJson(json);
   }
-  
+${triggersDoc.isNotEmpty ? '\n$triggersDoc\n' : ''}  
   /// Create a type-safe query builder for ${table.name}
   /// 
   /// The query builder provides a fluent interface to build complex queries
@@ -133,8 +145,9 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
 ''';
   }
 
+  /// [Deprecated] - Kept for reference but used directly in _generateRelatedRepositoryMethods now
   /// Get a list of related table names from columns that appear to be foreign keys
-  List<String> _getRelatedTableNames(TableInfo table, [List<TableInfo>? allTables]) {
+  /*List<String> _getRelatedTableNames(TableInfo table, [List<TableInfo>? allTables]) {
     final relatedTables = <String>{};
     
     // Find columns that are references to other tables
@@ -155,7 +168,7 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
     }
     
     return relatedTables.toList();
-  }
+  }*/
   
   /// Check if a table name exists in our real database schema and is included for generation
   bool _isKnownTable(String tableName, [List<TableInfo>? allTables]) {
@@ -392,6 +405,7 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
                   
                   if (_isKnownTable(otherTableName, allTables)) {
                     final otherModelClassName = config.getModelClassName(otherTableName);
+                    // Using camelCase for the column base name (without _id suffix)
                     final cleanOtherColumnName = otherColumn.name.endsWith('_id') 
                         ? otherColumn.name.substring(0, otherColumn.name.length - 3) 
                         : otherColumn.name;
@@ -429,7 +443,7 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
   /// // Get all games that a user is part of
   /// final games = await usersRepository.getGames(userId);
   /// ```
-  Future<List<${otherModelClassName}>> get$methodSuffix(String ${StringUtils.toCamelCase(table.name)}Id) async {
+  Future<List<$otherModelClassName>> get$methodSuffix(String ${StringUtils.toCamelCase(table.name)}Id) async {
     // First get junction records
     final junctionResult = await client
         .from('${relatedTable.name}')
@@ -454,14 +468,14 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
     
     // Now get the actual records
     final result = await client
-        .from('${otherTableName}')
+        .from('$otherTableName')
         .select()
         .inFilter('id', ids);
     
     final resultData = result as List<dynamic>;
     
     return resultData
-        .map((item) => ${otherModelClassName}.fromJson(item as Map<String, dynamic>))
+        .map((item) => $otherModelClassName.fromJson(item as Map<String, dynamic>))
         .toList();
   }
   
@@ -487,7 +501,7 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
     return result != null;
   }
   
-  /// Add a relationship between this ${table.name} and a ${cleanOtherColumnName}
+  /// Add a relationship between this ${table.name} and a $cleanOtherColumnName
   /// using the ${relatedTable.name} junction table.
   /// 
   /// Example:
@@ -512,7 +526,7 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
         });
   }
   
-  /// Remove a relationship between this ${table.name} and a ${cleanOtherColumnName}
+  /// Remove a relationship between this ${table.name} and a $cleanOtherColumnName
   /// using the ${relatedTable.name} junction table.
   /// 
   /// Example:
@@ -782,5 +796,72 @@ ${_generateRelatedRepositoryMethods(table, modelClassName, allTables)}
 export 'base_repository.dart';
 $exports
 ''';
+  }
+  
+  /// Format trigger documentation with enhanced function details
+  String _formatTriggerDocumentation(TriggerInfo trigger) {
+    // Basic trigger info with proper indentation for repositories
+    final basicInfo = '  /// - ${trigger.name}: ${trigger.eventType} ${trigger.actionTime}';
+    
+    // If we have function details, format them more helpfully
+    if (trigger.functionName != null) {
+      String doc = '$basicInfo - EXECUTE FUNCTION ${trigger.functionName}()';
+      
+      // Add function details if available
+      if (trigger.functionDefinition != null || trigger.functionParameters != null || trigger.functionReturnType != null) {
+        // Function signature and return type
+        doc += '\n  ///   Signature: ${trigger.functionName}';
+        
+        if (trigger.functionParameters != null && trigger.functionParameters!.isNotEmpty) {
+          doc += '(${trigger.functionParameters})';
+        } else {
+          doc += '()';
+        }
+        
+        if (trigger.functionReturnType != null) {
+          doc += ' RETURNS ${trigger.functionReturnType}';
+        } else {
+          doc += ' RETURNS trigger';
+        }
+        
+        // Language
+        if (trigger.functionLanguage != null) {
+          doc += '\n  ///   Language: ${trigger.functionLanguage}';
+        }
+        
+        // Description from function comment
+        if (trigger.functionComment != null && trigger.functionComment!.isNotEmpty) {
+          doc += '\n  ///   Description: ${trigger.functionComment}';
+        }
+        
+        // Add function body preview in a readable format
+        final functionBody = trigger.extractFunctionBody();
+        if (functionBody.isNotEmpty) {
+          // If the function body is long, truncate it with ellipsis but preserve formatting
+          String formattedBody = functionBody.replaceAll('\n', ' ');
+          if (formattedBody.length > 120) {
+            formattedBody = '${formattedBody.substring(0, 117)}...';
+          }
+          doc += '\n  ///   Body: $formattedBody';
+        } else if (trigger.actionStatement.contains('EXECUTE')) {
+          // If we couldn't get the function body but have an action statement with EXECUTE,
+          // extract just the function name for reference
+          final functionMatch = RegExp(r'EXECUTE(?:\s+PROCEDURE|\s+FUNCTION)?\s+(\w+)\(\)').firstMatch(trigger.actionStatement);
+          if (functionMatch != null && functionMatch.groupCount >= 1) {
+            final funcName = functionMatch.group(1);
+            doc += '\n  ///   Body: <Function body not available for $funcName>';
+          }
+        }
+      } else {
+        // We have a function name but no details, add a placeholder
+        doc += '\n  ///   Function details not available - see advanced_function_introspection.sql';
+      }
+      
+      return doc;
+    } else {
+      // Fallback to just showing the action statement
+      final cleanStatement = trigger.actionStatement.replaceAll('\n', ' ').trim();
+      return '$basicInfo - $cleanStatement';
+    }
   }
 }

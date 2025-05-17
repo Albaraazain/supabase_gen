@@ -356,26 +356,24 @@ class SchemaReader {
       final tables = <TableInfo>[];
       final tableNames = <String>[];
 
-      /** 
-   * Method 1: Call the RPC function to get tables.
-   * 
-   * This method uses the 'list_tables' RPC function that has been created in the Supabase
-   * project. This function returns a list of all tables in the public schema.
-   * 
-   * The RPC function was created with:
-   * ```sql
-   * CREATE OR REPLACE FUNCTION public.list_tables()
-   * RETURNS TABLE (table_name text) 
-   * SECURITY DEFINER
-   * LANGUAGE sql
-   * AS $$
-   *   SELECT table_name::text
-   *   FROM information_schema.tables
-   *   WHERE table_schema = 'public'
-   *   AND table_type = 'BASE TABLE';
-   * $$;
-   * ```
-   */
+      /// Method 1: Call the RPC function to get tables.
+      /// 
+      /// This method uses the 'list_tables' RPC function that has been created in the Supabase
+      /// project. This function returns a list of all tables in the public schema.
+      /// 
+      /// The RPC function was created with:
+      /// ```sql
+      /// CREATE OR REPLACE FUNCTION public.list_tables()
+      /// RETURNS TABLE (table_name text) 
+      /// SECURITY DEFINER
+      /// LANGUAGE sql
+      /// AS $$
+      ///   SELECT table_name::text
+      ///   FROM information_schema.tables
+      ///   WHERE table_schema = 'public'
+      ///   AND table_type = 'BASE TABLE';
+      /// $$;
+      /// ```
       _logger.info('METHOD 1: Using RPC function to get tables');
       try {
         // Call the function to get tables
@@ -613,9 +611,9 @@ class SchemaReader {
 
           if (tableInfo != null && tableInfo.columns.isNotEmpty) {
             _logger.info(
-              'Got complete table definition for $tableName with ${tableInfo.columns.length} columns, ' +
-                  '${tableInfo.constraints.length} constraints, ${tableInfo.indexes.length} indexes, ' +
-                  'and ${tableInfo.triggers.length} triggers',
+              'Got complete table definition for $tableName with ${tableInfo.columns.length} columns, '
+                '${tableInfo.constraints.length} constraints, ${tableInfo.indexes.length} indexes, '
+                'and ${tableInfo.triggers.length} triggers',
             );
             tables.add(tableInfo);
             continue;
@@ -685,17 +683,15 @@ class SchemaReader {
     }
   }
 
-  /**
-   * Get complete table information using the four RPC functions
-   * 
-   * This method calls the new RPC functions that have been created in the Supabase project:
-   * - get_table_columns: Returns column information
-   * - get_table_constraints: Returns constraint information
-   * - get_table_indexes: Returns index information
-   * - get_table_triggers: Returns trigger information
-   * 
-   * Combined, these provide comprehensive schema introspection for a given table.
-   */
+  /// Get complete table information using the four RPC functions
+  ///
+  /// This method calls the new RPC functions that have been created in the Supabase project:
+  /// - get_table_columns: Returns column information
+  /// - get_table_constraints: Returns constraint information
+  /// - get_table_indexes: Returns index information
+  /// - get_table_triggers: Returns trigger information
+  ///
+  /// Combined, these provide comprehensive schema introspection for a given table.
   Future<TableInfo?> _getTableDefinition(String tableName) async {
     try {
       _logger.info('Getting complete table definition for: $tableName');
@@ -1082,24 +1078,144 @@ class SchemaReader {
   /// Get table triggers using the get_table_triggers RPC function
   Future<List<TriggerInfo>> _getTableTriggers(String tableName) async {
     final results = await _callRpcFunction('get_table_triggers', tableName);
-
-    return results
-        .map((trigger) {
-          try {
-            return TriggerInfo(
-              name: trigger['trg_name'] as String? ?? 'unknown_trigger',
-              eventType: trigger['event_type'] as String? ?? 'UNKNOWN',
-              actionTime: trigger['action_time'] as String? ?? 'UNKNOWN',
-              actionStatement: trigger['action_stmt'] as String? ?? '',
-            );
-          } catch (e) {
-            _logger.warning('Error parsing trigger data: $e');
-            _logger.info('Problematic trigger data: $trigger');
-            return null;
+    
+    final triggers = <TriggerInfo>[];
+    
+    for (final triggerData in results) {
+      try {
+        final name = triggerData['trg_name'] as String? ?? 'unknown_trigger';
+        final eventType = triggerData['event_type'] as String? ?? 'UNKNOWN';
+        final actionTime = triggerData['action_time'] as String? ?? 'UNKNOWN';
+        final actionStatement = triggerData['action_stmt'] as String? ?? '';
+        
+        // Extract function name if this is a function-based trigger
+        String? functionName;
+        final functionMatch = RegExp(r'EXECUTE(?:\s+PROCEDURE|\s+FUNCTION)?\s+(\w+)\(\)').firstMatch(actionStatement);
+        if (functionMatch != null && functionMatch.groupCount >= 1) {
+          functionName = functionMatch.group(1);
+        }
+        
+        // Only fetch function details if we have a function name
+        String? functionDefinition;
+        String? functionParameters;
+        String? functionReturnType;
+        String? functionLanguage;
+        String? functionComment;
+        
+        if (functionName != null) {
+          // Fetch function details using the new RPC function
+          final functionDetails = await _getFunctionDetails(functionName);
+          
+          if (functionDetails.isNotEmpty) {
+            final details = functionDetails.first;
+            functionDefinition = details['function_body'] as String? ?? 
+                                details['function_definition'] as String? ?? 
+                                'Function body unavailable';
+            functionParameters = details['parameters'] as String? ?? 
+                                details['complete_signature'] as String? ?? 
+                                null;
+            functionReturnType = details['return_type'] as String?;
+            functionLanguage = details['language_name'] as String?;
+            functionComment = details['comment'] as String?;
           }
-        })
-        .whereType<TriggerInfo>()
-        .toList();
+        }
+        
+        triggers.add(TriggerInfo(
+          name: name,
+          eventType: eventType,
+          actionTime: actionTime,
+          actionStatement: actionStatement,
+          functionName: functionName,
+          functionDefinition: functionDefinition,
+          functionParameters: functionParameters,
+          functionReturnType: functionReturnType,
+          functionLanguage: functionLanguage,
+          functionComment: functionComment,
+        ));
+      } catch (e) {
+        _logger.warning('Error parsing trigger data: $e');
+        _logger.info('Problematic trigger data: $triggerData');
+      }
+    }
+    
+    return triggers;
+  }
+  
+  /// Get function details using the get_function_details RPC function
+  Future<List<Map<String, dynamic>>> _getFunctionDetails(String functionName) async {
+    try {
+      _logger.info('Fetching function details for: $functionName');
+      
+      // First try the advanced function details
+      final response = await _dioClient!.post(
+        '/rest/v1/rpc/get_function_details',
+        data: {'p_function_name': functionName},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 10),
+          sendTimeout: const Duration(seconds: 10),
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is List) {
+          final resultList = response.data as List;
+          _logger.info('Function details returned ${resultList.length} results for $functionName');
+          
+          return resultList.whereType<Map<String, dynamic>>().toList();
+        } else if (response.data is Map) {
+          // Sometimes RPC may return a single object
+          _logger.info('Function details returned a single result for $functionName');
+          return [response.data as Map<String, dynamic>];
+        }
+      }
+      
+      // If the advanced function fails, try the simpler version
+      _logger.info('Trying simplified function definition fetch for: $functionName');
+      final simpleResponse = await _trySimpleFunctionInfo(functionName);
+      if (simpleResponse.isNotEmpty) {
+        return simpleResponse;
+      }
+      
+      _logger.warning('Failed to get function details for: $functionName');
+      _logger.warning('Consider deploying the improved function introspection SQL in lib/generated/docs/advanced_function_introspection.sql');
+      
+      // Fallback to just a basic result with the name
+      return [{
+        'function_name': functionName,
+        'function_body': 'Function body unavailable - deploy advanced_function_introspection.sql to see details'
+      }];
+    } catch (e) {
+      _logger.warning('Error fetching function details for $functionName: $e');
+      return [];
+    }
+  }
+  
+  /// Fallback approach to get basic function info
+  Future<List<Map<String, dynamic>>> _trySimpleFunctionInfo(String functionName) async {
+    try {
+      // Try a simpler approach to get just the function name and language
+      final response = await _dioClient!.post(
+        '/rest/v1/rpc/get_function_simple_info',
+        data: {'p_function_name': functionName},
+        options: Options(
+          receiveTimeout: const Duration(seconds: 5),
+          sendTimeout: const Duration(seconds: 5),
+        ),
+      );
+      
+      if (response.statusCode == 200) {
+        if (response.data is List) {
+          return (response.data as List).whereType<Map<String, dynamic>>().toList();
+        } else if (response.data is Map) {
+          return [response.data as Map<String, dynamic>];
+        }
+      }
+      
+      return [];
+    } catch (e) {
+      _logger.warning('Error with simple function info: $e');
+      return [];
+    }
   }
 
   /// Enrich column information with constraint data to add primary key, foreign key, and unique flags
@@ -1208,6 +1324,29 @@ class SchemaReader {
   /// Get SQL scripts for creating the required RPC functions
   static String getRpcFunctionScripts() {
     return '''
+-- Simple lightweight function to get basic function info
+CREATE OR REPLACE FUNCTION public.get_function_simple_info(p_function_name text)
+RETURNS TABLE (
+    function_name text,
+    language_name text
+) 
+SECURITY DEFINER
+LANGUAGE sql
+AS \$\$
+    SELECT 
+        p.proname::text AS function_name,
+        l.lanname::text AS language_name
+    FROM 
+        pg_proc p
+        JOIN pg_namespace n ON p.pronamespace = n.oid
+        JOIN pg_language l ON p.prolang = l.oid
+    WHERE 
+        p.proname = p_function_name
+        AND n.nspname NOT IN ('pg_catalog', 'information_schema')
+    ORDER BY 
+        p.proname;
+\$\$;
+
 -- Function to list all tables and views in the public schema
 CREATE OR REPLACE FUNCTION public.list_tables()
 RETURNS TABLE (table_name text, table_type text) 

@@ -1,3 +1,13 @@
+## 1.7.0
+
+### Added
+- Enhanced trigger documentation with full function definitions
+- Advanced PostgreSQL function introspection capabilities
+- Added SQL functions for extracting function details from database
+- Complete model and repository documentation with trigger behaviors
+- Added database_triggers.md guide for understanding generated trigger information
+- Improved error handling in schema reader for better reliability
+
 ## 1.6.0
 
 ### Added

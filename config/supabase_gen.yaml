@@ -7,7 +7,7 @@ database:
 
 
 generation:
-  output_directory: lib/generated/
+  output_directory: test_app/lib/generated/
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
