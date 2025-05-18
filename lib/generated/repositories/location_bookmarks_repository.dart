@@ -5,11 +5,16 @@ import '../query_builders/location_bookmarks_query_builder.dart';
 
 
 class LocationBookmarksRepository extends BaseRepository<LocationBookmarksModel> {
-  LocationBookmarksRepository(SupabaseClient client) : super(client, 'location_bookmarks');
+  LocationBookmarksRepository(SupabaseClient client) : super(client, 'location_bookmarks', primaryKeyColumn: 'bookmark_id');
   
   @override
   LocationBookmarksModel fromJson(Map<String, dynamic> json) {
     return LocationBookmarksModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(LocationBookmarksModel model) {
+    return model.bookmarkId;
   }
   
   /// Create a type-safe query builder for location_bookmarks

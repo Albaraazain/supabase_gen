@@ -5,11 +5,16 @@ import '../query_builders/pause_periods_query_builder.dart';
 
 
 class PausePeriodsRepository extends BaseRepository<PausePeriodsModel> {
-  PausePeriodsRepository(SupabaseClient client) : super(client, 'pause_periods');
+  PausePeriodsRepository(SupabaseClient client) : super(client, 'pause_periods', primaryKeyColumn: 'pause_id');
   
   @override
   PausePeriodsModel fromJson(Map<String, dynamic> json) {
     return PausePeriodsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(PausePeriodsModel model) {
+    return model.pauseId;
   }
   
   /// Create a type-safe query builder for pause_periods

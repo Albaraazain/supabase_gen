@@ -5,11 +5,16 @@ import '../query_builders/site_photos_query_builder.dart';
 
 
 class SitePhotosRepository extends BaseRepository<SitePhotosModel> {
-  SitePhotosRepository(SupabaseClient client) : super(client, 'site_photos');
+  SitePhotosRepository(SupabaseClient client) : super(client, 'site_photos', primaryKeyColumn: 'photo_id');
   
   @override
   SitePhotosModel fromJson(Map<String, dynamic> json) {
     return SitePhotosModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(SitePhotosModel model) {
+    return model.photoId;
   }
   
   /// Create a type-safe query builder for site_photos

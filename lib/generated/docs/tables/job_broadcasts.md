@@ -10,7 +10,6 @@ No description available for this table.
 |-------|------|----------|---------|-------------|
 | `broadcast_id` | `uuid` | No | uuid_generate_v4() | Primary Key, Not Null |
 | `homeowner_id` | `uuid` | Yes | None | - |
-| `service_id` | `uuid` | Yes | None | - |
 | `title` | `text` | No | None | Not Null |
 | `description` | `text` | Yes | None | - |
 | `address` | `text` | Yes | None | - |
@@ -28,6 +27,7 @@ No description available for this table.
 | `created_at` | `timestamp with time zone` | Yes | now() | - |
 | `updated_at` | `timestamp with time zone` | Yes | now() | - |
 | `expires_at` | `timestamp with time zone` | Yes | None | - |
+| `category_id` | `uuid` | Yes | None | - |
 
 ### One-to-Many Relationships
 

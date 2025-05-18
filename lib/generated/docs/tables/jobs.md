@@ -8,22 +8,26 @@ No description available for this table.
 
 | Field | Type | Nullable | Default | Constraints |
 |-------|------|----------|---------|-------------|
-| `job_id` | `uuid` | No | uuid_generate_v4() | Primary Key, Not Null |
+| `job_id` | `uuid` | No | None | Primary Key, Not Null |
 | `broadcast_id` | `uuid` | Yes | None | - |
 | `homeowner_id` | `uuid` | No | None | Not Null |
-| `professional_id` | `uuid` | No | None | Not Null |
-| `service_id` | `uuid` | No | None | Not Null |
+| `professional_id` | `uuid` | Yes | None | - |
+| `current_stage` | `text` | No | None | Not Null |
+| `created_at` | `timestamp with time zone` | No | now() | Not Null |
+| `updated_at` | `timestamp with time zone` | No | now() | Not Null |
 | `stage_updated_at` | `timestamp with time zone` | Yes | None | - |
 | `scheduled_time` | `timestamp with time zone` | Yes | None | - |
 | `estimated_duration` | `integer` | Yes | None | - |
-| `current_stage` | `text` | No | None | Not Null |
 | `work_started_at` | `timestamp with time zone` | Yes | None | - |
 | `work_paused_at` | `timestamp with time zone` | Yes | None | - |
 | `total_pause_duration` | `text` | Yes | None | - |
-| `created_at` | `timestamp with time zone` | Yes | now() | - |
-| `updated_at` | `timestamp with time zone` | Yes | now() | - |
 | `last_updated_by` | `uuid` | Yes | None | - |
 | `current_session_id` | `uuid` | Yes | None | - |
+| `metadata` | `jsonb` | Yes | None | - |
+| `stage_notes` | `text` | Yes | None | - |
+| `stage_metadata` | `jsonb` | Yes | None | - |
+| `is_active` | `boolean` | No | true | Not Null |
+| `category_id` | `uuid` | No | None | Not Null |
 
 ### One-to-Many Relationships
 

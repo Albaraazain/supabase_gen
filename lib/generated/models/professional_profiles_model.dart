@@ -1,6 +1,16 @@
 import '../utils/geo_json.dart';
 
 /// Generated model class for table professional_profiles
+/// Database triggers associated with this table:
+/// - set_default_business_name: INSERT BEFORE - EXECUTE FUNCTION handle_business_name_default()
+///   Signature: handle_business_name_default() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for handle_business_name_default>
+/// - set_default_business_name: UPDATE BEFORE - EXECUTE FUNCTION handle_business_name_default()
+///   Signature: handle_business_name_default() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for handle_business_name_default>
+///
 class ProfessionalProfilesModel {
   /// Primary key field
   /// Non-nullable field

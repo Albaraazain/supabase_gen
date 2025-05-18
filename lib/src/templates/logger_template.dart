@@ -17,143 +17,108 @@ class LoggerTemplate {
 
   /// Generate a centralized logger utility class
   static String loggerUtility() {
-    return '''import 'package:logging/logging.dart';
+    return '''import 'package:logger/logger.dart';
 
 /// Centralized logging utility for app-wide logging
 class AppLogger {
-  static final Map<String, Logger> _loggers = {};
+  static final Map<String, String> _loggerNames = {};
   static bool _initialized = false;
+  
+  // Single logger instance with custom output
+  static final Logger _logger = Logger(
+    printer: PrettyPrinter(
+      methodCount: 0,
+      errorMethodCount: 8,
+      lineLength: 120,
+      colors: true,
+      printEmojis: true,
+      printTime: true,
+    ),
+  );
   
   /// Initialize the logging system with custom settings
   static void initialize({
-    Level level = Level.INFO,
+    Level? level,
     bool includeCallerInfo = true,
     bool colorize = true,
   }) {
     if (_initialized) return;
     
-    hierarchicalLoggingEnabled = true;
-    Logger.root.level = level;
-    
-    Logger.root.onRecord.listen((record) {
-      final message = _formatLogMessage(record, colorize, includeCallerInfo);
-      print(message);
-    });
+    // Logger is automatically initialized with appropriate defaults
+    // No additional setup required
     
     _initialized = true;
   }
   
-  /// Format log message with optional coloring and caller info
-  static String _formatLogMessage(LogRecord record, bool colorize, bool includeCallerInfo) {
-    final level = record.level.name.padRight(7);
-    final time = record.time.toIso8601String();
-    final loggerName = record.loggerName;
-    final message = record.message;
-    final error = record.error != null ? '\\nERROR: \${record.error}' : '';
-    final stackTrace = record.stackTrace != null ? '\\nSTACKTRACE:\\n\${record.stackTrace}' : '';
-    
-    final callerInfo = includeCallerInfo && record.stackTrace != null
-        ? ' [\${_extractCallerInfo(record.stackTrace.toString())}]'
-        : '';
-        
-    if (colorize) {
-      final color = _getColorForLevel(record.level);
-      return "\${time}: \${color}\${level}\${_RESET} [\${loggerName}]\${callerInfo}: \${message}\${error}\${stackTrace}";
-    } else {
-      return "\${time}: \${level} [\${loggerName}]\${callerInfo}: \${message}\${error}\${stackTrace}";
-    }
-  }
-  
-  /// Extract caller info from stack trace (file:line)
-  static String _extractCallerInfo(String stackTrace) {
-    final lines = stackTrace.split('\\n');
-    if (lines.length > 1) {
-      // Skip first frames which are likely the logging framework
-      for (int i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        if (!line.contains('logging.dart') && 
-            !line.contains('logger.dart') && 
-            !line.contains('app_logger.dart')) {
-          // Extract location info after finding a non-logger frame
-          final fileMatch = RegExp(r'\\((.+?):(\\d+)(?::(\\d+))?\\)').firstMatch(line);
-          if (fileMatch != null) {
-            final file = fileMatch.group(1);
-            final lineNumber = fileMatch.group(2);
-            return "\$file:\$lineNumber";
-          }
-          break;
-        }
-      }
-    }
-    return 'unknown location';
-  }
-  
-  /// Get ANSI color code for log level
-  static String _getColorForLevel(Level level) {
-    if (level == Level.FINEST || level == Level.FINER || level == Level.FINE) {
-      return _CYAN; // Debug levels
-    } else if (level == Level.CONFIG) {
-      return _BLUE; // Config
-    } else if (level == Level.INFO) {
-      return _GREEN; // Info
-    } else if (level == Level.WARNING) {
-      return _YELLOW; // Warning
-    } else if (level == Level.SEVERE) {
-      return _RED; // Error
-    } else if (level == Level.SHOUT) {
-      return _MAGENTA; // Critical
-    }
-    return '';
-  }
-  
-  // ANSI color codes
-  static const String _RESET = '\\x1B[0m';
-  static const String _RED = '\\x1B[31m';
-  static const String _GREEN = '\\x1B[32m';
-  static const String _YELLOW = '\\x1B[33m';
-  static const String _BLUE = '\\x1B[34m';
-  static const String _MAGENTA = '\\x1B[35m';
-  static const String _CYAN = '\\x1B[36m';
-  
-  /// Get or create a named logger
-  static Logger getLogger(String name) {
-    if (_loggers.containsKey(name)) {
-      return _loggers[name]!;
-    }
-    
-    final logger = Logger(name);
-    _loggers[name] = logger;
-    return logger;
+  /// Get logger name for context
+  static String _getLoggerContext(String? loggerName) {
+    return loggerName ?? 'App';
   }
   
   /// Log an info message
   static void info(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
-    final logger = loggerName != null ? getLogger(loggerName) : Logger.root;
-    logger.info(message, error, stackTrace);
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.i('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.i('[\$context] \$message');
+    }
   }
   
   /// Log a debug message
   static void debug(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
-    final logger = loggerName != null ? getLogger(loggerName) : Logger.root;
-    logger.fine(message, error, stackTrace);
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.d('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.d('[\$context] \$message');
+    }
   }
   
   /// Log a warning message
   static void warning(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
-    final logger = loggerName != null ? getLogger(loggerName) : Logger.root;
-    logger.warning(message, error, stackTrace);
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.w('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.w('[\$context] \$message');
+    }
   }
   
   /// Log an error message
   static void error(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
-    final logger = loggerName != null ? getLogger(loggerName) : Logger.root;
-    logger.severe(message, error, stackTrace);
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.e('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.e('[\$context] \$message');
+    }
   }
   
   /// Log a success message (INFO level with checkmark prefix)
   static void success(String message, {String? loggerName}) {
-    final logger = loggerName != null ? getLogger(loggerName) : Logger.root;
-    logger.info('✓ \$message');
+    final context = _getLoggerContext(loggerName);
+    _logger.i('[\$context] ✓ \$message');
+  }
+  
+  /// Log a verbose message (for detailed tracing)
+  static void verbose(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.v('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.v('[\$context] \$message');
+    }
+  }
+  
+  /// Log a wtf message (what a terrible failure)
+  static void wtf(String message, {String? loggerName, Object? error, StackTrace? stackTrace}) {
+    final context = _getLoggerContext(loggerName);
+    if (error != null || stackTrace != null) {
+      _logger.wtf('[\$context] \$message', error: error, stackTrace: stackTrace);
+    } else {
+      _logger.wtf('[\$context] \$message');
+    }
   }
 }
 ''';
@@ -326,8 +291,12 @@ import './repository_logging.dart';
 abstract class BaseRepository<T> {
   final SupabaseClient client;
   final String tableName;
+  final String primaryKeyColumn;
 
-  const BaseRepository(this.client, this.tableName);
+  const BaseRepository(this.client, this.tableName, {this.primaryKeyColumn = 'id'});
+  
+  /// Get primary key value from a model
+  String? getPrimaryKeyValue(T model);
 
   /// Get the base query builder for this table
   SupabaseQueryBuilder get query => client.from(tableName);
@@ -405,15 +374,15 @@ abstract class BaseRepository<T> {
   Future<T?> find(String id) async {
     return await RepositoryLogging.timeOperation(tableName, 'find', () async {
       try {
-        AppLogger.debug('[\$tableName] Finding record with ID: \$id', loggerName: 'Repository');
-        final response = await query.select().eq('id', id).maybeSingle();
+        AppLogger.debug('[\$tableName] Finding record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
+        final response = await query.select().eq(primaryKeyColumn, id).maybeSingle();
         if (response == null) {
-          AppLogger.debug('[\$tableName] No record found with ID: \$id', loggerName: 'Repository');
+          AppLogger.debug('[\$tableName] No record found with \$primaryKeyColumn: \$id', loggerName: 'Repository');
           return null;
         }
         return fromJson(response);
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'find', 'Failed to find record with id=\$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'find', 'Failed to find record with \$primaryKeyColumn=\$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -521,15 +490,15 @@ abstract class BaseRepository<T> {
     return await RepositoryLogging.timeOperation(tableName, 'insert', () async {
       try {
         final dynamic json = (model as dynamic).toJson();
-        if (json is Map<String, dynamic> && json.containsKey('id') && json['id'] == null) {
-          json.remove('id'); // Remove null ID for auto-generation
+        if (json is Map<String, dynamic> && json.containsKey(primaryKeyColumn) && json[primaryKeyColumn] == null) {
+          json.remove(primaryKeyColumn); // Remove null ID for auto-generation
         }
         
         AppLogger.debug('[\$tableName] Inserting new record', loggerName: 'Repository');
         final response = await query.insert(json).select();
         
         if ((response as List<dynamic>).isNotEmpty) {
-          AppLogger.success('[\$tableName] Successfully inserted record with ID: \${response.first['id']}', loggerName: 'Repository');
+          AppLogger.success('[\$tableName] Successfully inserted record with \$primaryKeyColumn: \${response.first[primaryKeyColumn]}', loggerName: 'Repository');
           return fromJson(response.first as Map<String, dynamic>);
         }
         
@@ -549,8 +518,8 @@ abstract class BaseRepository<T> {
         
         final jsonList = models.map((model) {
           final dynamic json = (model as dynamic).toJson();
-          if (json is Map<String, dynamic> && json.containsKey('id') && json['id'] == null) {
-            json.remove('id'); // Remove null ID for auto-generation
+          if (json is Map<String, dynamic> && json.containsKey(primaryKeyColumn) && json[primaryKeyColumn] == null) {
+            json.remove(primaryKeyColumn); // Remove null ID for auto-generation
           }
           return json;
         }).toList();
@@ -570,26 +539,26 @@ abstract class BaseRepository<T> {
   Future<T?> update(T model) async {
     return await RepositoryLogging.timeOperation(tableName, 'update', () async {
       try {
-        final dynamic json = (model as dynamic).toJson();
-        if (json is Map<String, dynamic> && (!json.containsKey('id') || json['id'] == null)) {
-          throw Exception('Cannot update record without ID');
+        final String? id = getPrimaryKeyValue(model);
+        if (id == null) {
+          throw Exception('Cannot update record without primary key value');
         }
         
-        final id = json['id'];
-        AppLogger.debug('[\$tableName] Updating record with ID: \$id', loggerName: 'Repository');
+        final dynamic json = (model as dynamic).toJson();
+        AppLogger.debug('[\$tableName] Updating record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
         
         final response = await query
             .update(json)
-            .eq('id', id)
+            .eq(primaryKeyColumn, id)
             .select();
         
         final results = response as List;
         if (results.isNotEmpty) {
-          AppLogger.success('[\$tableName] Successfully updated record with ID: \$id', loggerName: 'Repository');
+          AppLogger.success('[\$tableName] Successfully updated record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
           return fromJson(results.first);
         }
         
-        AppLogger.warning('[\$tableName] No record found to update with ID: \$id', loggerName: 'Repository');
+        AppLogger.warning('[\$tableName] No record found to update with \$primaryKeyColumn: \$id', loggerName: 'Repository');
         return null;
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'update', 'Failed to update record', error: e, stackTrace: stackTrace);
@@ -641,7 +610,7 @@ abstract class BaseRepository<T> {
         
         final results = response as List;
         if (results.isNotEmpty) {
-          AppLogger.success('[\$tableName] Successfully upserted record with ID: \${results.first['id']}', loggerName: 'Repository');
+          AppLogger.success('[\$tableName] Successfully upserted record with \$primaryKeyColumn: \${results.first[primaryKeyColumn]}', loggerName: 'Repository');
           return fromJson(results.first);
         }
         
@@ -676,11 +645,11 @@ abstract class BaseRepository<T> {
   Future<void> delete(String id) async {
     await RepositoryLogging.timeOperation(tableName, 'delete', () async {
       try {
-        AppLogger.debug('[\$tableName] Deleting record with ID: \$id', loggerName: 'Repository');
-        await query.delete().eq('id', id);
-        AppLogger.success('[\$tableName] Successfully deleted record with ID: \$id', loggerName: 'Repository');
+        AppLogger.debug('[\$tableName] Deleting record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
+        await query.delete().eq(primaryKeyColumn, id);
+        AppLogger.success('[\$tableName] Successfully deleted record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'delete', 'Failed to delete record with id=\$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'delete', 'Failed to delete record with \$primaryKeyColumn=\$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -718,14 +687,14 @@ abstract class BaseRepository<T> {
   Future<bool> exists(String id) async {
     return await RepositoryLogging.timeOperation(tableName, 'exists', () async {
       try {
-        AppLogger.debug('[\$tableName] Checking if record exists with ID: \$id', loggerName: 'Repository');
+        AppLogger.debug('[\$tableName] Checking if record exists with \$primaryKeyColumn: \$id', loggerName: 'Repository');
         final response = await query
-            .select('id')
-            .eq('id', id)
+            .select(primaryKeyColumn)
+            .eq(primaryKeyColumn, id)
             .maybeSingle();
         return response != null;
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'exists', 'Failed to check if record exists with id=\$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'exists', 'Failed to check if record exists with \$primaryKeyColumn=\$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -739,7 +708,7 @@ abstract class BaseRepository<T> {
         
         AppLogger.debug('[\$tableName] Checking if records exist with conditions: \$conditions', loggerName: 'Repository');
         
-        dynamic queryBuilder = query.select('id').limit(1);
+        dynamic queryBuilder = query.select(primaryKeyColumn).limit(1);
         
         // Apply conditions
         conditions.forEach((key, value) {

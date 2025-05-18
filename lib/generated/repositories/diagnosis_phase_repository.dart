@@ -5,11 +5,16 @@ import '../query_builders/diagnosis_phase_query_builder.dart';
 
 
 class DiagnosisPhaseRepository extends BaseRepository<DiagnosisPhaseModel> {
-  DiagnosisPhaseRepository(SupabaseClient client) : super(client, 'diagnosis_phase');
+  DiagnosisPhaseRepository(SupabaseClient client) : super(client, 'diagnosis_phase', primaryKeyColumn: 'job_id');
   
   @override
   DiagnosisPhaseModel fromJson(Map<String, dynamic> json) {
     return DiagnosisPhaseModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(DiagnosisPhaseModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for diagnosis_phase

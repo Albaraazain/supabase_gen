@@ -6,8 +6,12 @@ import './repository_logging.dart';
 abstract class BaseRepository<T> {
   final SupabaseClient client;
   final String tableName;
+  final String primaryKeyColumn;
 
-  const BaseRepository(this.client, this.tableName);
+  const BaseRepository(this.client, this.tableName, {this.primaryKeyColumn = 'id'});
+  
+  /// Get primary key value from a model
+  String? getPrimaryKeyValue(T model);
 
   /// Get the base query builder for this table
   SupabaseQueryBuilder get query => client.from(tableName);
@@ -85,15 +89,15 @@ abstract class BaseRepository<T> {
   Future<T?> find(String id) async {
     return await RepositoryLogging.timeOperation(tableName, 'find', () async {
       try {
-        AppLogger.debug('[$tableName] Finding record with ID: $id', loggerName: 'Repository');
-        final response = await query.select().eq('id', id).maybeSingle();
+        AppLogger.debug('[$tableName] Finding record with $primaryKeyColumn: $id', loggerName: 'Repository');
+        final response = await query.select().eq(primaryKeyColumn, id).maybeSingle();
         if (response == null) {
-          AppLogger.debug('[$tableName] No record found with ID: $id', loggerName: 'Repository');
+          AppLogger.debug('[$tableName] No record found with $primaryKeyColumn: $id', loggerName: 'Repository');
           return null;
         }
         return fromJson(response);
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'find', 'Failed to find record with id=$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'find', 'Failed to find record with $primaryKeyColumn=$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -209,7 +213,7 @@ abstract class BaseRepository<T> {
         final response = await query.insert(json).select();
         
         if ((response as List<dynamic>).isNotEmpty) {
-          AppLogger.success('[$tableName] Successfully inserted record with ID: ${response.first['id']}', loggerName: 'Repository');
+          AppLogger.success('[$tableName] Successfully inserted record with $primaryKeyColumn: ${response.first[primaryKeyColumn]}', loggerName: 'Repository');
           return fromJson(response.first as Map<String, dynamic>);
         }
         
@@ -250,26 +254,26 @@ abstract class BaseRepository<T> {
   Future<T?> update(T model) async {
     return await RepositoryLogging.timeOperation(tableName, 'update', () async {
       try {
-        final dynamic json = (model as dynamic).toJson();
-        if (json is Map<String, dynamic> && (!json.containsKey('id') || json['id'] == null)) {
-          throw Exception('Cannot update record without ID');
+        final String? id = getPrimaryKeyValue(model);
+        if (id == null) {
+          throw Exception('Cannot update record without primary key value');
         }
         
-        final id = json['id'];
-        AppLogger.debug('[$tableName] Updating record with ID: $id', loggerName: 'Repository');
+        final dynamic json = (model as dynamic).toJson();
+        AppLogger.debug('[$tableName] Updating record with $primaryKeyColumn: $id', loggerName: 'Repository');
         
         final response = await query
             .update(json)
-            .eq('id', id)
+            .eq(primaryKeyColumn, id)
             .select();
         
         final results = response as List;
         if (results.isNotEmpty) {
-          AppLogger.success('[$tableName] Successfully updated record with ID: $id', loggerName: 'Repository');
+          AppLogger.success('[$tableName] Successfully updated record with $primaryKeyColumn: $id', loggerName: 'Repository');
           return fromJson(results.first);
         }
         
-        AppLogger.warning('[$tableName] No record found to update with ID: $id', loggerName: 'Repository');
+        AppLogger.warning('[$tableName] No record found to update with $primaryKeyColumn: $id', loggerName: 'Repository');
         return null;
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'update', 'Failed to update record', error: e, stackTrace: stackTrace);
@@ -356,11 +360,11 @@ abstract class BaseRepository<T> {
   Future<void> delete(String id) async {
     await RepositoryLogging.timeOperation(tableName, 'delete', () async {
       try {
-        AppLogger.debug('[$tableName] Deleting record with ID: $id', loggerName: 'Repository');
-        await query.delete().eq('id', id);
-        AppLogger.success('[$tableName] Successfully deleted record with ID: $id', loggerName: 'Repository');
+        AppLogger.debug('[$tableName] Deleting record with $primaryKeyColumn: $id', loggerName: 'Repository');
+        await query.delete().eq(primaryKeyColumn, id);
+        AppLogger.success('[$tableName] Successfully deleted record with $primaryKeyColumn: $id', loggerName: 'Repository');
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'delete', 'Failed to delete record with id=$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'delete', 'Failed to delete record with $primaryKeyColumn=$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -398,14 +402,14 @@ abstract class BaseRepository<T> {
   Future<bool> exists(String id) async {
     return await RepositoryLogging.timeOperation(tableName, 'exists', () async {
       try {
-        AppLogger.debug('[$tableName] Checking if record exists with ID: $id', loggerName: 'Repository');
+        AppLogger.debug('[$tableName] Checking if record exists with $primaryKeyColumn: $id', loggerName: 'Repository');
         final response = await query
-            .select('id')
-            .eq('id', id)
+            .select(primaryKeyColumn)
+            .eq(primaryKeyColumn, id)
             .maybeSingle();
         return response != null;
       } catch (e, stackTrace) {
-        RepositoryLogging.logOperation(tableName, 'exists', 'Failed to check if record exists with id=$id', error: e, stackTrace: stackTrace);
+        RepositoryLogging.logOperation(tableName, 'exists', 'Failed to check if record exists with $primaryKeyColumn=$id', error: e, stackTrace: stackTrace);
         rethrow;
       }
     });
@@ -419,7 +423,7 @@ abstract class BaseRepository<T> {
         
         AppLogger.debug('[$tableName] Checking if records exist with conditions: $conditions', loggerName: 'Repository');
         
-        dynamic queryBuilder = query.select('id').limit(1);
+        dynamic queryBuilder = query.select(primaryKeyColumn).limit(1);
         
         // Apply conditions
         conditions.forEach((key, value) {

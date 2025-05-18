@@ -1,88 +1,72 @@
-/// Logger initialization for generated Supabase code
+// Generated logger initialization code
+import 'package:logger/logger.dart';
+import './utils/app_logger.dart';
 
-import 'dart:developer' as developer;
-
-/// Initialize the logging system for generated Supabase code
-/// 
-/// Call this method early in your application startup to ensure
-/// proper logging for database operations.
-/// 
-/// ```dart
-/// void main() {
-///   initSupabaseLogger();
-///   runApp(MyApp());
-/// }
-/// ```
-void initSupabaseLogger() {
-  developer.log('Initializing Supabase Gen logger');
-  
-  // Any additional logger initialization can be added here
-  // in future versions (e.g., custom log levels, filters)
-}
-
-/// Log a Supabase database operation
-/// 
-/// This is used internally by generated code to provide
-/// consistent logging for database operations.
-void logSupabaseOperation(String operation, String table, {String? details, Object? error}) {
-  final timestamp = DateTime.now().toIso8601String();
-  
-  if (error != null) {
-    developer.log(
-      '[$timestamp] ERROR: $operation on $table - $details',
-      error: error,
-      name: 'supabase.db',
-    );
-  } else {
-    developer.log(
-      '[$timestamp] $operation on $table${details != null ? " - $details" : ""}',
-      name: 'supabase.db',
-    );
-  }
-}
-
-/// Enable detailed logging for database operations
-/// 
-/// This turns on SQL query logging and detailed timing information.
-/// Use this during development for debugging purposes.
-/// 
-/// ```dart
-/// // During development
-/// void main() {
-///   initSupabaseLogger();
-///   enableVerboseLogging(true);
-///   runApp(MyApp());
-/// }
-/// ```
-void enableVerboseLogging(bool enabled) {
-  _verboseLoggingEnabled = enabled;
-  developer.log(
-    'Verbose logging ${enabled ? "enabled" : "disabled"} for Supabase Gen',
-    name: 'supabase.config',
+/// Initialize all logging for the application
+void initializeLogging({
+  Level? level, 
+  bool colorize = true,
+  bool includeCallerInfo = true,
+}) {
+  AppLogger.initialize(
+    level: level,
+    includeCallerInfo: includeCallerInfo,
+    colorize: colorize,
   );
-}
 
-/// Whether verbose logging is enabled
-bool _verboseLoggingEnabled = false;
-
-/// Check if verbose logging is enabled
-bool isVerboseLoggingEnabled() => _verboseLoggingEnabled;
-
-/// Add trigger function name to errors when applicable
-/// 
-/// The trigger detection system will check error messages for function names
-/// from database triggers to help with debugging trigger-related errors.
-/// 
-/// For example, if an error occurs in a trigger function, this will help
-/// identify which trigger function caused the problem.
-String enhanceErrorWithTriggerInfo(String table, String errorMessage) {
-  // This method can be expanded in the future to include more sophisticated
-  // trigger detection and error enhancement.
-  
-  // Simple placeholder implementation
-  if (errorMessage.contains('violates trigger')) {
-    return 'Trigger error on $table: $errorMessage';
-  }
-  
-  return errorMessage;
+  // Example usage in your application:
+  //
+  // 1. In your app's main() function:
+  // ```dart
+  // void main() {
+  //   // Initialize logging with more detailed logs during development
+  //   initializeLogging(
+  //     level: kDebugMode ? Level.FINE : Level.INFO,
+  //     colorize: true,
+  //   );
+  //   runApp(MyApp());
+  // }
+  // ```
+  //
+  // 2. The repositories and providers already use logging extensively.
+  //
+  // 3. In your own code, use these methods:
+  // ```dart
+  //   // For informational messages:
+  //   AppLogger.info('User logged in', loggerName: 'Auth');
+  //
+  //   // For debug messages (only shown if level is FINE or lower):
+  //   AppLogger.debug('Processing item $id', loggerName: 'SyncService');
+  //
+  //   // For warnings:
+  //   AppLogger.warning('Rate limit approaching', loggerName: 'API');
+  //
+  //   // For errors with stack traces:
+  //   try {
+  //     // Some code that might throw
+  //   } catch (e, stackTrace) {
+  //     AppLogger.error(
+  //       'Failed to process data', 
+  //       loggerName: 'DataProcessor', 
+  //       error: e, 
+  //       stackTrace: stackTrace
+  //     );
+  //   }
+  //
+  //   // For success messages (with checkmark):
+  //   AppLogger.success('Data synchronized successfully', loggerName: 'SyncService');
+  // ```
+  //
+  // 4. For operations that need timing:
+  // ```dart
+  //   // Use the RepositoryLogging extension:
+  //   final result = await RepositoryLogging.timeOperation(
+  //     'UserRepository', 
+  //     'fetchProfileData', 
+  //     () async {
+  //       // Your expensive operation here
+  //       return await someExpensiveOperation();
+  //     }
+  //   );
+  // ```
 }

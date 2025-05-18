@@ -78,6 +78,18 @@ class RepositoryGenerator {
     _logger.info('Generated repository file: $filePath');
   }
 
+  /// Get the primary key column name for a table
+  String _getPrimaryKeyColumn(TableInfo table) {
+    // Get all primary key columns
+    final primaryKeys = table.primaryKeys;
+    if (primaryKeys.isNotEmpty) {
+      // Return the first primary key column name
+      return primaryKeys.first.name;
+    }
+    // Default to 'id' if no primary key is explicitly defined
+    return 'id';
+  }
+
   String _generateRepositoryClass(
     TableInfo table, 
     String className, 
@@ -113,11 +125,16 @@ class RepositoryGenerator {
     return '''$imports
 
 class $className extends BaseRepository<$modelClassName> {
-  $className(SupabaseClient client) : super(client, '${table.name}');
+  $className(SupabaseClient client) : super(client, '${table.name}', primaryKeyColumn: '${_getPrimaryKeyColumn(table)}');
   
   @override
   $modelClassName fromJson(Map<String, dynamic> json) {
     return $modelClassName.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue($modelClassName model) {
+    return model.${StringUtils.toCamelCase(_getPrimaryKeyColumn(table))};
   }
 ${triggersDoc.isNotEmpty ? '\n$triggersDoc\n' : ''}  
   /// Create a type-safe query builder for ${table.name}
@@ -798,6 +815,8 @@ $exports
 ''';
   }
   
+  // This method has been moved to the top of the class
+
   /// Format trigger documentation with enhanced function details
   String _formatTriggerDocumentation(TriggerInfo trigger) {
     // Basic trigger info with proper indentation for repositories

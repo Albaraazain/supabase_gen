@@ -60,21 +60,6 @@ class JobBroadcastsModelQueryBuilder {
   
   
 
-  /// Filter by service_id
-  JobBroadcastsModelQueryBuilder whereServiceId(String? value) {
-    _queryBuilder = _queryBuilder.eq('service_id', value);
-    return this;
-  }
-  
-  /// Filter by service_id with multiple values (IN operator)
-  JobBroadcastsModelQueryBuilder whereServiceIdIn(List<String> values) {
-    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
-    _queryBuilder = _queryBuilder.inFilter('service_id', values);
-    return this;
-  }
-  
-  
-
   /// Filter by title
   JobBroadcastsModelQueryBuilder whereTitle(String value) {
     _queryBuilder = _queryBuilder.eq('title', value);
@@ -553,6 +538,21 @@ class JobBroadcastsModelQueryBuilder {
     _queryBuilder = _queryBuilder.gte('expires_at', min).lte('expires_at', max);
     return this;
   }
+
+  /// Filter by category_id
+  JobBroadcastsModelQueryBuilder whereCategoryId(String? value) {
+    _queryBuilder = _queryBuilder.eq('category_id', value);
+    return this;
+  }
+  
+  /// Filter by category_id with multiple values (IN operator)
+  JobBroadcastsModelQueryBuilder whereCategoryIdIn(List<String> values) {
+    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
+    _queryBuilder = _queryBuilder.inFilter('category_id', values);
+    return this;
+  }
+  
+  
   
   /// Order by broadcast_id in ascending order
   JobBroadcastsModelQueryBuilder orderByBroadcastIdAsc() {
@@ -575,18 +575,6 @@ class JobBroadcastsModelQueryBuilder {
   /// Order by homeowner_id in descending order
   JobBroadcastsModelQueryBuilder orderByHomeownerIdDesc() {
     _queryBuilder = _queryBuilder.order('homeowner_id', ascending: false);
-    return this;
-  }
-
-  /// Order by service_id in ascending order
-  JobBroadcastsModelQueryBuilder orderByServiceIdAsc() {
-    _queryBuilder = _queryBuilder.order('service_id', ascending: true);
-    return this;
-  }
-  
-  /// Order by service_id in descending order
-  JobBroadcastsModelQueryBuilder orderByServiceIdDesc() {
-    _queryBuilder = _queryBuilder.order('service_id', ascending: false);
     return this;
   }
 
@@ -791,6 +779,18 @@ class JobBroadcastsModelQueryBuilder {
   /// Order by expires_at in descending order
   JobBroadcastsModelQueryBuilder orderByExpiresAtDesc() {
     _queryBuilder = _queryBuilder.order('expires_at', ascending: false);
+    return this;
+  }
+
+  /// Order by category_id in ascending order
+  JobBroadcastsModelQueryBuilder orderByCategoryIdAsc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: true);
+    return this;
+  }
+  
+  /// Order by category_id in descending order
+  JobBroadcastsModelQueryBuilder orderByCategoryIdDesc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: false);
     return this;
   }
   

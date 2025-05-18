@@ -5,11 +5,16 @@ import '../query_builders/work_timeline_events_query_builder.dart';
 
 
 class WorkTimelineEventsRepository extends BaseRepository<WorkTimelineEventsModel> {
-  WorkTimelineEventsRepository(SupabaseClient client) : super(client, 'work_timeline_events');
+  WorkTimelineEventsRepository(SupabaseClient client) : super(client, 'work_timeline_events', primaryKeyColumn: 'event_id');
   
   @override
   WorkTimelineEventsModel fromJson(Map<String, dynamic> json) {
     return WorkTimelineEventsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(WorkTimelineEventsModel model) {
+    return model.eventId;
   }
   
   /// Create a type-safe query builder for work_timeline_events

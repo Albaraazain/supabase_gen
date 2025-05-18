@@ -5,12 +5,27 @@ import '../query_builders/service_quotes_query_builder.dart';
 
 
 class ServiceQuotesRepository extends BaseRepository<ServiceQuotesModel> {
-  ServiceQuotesRepository(SupabaseClient client) : super(client, 'service_quotes');
+  ServiceQuotesRepository(SupabaseClient client) : super(client, 'service_quotes', primaryKeyColumn: 'quote_id');
   
   @override
   ServiceQuotesModel fromJson(Map<String, dynamic> json) {
     return ServiceQuotesModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(ServiceQuotesModel model) {
+    return model.quoteId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - update_quote_totals: INSERT BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+  ///   Signature: calculate_quote_totals() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for calculate_quote_totals>
+  /// - update_quote_totals: UPDATE BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+  ///   Signature: calculate_quote_totals() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for calculate_quote_totals>
   
   /// Create a type-safe query builder for service_quotes
   /// 

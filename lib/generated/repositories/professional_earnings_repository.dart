@@ -5,11 +5,16 @@ import '../query_builders/professional_earnings_query_builder.dart';
 
 
 class ProfessionalEarningsRepository extends BaseRepository<ProfessionalEarningsModel> {
-  ProfessionalEarningsRepository(SupabaseClient client) : super(client, 'professional_earnings');
+  ProfessionalEarningsRepository(SupabaseClient client) : super(client, 'professional_earnings', primaryKeyColumn: 'earning_id');
   
   @override
   ProfessionalEarningsModel fromJson(Map<String, dynamic> json) {
     return ProfessionalEarningsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ProfessionalEarningsModel model) {
+    return model.earningId;
   }
   
   /// Create a type-safe query builder for professional_earnings

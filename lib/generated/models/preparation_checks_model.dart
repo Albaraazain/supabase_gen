@@ -1,5 +1,11 @@
 
 /// Generated model class for table preparation_checks
+/// Database triggers associated with this table:
+/// - update_preparation_checks_updated_at: UPDATE BEFORE - EXECUTE FUNCTION update_preparation_checks_updated_at()
+///   Signature: update_preparation_checks_updated_at() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_preparation_checks_updated_at>
+///
 class PreparationChecksModel {
   /// Primary key field
   /// Non-nullable field

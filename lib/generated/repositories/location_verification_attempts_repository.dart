@@ -5,11 +5,16 @@ import '../query_builders/location_verification_attempts_query_builder.dart';
 
 
 class LocationVerificationAttemptsRepository extends BaseRepository<LocationVerificationAttemptsModel> {
-  LocationVerificationAttemptsRepository(SupabaseClient client) : super(client, 'location_verification_attempts');
+  LocationVerificationAttemptsRepository(SupabaseClient client) : super(client, 'location_verification_attempts', primaryKeyColumn: 'attempt_id');
   
   @override
   LocationVerificationAttemptsModel fromJson(Map<String, dynamic> json) {
     return LocationVerificationAttemptsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(LocationVerificationAttemptsModel model) {
+    return model.attemptId;
   }
   
   /// Create a type-safe query builder for location_verification_attempts

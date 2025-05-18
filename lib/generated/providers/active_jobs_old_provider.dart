@@ -1,25 +1,35 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 
-import '../models/active_jobs_model.dart';
-import '../repositories/active_jobs_repository.dart';
+import '../models/active_jobs_old_model.dart';
+import '../repositories/active_jobs_old_repository.dart';
 import '../shared/errors/app_exception.dart';
 import '../utils/app_logger.dart';
 import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - active_job_stage_change: UPDATE BEFORE - EXECUTE FUNCTION handle_stage_transition()
+///   Signature: handle_stage_transition() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for handle_stage_transition>
+/// - set_stage_updated_at: UPDATE BEFORE - EXECUTE FUNCTION update_stage_updated_at()
+///   Signature: update_stage_updated_at() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_stage_updated_at>
+
 // Repository provider
-final activeJobsRepositoryProvider = Provider<ActiveJobsRepository>((ref) {
-  AppLogger.debug('Creating ActiveJobsRepository instance', loggerName: 'Provider');
-  return ActiveJobsRepository(Supabase.instance.client);
+final activeJobsOldRepositoryProvider = Provider<ActiveJobsOldRepository>((ref) {
+  AppLogger.debug('Creating ActiveJobsOldRepository instance', loggerName: 'Provider');
+  return ActiveJobsOldRepository(Supabase.instance.client);
 });
 
-// Main provider for managing active_jobs data
-final activeJobsProvider = StateNotifierProvider<ActiveJobsNotifier, AsyncValue<List<ActiveJobsModel>>>((ref) {
-  final repository = ref.watch(activeJobsRepositoryProvider);
-  AppLogger.debug('Creating ActiveJobsNotifier', loggerName: 'Provider');
-  return ActiveJobsNotifier(repository);
+// Main provider for managing active_jobs_old data
+final activeJobsOldProvider = StateNotifierProvider<ActiveJobsOldNotifier, AsyncValue<List<ActiveJobsOldModel>>>((ref) {
+  final repository = ref.watch(activeJobsOldRepositoryProvider);
+  AppLogger.debug('Creating ActiveJobsOldNotifier', loggerName: 'Provider');
+  return ActiveJobsOldNotifier(repository);
 });
 
 // Helper to create a stable cache key from filters
@@ -33,45 +43,45 @@ String _createCacheKey(Map<String, dynamic> filters) {
     parts.add('$key=${value?.toString() ?? 'null'}');
   }
   
-  return 'active_jobs:${parts.join(',')}';
+  return 'active_jobs_old:${parts.join(',')}';
 }
 
-// Provider to get a single active_jobs by ID with caching
-final activeJobsByIdProvider = FutureProvider.family<ActiveJobsModel?, String>((ref, id) async {
+// Provider to get a single active_jobs_old by ID with caching
+final activeJobsOldByIdProvider = FutureProvider.family<ActiveJobsOldModel?, String>((ref, id) async {
   // Create a stable cache key for this ID lookup
-  final cacheKey = 'active_jobs:id:$id';
+  final cacheKey = 'active_jobs_old:id:$id';
   
-  AppLogger.debug('activeJobsByIdProvider called with id: $id', loggerName: 'Provider');
-  final repository = ref.watch(activeJobsRepositoryProvider);
+  AppLogger.debug('activeJobsOldByIdProvider called with id: $id', loggerName: 'Provider');
+  final repository = ref.watch(activeJobsOldRepositoryProvider);
   
   try {
     // Use the app cache to prevent redundant database calls
-    final result = await AppCache().getOrFetch<ActiveJobsModel?>(
+    final result = await AppCache().getOrFetch<ActiveJobsOldModel?>(
       cacheKey,
       () => repository.find(id),
       duration: const Duration(minutes: 2), // Cache items briefly
     );
     
     if (result == null) {
-      AppLogger.warning('No active_job found with ID: $id', loggerName: 'Provider');
+      AppLogger.warning('No active_jobs_old found with ID: $id', loggerName: 'Provider');
     } else {
-      AppLogger.debug('Found active_job with ID: $id', loggerName: 'Provider');
+      AppLogger.debug('Found active_jobs_old with ID: $id', loggerName: 'Provider');
     }
     
     return result;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsById');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOldById');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
 
-// Provider to get filtered active_jobs with proper caching
-final filteredActiveJobsProvider = FutureProvider.family<List<ActiveJobsModel>, Map<String, dynamic>>((ref, filters) async {
+// Provider to get filtered active_jobs_old with proper caching
+final filteredActiveJobsOldProvider = FutureProvider.family<List<ActiveJobsOldModel>, Map<String, dynamic>>((ref, filters) async {
   // Create a stable cache key from the filters
   final cacheKey = _createCacheKey(filters);
   
-  AppLogger.debug('filteredActiveJobsProvider called with key: $cacheKey', loggerName: 'Provider');
-  final repository = ref.watch(activeJobsRepositoryProvider);
+  AppLogger.debug('filteredActiveJobsOldProvider called with key: $cacheKey', loggerName: 'Provider');
+  final repository = ref.watch(activeJobsOldRepositoryProvider);
   
   try {
     // Check if any filter contains a list of values
@@ -88,7 +98,7 @@ final filteredActiveJobsProvider = FutureProvider.family<List<ActiveJobsModel>, 
       }
     });
     
-    final results = await AppCache().getOrFetch<List<ActiveJobsModel>>(
+    final results = await AppCache().getOrFetch<List<ActiveJobsOldModel>>(
       cacheKey,
       () async {
         // If we have a field with a list of values, use whereIn for better performance
@@ -120,10 +130,10 @@ final filteredActiveJobsProvider = FutureProvider.family<List<ActiveJobsModel>, 
       duration: const Duration(seconds: 30), // Short cache time to stay fresh
     );
     
-    AppLogger.debug('filteredActiveJobsProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
+    AppLogger.debug('filteredActiveJobsOldProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
     return results;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredActiveJobs');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredActiveJobsOld');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
@@ -160,33 +170,33 @@ dynamic _getFieldValue(dynamic model, String fieldName) {
   }
 }
 
-/// Notifier class that handles active_jobs operations
-class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>> {
-  final ActiveJobsRepository _repository;
+/// Notifier class that handles active_jobs_old operations
+class ActiveJobsOldNotifier extends StateNotifier<AsyncValue<List<ActiveJobsOldModel>>> {
+  final ActiveJobsOldRepository _repository;
 
-  ActiveJobsNotifier(this._repository) : super(const AsyncValue.loading()) {
+  ActiveJobsOldNotifier(this._repository) : super(const AsyncValue.loading()) {
     // Load initial data when created
     _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
     try {
-      AppLogger.debug('Loading initial active_jobs data', loggerName: 'Provider');
+      AppLogger.debug('Loading initial active_jobs_old data', loggerName: 'Provider');
       final results = await _repository.findAll();
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Loaded initial data', details: '${results.length} records');
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Loaded initial data', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
       }
     }
   }
 
-  /// Fetch all active_jobs with basic sorting and filtering
-  Future<List<ActiveJobsModel>> fetchAll({
+  /// Fetch all active_jobs_old with basic sorting and filtering
+  Future<List<ActiveJobsOldModel>> fetchAll({
     String? orderBy,
     bool ascending = true,
     Map<String, dynamic>? filters,
@@ -194,7 +204,7 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
     int? offset,
   }) async {
     try {
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Fetching data', 
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Fetching data', 
         details: 'filters: $filters, orderBy: $orderBy, limit: $limit, offset: $offset');
       
       // Create a cache key if filters are provided
@@ -207,9 +217,9 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
       state = const AsyncValue.loading();
       
       // Use cache if filters are provided, otherwise fetch directly
-      final List<ActiveJobsModel> results;
+      final List<ActiveJobsOldModel> results;
       if (cacheKey != null) {
-        results = await AppCache().getOrFetch<List<ActiveJobsModel>>(
+        results = await AppCache().getOrFetch<List<ActiveJobsOldModel>>(
           cacheKey,
           () => _repository.findAll(
             orderBy: orderBy,
@@ -232,7 +242,7 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Data fetched', details: '${results.length} records');
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Data fetched', details: '${results.length} records');
       }
       
       return results;
@@ -241,78 +251,78 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
         state = AsyncValue.error(e, stackTrace);
       }
       
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobs');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOld');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Get a single record by ID with caching
-  Future<ActiveJobsModel?> getById(String id) async {
+  Future<ActiveJobsOldModel?> getById(String id) async {
     try {
       // Create a stable cache key
-      final cacheKey = 'active_jobs:id:$id';
+      final cacheKey = 'active_jobs_old:id:$id';
       
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Getting record by ID', details: 'id: $id');
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Getting record by ID', details: 'id: $id');
       
       // Use app cache for efficient data access
-      final result = await AppCache().getOrFetch<ActiveJobsModel?>(
+      final result = await AppCache().getOrFetch<ActiveJobsOldModel?>(
         cacheKey,
         () => _repository.find(id),
         duration: const Duration(minutes: 2),
       );
       
       if (result == null) {
-        AppLogger.warning('No active_job found with ID: $id', loggerName: 'Provider');
+        AppLogger.warning('No active_jobs_old found with ID: $id', loggerName: 'Provider');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobs');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOld');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Create a new record
-  Future<ActiveJobsModel> create(ActiveJobsModel model) async {
+  Future<ActiveJobsOldModel> create(ActiveJobsOldModel model) async {
     try {
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Creating record');
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Creating record');
       final result = await _repository.insert(model);
       
       // Clear any cached list results that might contain this entity
-      AppLogger.debug('Clearing active_jobs list caches after create', loggerName: 'Provider');
+      AppLogger.debug('Clearing active_jobs_old list caches after create', loggerName: 'Provider');
       _clearRelatedCaches(result);
       
       // Update state with new data
       if (mounted) {
         final currentData = state.valueOrNull ?? [];
         state = AsyncValue.data([...currentData, result]);
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Record created', details: 'id: ${result.id}');
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Record created', details: 'id: ${result.id}');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobs');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOld');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Update an existing record
-  Future<ActiveJobsModel?> update(ActiveJobsModel model) async {
+  Future<ActiveJobsOldModel?> update(ActiveJobsOldModel model) async {
     try {
       final modelId = model.id;
       if (modelId.isEmpty) {
-        const message = 'Cannot update active_job without ID';
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Update failed', details: message);
+        const message = 'Cannot update active_jobs_old without ID';
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Update failed', details: message);
         throw AppException(message: message);
       }
       
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Updating record', details: 'id: $modelId');
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Updating record', details: 'id: $modelId');
       final result = await _repository.update(model);
       
       // Clear related caches
       if (result != null) {
         // Clear both the specific ID cache and list caches
-        final idCacheKey = 'active_jobs:id:$modelId';
+        final idCacheKey = 'active_jobs_old:id:$modelId';
         AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
         AppCache().remove(idCacheKey);
         
@@ -329,13 +339,13 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
           final updated = [...currentList];
           updated[index] = result;
           state = AsyncValue.data(updated);
-          ProviderLogging.logStateChange('ActiveJobsNotifier', 'Record updated', details: 'id: $modelId');
+          ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Record updated', details: 'id: $modelId');
         }
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobs');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOld');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
@@ -343,16 +353,16 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
   /// Delete a record
   Future<void> delete(String id) async {
     try {
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Deleting record', details: 'id: $id');
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Deleting record', details: 'id: $id');
       await _repository.delete(id);
       
       // Clear cache entries for this ID
-      final idCacheKey = 'active_jobs:id:$id';
+      final idCacheKey = 'active_jobs_old:id:$id';
       AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
       AppCache().remove(idCacheKey);
       
       // Clear list caches that might contain this entity (using a prefix)
-      final prefix = 'active_jobs:';
+      final prefix = 'active_jobs_old:';
       AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -367,17 +377,17 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
         state = AsyncValue.data(
           currentList.where((item) => item.id != id).toList(),
         );
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Record deleted', details: 'id: $id');
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Record deleted', details: 'id: $id');
       }
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobs');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ActiveJobsOld');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Clear caches related to this entity
-  void _clearRelatedCaches(ActiveJobsModel entity) {
-    final prefix = 'active_jobs:';
+  void _clearRelatedCaches(ActiveJobsOldModel entity) {
+    final prefix = 'active_jobs_old:';
     AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
     
     // Scan all keys in the cache
@@ -400,13 +410,13 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
   /// Refresh data from the server
   Future<void> refresh() async {
     try {
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Refreshing data');
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Refreshing data');
       if (mounted) {
         state = const AsyncValue.loading();
       }
       
       // Clear all caches related to this entity type
-      final prefix = 'active_jobs:';
+      final prefix = 'active_jobs_old:';
       AppLogger.debug('Clearing all caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -419,13 +429,13 @@ class ActiveJobsNotifier extends StateNotifier<AsyncValue<List<ActiveJobsModel>>
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ActiveJobsNotifier', 'Data refreshed', details: '${results.length} records');
+        ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Data refreshed', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
       }
-      ProviderLogging.logStateChange('ActiveJobsNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
+      ProviderLogging.logStateChange('ActiveJobsOldNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
     }
   }
 }

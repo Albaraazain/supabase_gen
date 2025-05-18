@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 
-import '../models/users_model.dart';
-import '../repositories/users_repository.dart';
+import '../models/profile_base_model.dart';
+import '../repositories/profile_base_repository.dart';
 import '../shared/errors/app_exception.dart';
 import '../utils/app_logger.dart';
 import '../utils/app_cache.dart';
@@ -10,16 +10,16 @@ import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
 // Repository provider
-final usersRepositoryProvider = Provider<UsersRepository>((ref) {
-  AppLogger.debug('Creating UsersRepository instance', loggerName: 'Provider');
-  return UsersRepository(Supabase.instance.client);
+final profileBaseRepositoryProvider = Provider<ProfileBaseRepository>((ref) {
+  AppLogger.debug('Creating ProfileBaseRepository instance', loggerName: 'Provider');
+  return ProfileBaseRepository(Supabase.instance.client);
 });
 
-// Main provider for managing users data
-final usersProvider = StateNotifierProvider<UsersNotifier, AsyncValue<List<UsersModel>>>((ref) {
-  final repository = ref.watch(usersRepositoryProvider);
-  AppLogger.debug('Creating UsersNotifier', loggerName: 'Provider');
-  return UsersNotifier(repository);
+// Main provider for managing profile_base data
+final profileBaseProvider = StateNotifierProvider<ProfileBaseNotifier, AsyncValue<List<ProfileBaseModel>>>((ref) {
+  final repository = ref.watch(profileBaseRepositoryProvider);
+  AppLogger.debug('Creating ProfileBaseNotifier', loggerName: 'Provider');
+  return ProfileBaseNotifier(repository);
 });
 
 // Helper to create a stable cache key from filters
@@ -33,45 +33,45 @@ String _createCacheKey(Map<String, dynamic> filters) {
     parts.add('$key=${value?.toString() ?? 'null'}');
   }
   
-  return 'users:${parts.join(',')}';
+  return 'profile_base:${parts.join(',')}';
 }
 
-// Provider to get a single users by ID with caching
-final usersByIdProvider = FutureProvider.family<UsersModel?, String>((ref, id) async {
+// Provider to get a single profile_base by ID with caching
+final profileBaseByIdProvider = FutureProvider.family<ProfileBaseModel?, String>((ref, id) async {
   // Create a stable cache key for this ID lookup
-  final cacheKey = 'users:id:$id';
+  final cacheKey = 'profile_base:id:$id';
   
-  AppLogger.debug('usersByIdProvider called with id: $id', loggerName: 'Provider');
-  final repository = ref.watch(usersRepositoryProvider);
+  AppLogger.debug('profileBaseByIdProvider called with id: $id', loggerName: 'Provider');
+  final repository = ref.watch(profileBaseRepositoryProvider);
   
   try {
     // Use the app cache to prevent redundant database calls
-    final result = await AppCache().getOrFetch<UsersModel?>(
+    final result = await AppCache().getOrFetch<ProfileBaseModel?>(
       cacheKey,
       () => repository.find(id),
       duration: const Duration(minutes: 2), // Cache items briefly
     );
     
     if (result == null) {
-      AppLogger.warning('No user found with ID: $id', loggerName: 'Provider');
+      AppLogger.warning('No profile_base found with ID: $id', loggerName: 'Provider');
     } else {
-      AppLogger.debug('Found user with ID: $id', loggerName: 'Provider');
+      AppLogger.debug('Found profile_base with ID: $id', loggerName: 'Provider');
     }
     
     return result;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'UsersById');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBaseById');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
 
-// Provider to get filtered users with proper caching
-final filteredUsersProvider = FutureProvider.family<List<UsersModel>, Map<String, dynamic>>((ref, filters) async {
+// Provider to get filtered profile_base with proper caching
+final filteredProfileBaseProvider = FutureProvider.family<List<ProfileBaseModel>, Map<String, dynamic>>((ref, filters) async {
   // Create a stable cache key from the filters
   final cacheKey = _createCacheKey(filters);
   
-  AppLogger.debug('filteredUsersProvider called with key: $cacheKey', loggerName: 'Provider');
-  final repository = ref.watch(usersRepositoryProvider);
+  AppLogger.debug('filteredProfileBaseProvider called with key: $cacheKey', loggerName: 'Provider');
+  final repository = ref.watch(profileBaseRepositoryProvider);
   
   try {
     // Check if any filter contains a list of values
@@ -88,7 +88,7 @@ final filteredUsersProvider = FutureProvider.family<List<UsersModel>, Map<String
       }
     });
     
-    final results = await AppCache().getOrFetch<List<UsersModel>>(
+    final results = await AppCache().getOrFetch<List<ProfileBaseModel>>(
       cacheKey,
       () async {
         // If we have a field with a list of values, use whereIn for better performance
@@ -120,10 +120,10 @@ final filteredUsersProvider = FutureProvider.family<List<UsersModel>, Map<String
       duration: const Duration(seconds: 30), // Short cache time to stay fresh
     );
     
-    AppLogger.debug('filteredUsersProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
+    AppLogger.debug('filteredProfileBaseProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
     return results;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredUsers');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredProfileBase');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
@@ -160,33 +160,33 @@ dynamic _getFieldValue(dynamic model, String fieldName) {
   }
 }
 
-/// Notifier class that handles users operations
-class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
-  final UsersRepository _repository;
+/// Notifier class that handles profile_base operations
+class ProfileBaseNotifier extends StateNotifier<AsyncValue<List<ProfileBaseModel>>> {
+  final ProfileBaseRepository _repository;
 
-  UsersNotifier(this._repository) : super(const AsyncValue.loading()) {
+  ProfileBaseNotifier(this._repository) : super(const AsyncValue.loading()) {
     // Load initial data when created
     _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
     try {
-      AppLogger.debug('Loading initial users data', loggerName: 'Provider');
+      AppLogger.debug('Loading initial profile_base data', loggerName: 'Provider');
       final results = await _repository.findAll();
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('UsersNotifier', 'Loaded initial data', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Loaded initial data', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
-        ProviderLogging.logStateChange('UsersNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
       }
     }
   }
 
-  /// Fetch all users with basic sorting and filtering
-  Future<List<UsersModel>> fetchAll({
+  /// Fetch all profile_base with basic sorting and filtering
+  Future<List<ProfileBaseModel>> fetchAll({
     String? orderBy,
     bool ascending = true,
     Map<String, dynamic>? filters,
@@ -194,7 +194,7 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
     int? offset,
   }) async {
     try {
-      ProviderLogging.logStateChange('UsersNotifier', 'Fetching data', 
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Fetching data', 
         details: 'filters: $filters, orderBy: $orderBy, limit: $limit, offset: $offset');
       
       // Create a cache key if filters are provided
@@ -207,9 +207,9 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
       state = const AsyncValue.loading();
       
       // Use cache if filters are provided, otherwise fetch directly
-      final List<UsersModel> results;
+      final List<ProfileBaseModel> results;
       if (cacheKey != null) {
-        results = await AppCache().getOrFetch<List<UsersModel>>(
+        results = await AppCache().getOrFetch<List<ProfileBaseModel>>(
           cacheKey,
           () => _repository.findAll(
             orderBy: orderBy,
@@ -232,7 +232,7 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('UsersNotifier', 'Data fetched', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Data fetched', details: '${results.length} records');
       }
       
       return results;
@@ -241,78 +241,78 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
         state = AsyncValue.error(e, stackTrace);
       }
       
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Users');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBase');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Get a single record by ID with caching
-  Future<UsersModel?> getById(String id) async {
+  Future<ProfileBaseModel?> getById(String id) async {
     try {
       // Create a stable cache key
-      final cacheKey = 'users:id:$id';
+      final cacheKey = 'profile_base:id:$id';
       
-      ProviderLogging.logStateChange('UsersNotifier', 'Getting record by ID', details: 'id: $id');
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Getting record by ID', details: 'id: $id');
       
       // Use app cache for efficient data access
-      final result = await AppCache().getOrFetch<UsersModel?>(
+      final result = await AppCache().getOrFetch<ProfileBaseModel?>(
         cacheKey,
         () => _repository.find(id),
         duration: const Duration(minutes: 2),
       );
       
       if (result == null) {
-        AppLogger.warning('No user found with ID: $id', loggerName: 'Provider');
+        AppLogger.warning('No profile_base found with ID: $id', loggerName: 'Provider');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Users');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBase');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Create a new record
-  Future<UsersModel> create(UsersModel model) async {
+  Future<ProfileBaseModel> create(ProfileBaseModel model) async {
     try {
-      ProviderLogging.logStateChange('UsersNotifier', 'Creating record');
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Creating record');
       final result = await _repository.insert(model);
       
       // Clear any cached list results that might contain this entity
-      AppLogger.debug('Clearing users list caches after create', loggerName: 'Provider');
+      AppLogger.debug('Clearing profile_base list caches after create', loggerName: 'Provider');
       _clearRelatedCaches(result);
       
       // Update state with new data
       if (mounted) {
         final currentData = state.valueOrNull ?? [];
         state = AsyncValue.data([...currentData, result]);
-        ProviderLogging.logStateChange('UsersNotifier', 'Record created', details: 'id: ${result.id}');
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Record created', details: 'id: ${result.id}');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Users');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBase');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Update an existing record
-  Future<UsersModel?> update(UsersModel model) async {
+  Future<ProfileBaseModel?> update(ProfileBaseModel model) async {
     try {
       final modelId = model.id;
       if (modelId.isEmpty) {
-        const message = 'Cannot update user without ID';
-        ProviderLogging.logStateChange('UsersNotifier', 'Update failed', details: message);
+        const message = 'Cannot update profile_base without ID';
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Update failed', details: message);
         throw AppException(message: message);
       }
       
-      ProviderLogging.logStateChange('UsersNotifier', 'Updating record', details: 'id: $modelId');
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Updating record', details: 'id: $modelId');
       final result = await _repository.update(model);
       
       // Clear related caches
       if (result != null) {
         // Clear both the specific ID cache and list caches
-        final idCacheKey = 'users:id:$modelId';
+        final idCacheKey = 'profile_base:id:$modelId';
         AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
         AppCache().remove(idCacheKey);
         
@@ -329,13 +329,13 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
           final updated = [...currentList];
           updated[index] = result;
           state = AsyncValue.data(updated);
-          ProviderLogging.logStateChange('UsersNotifier', 'Record updated', details: 'id: $modelId');
+          ProviderLogging.logStateChange('ProfileBaseNotifier', 'Record updated', details: 'id: $modelId');
         }
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Users');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBase');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
@@ -343,16 +343,16 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
   /// Delete a record
   Future<void> delete(String id) async {
     try {
-      ProviderLogging.logStateChange('UsersNotifier', 'Deleting record', details: 'id: $id');
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Deleting record', details: 'id: $id');
       await _repository.delete(id);
       
       // Clear cache entries for this ID
-      final idCacheKey = 'users:id:$id';
+      final idCacheKey = 'profile_base:id:$id';
       AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
       AppCache().remove(idCacheKey);
       
       // Clear list caches that might contain this entity (using a prefix)
-      final prefix = 'users:';
+      final prefix = 'profile_base:';
       AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -367,17 +367,17 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
         state = AsyncValue.data(
           currentList.where((item) => item.id != id).toList(),
         );
-        ProviderLogging.logStateChange('UsersNotifier', 'Record deleted', details: 'id: $id');
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Record deleted', details: 'id: $id');
       }
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'Users');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfileBase');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Clear caches related to this entity
-  void _clearRelatedCaches(UsersModel entity) {
-    final prefix = 'users:';
+  void _clearRelatedCaches(ProfileBaseModel entity) {
+    final prefix = 'profile_base:';
     AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
     
     // Scan all keys in the cache
@@ -400,13 +400,13 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
   /// Refresh data from the server
   Future<void> refresh() async {
     try {
-      ProviderLogging.logStateChange('UsersNotifier', 'Refreshing data');
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Refreshing data');
       if (mounted) {
         state = const AsyncValue.loading();
       }
       
       // Clear all caches related to this entity type
-      final prefix = 'users:';
+      final prefix = 'profile_base:';
       AppLogger.debug('Clearing all caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -419,13 +419,13 @@ class UsersNotifier extends StateNotifier<AsyncValue<List<UsersModel>>> {
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('UsersNotifier', 'Data refreshed', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfileBaseNotifier', 'Data refreshed', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
       }
-      ProviderLogging.logStateChange('UsersNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
+      ProviderLogging.logStateChange('ProfileBaseNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
     }
   }
 }

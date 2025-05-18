@@ -5,11 +5,16 @@ import '../query_builders/jobs_query_builder.dart';
 
 
 class JobsRepository extends BaseRepository<JobsModel> {
-  JobsRepository(SupabaseClient client) : super(client, 'jobs');
+  JobsRepository(SupabaseClient client) : super(client, 'jobs', primaryKeyColumn: 'job_id');
   
   @override
   JobsModel fromJson(Map<String, dynamic> json) {
     return JobsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(JobsModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for jobs
@@ -51,11 +56,13 @@ class JobsRepository extends BaseRepository<JobsModel> {
   /// It throws an exception if any constraint is violated.
   void validate(JobsModel model) {
     // Validate check constraints
-    // 2200_17741_1_not_null: Database CHECK constraint
-    // 2200_17741_3_not_null: Database CHECK constraint
-    // 2200_17741_4_not_null: Database CHECK constraint
-    // 2200_17741_5_not_null: Database CHECK constraint
-    // 2200_17741_9_not_null: Database CHECK constraint
+    // 2200_22720_1_not_null: Database CHECK constraint
+    // 2200_22720_20_not_null: Database CHECK constraint
+    // 2200_22720_21_not_null: Database CHECK constraint
+    // 2200_22720_3_not_null: Database CHECK constraint
+    // 2200_22720_6_not_null: Database CHECK constraint
+    // 2200_22720_7_not_null: Database CHECK constraint
+    // 2200_22720_8_not_null: Database CHECK constraint
     // Add custom validation logic here
   }
   /// Get the job record associated with this jobs
@@ -93,46 +100,6 @@ class JobsRepository extends BaseRepository<JobsModel> {
         .from('jobs')
         .select('id')
         .eq('id', jobId)
-        .maybeSingle();
-    
-    return result != null;
-  }
-
-  /// Get the service record associated with this jobs
-  /// 
-  /// This retrieves the parent service record for this jobs.
-  /// It represents a foreign key relationship from jobs.service_id to services.id
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Get the user who created a message
-  /// final user = await messageRepository.getUser(message.userId);
-  /// ```
-  Future<ServicesModel?> getService(String serviceId) async {
-    final result = await client
-        .from('services')
-        .select()
-        .eq('id', serviceId)
-        .maybeSingle();
-    
-    if (result == null) return null;
-    return ServicesModel.fromJson(result);
-  }
-  
-  /// Check if the service record exists for this jobs
-  /// 
-  /// A utility method to check if the parent record exists without having to fetch the full record.
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Check if the user exists
-  /// final exists = await messageRepository.serviceExists(message.userId);
-  /// ```
-  Future<bool> serviceExists(String serviceId) async {
-    final result = await client
-        .from('services')
-        .select('id')
-        .eq('id', serviceId)
         .maybeSingle();
     
     return result != null;
@@ -1840,46 +1807,46 @@ class JobsRepository extends BaseRepository<JobsModel> {
     return 0;
   }
 
-  /// Get all active_jobs associated with this jobs
+  /// Get all active_jobs_olds associated with this jobs
   /// 
-  /// This is a one-to-many relationship where a jobs has many active_jobs.
-  /// It will return all active_jobs linked to the given jobsId via
+  /// This is a one-to-many relationship where a jobs has many active_jobs_olds.
+  /// It will return all active_jobs_olds linked to the given jobsId via
   /// the job_id foreign key.
   /// 
   /// Example:
   /// ```dart
   /// // Get all messages in a chat room
-  /// final messages = await chatRoomRepository.getActiveJobs(roomId);
+  /// final messages = await chatRoomRepository.getActiveJobsOlds(roomId);
   /// ```
-  Future<List<ActiveJobsModel>> getActiveJobs(String jobsId) async {
+  Future<List<ActiveJobsOldModel>> getActiveJobsOlds(String jobsId) async {
     final result = await client
-        .from('active_jobs')
+        .from('active_jobs_old')
         .select()
         .eq('job_id', jobsId);
     
     final data = result as List<dynamic>;
     
     return data
-        .map((item) => ActiveJobsModel.fromJson(item as Map<String, dynamic>))
+        .map((item) => ActiveJobsOldModel.fromJson(item as Map<String, dynamic>))
         .toList();
   }
   
-  /// Get all active_jobs associated with this jobs with pagination and sorting
+  /// Get all active_jobs_olds associated with this jobs with pagination and sorting
   /// 
-  /// This is an enhanced version of getActiveJobs that supports
+  /// This is an enhanced version of getActiveJobsOlds that supports
   /// pagination and sorting options.
   /// 
   /// Example:
   /// ```dart
   /// // Get the latest 10 messages in a chat room
-  /// final messages = await chatRoomRepository.findActiveJobs(
+  /// final messages = await chatRoomRepository.findActiveJobsOlds(
   ///   roomId,
   ///   limit: 10,
   ///   orderBy: 'created_at',
   ///   ascending: false,
   /// );
   /// ```
-  Future<List<ActiveJobsModel>> findActiveJobs(
+  Future<List<ActiveJobsOldModel>> findActiveJobsOlds(
     String jobsId, {
     int? limit,
     int? offset,
@@ -1888,7 +1855,7 @@ class JobsRepository extends BaseRepository<JobsModel> {
     Map<String, dynamic>? additionalFilters,
   }) async {
     // Start with a select query
-    dynamic queryBuilder = client.from('active_jobs').select();
+    dynamic queryBuilder = client.from('active_jobs_old').select();
     
     // Apply the main filter for this relationship
     queryBuilder = queryBuilder.eq('job_id', jobsId);
@@ -1921,19 +1888,19 @@ class JobsRepository extends BaseRepository<JobsModel> {
     final response = await queryBuilder;
     
     // Convert the response to model instances
-    return (response as List<dynamic>).map((json) => ActiveJobsModel.fromJson(json as Map<String, dynamic>)).toList();
+    return (response as List<dynamic>).map((json) => ActiveJobsOldModel.fromJson(json as Map<String, dynamic>)).toList();
   }
   
-  /// Count the number of active_jobs associated with this jobs
+  /// Count the number of active_jobs_olds associated with this jobs
   /// 
   /// Example:
   /// ```dart
   /// // Count how many messages are in a chat room
-  /// final messageCount = await chatRoomRepository.countActiveJobs(roomId);
+  /// final messageCount = await chatRoomRepository.countActiveJobsOlds(roomId);
   /// ```
-  Future<int> countActiveJobs(String jobsId) async {
+  Future<int> countActiveJobsOlds(String jobsId) async {
     final result = await client
-        .from('active_jobs')
+        .from('active_jobs_old')
         .select()
         .eq('job_id', jobsId)
         .count();

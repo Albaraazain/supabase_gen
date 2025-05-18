@@ -5,12 +5,27 @@ import '../query_builders/professional_profiles_query_builder.dart';
 
 
 class ProfessionalProfilesRepository extends BaseRepository<ProfessionalProfilesModel> {
-  ProfessionalProfilesRepository(SupabaseClient client) : super(client, 'professional_profiles');
+  ProfessionalProfilesRepository(SupabaseClient client) : super(client, 'professional_profiles', primaryKeyColumn: 'professional_id');
   
   @override
   ProfessionalProfilesModel fromJson(Map<String, dynamic> json) {
     return ProfessionalProfilesModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(ProfessionalProfilesModel model) {
+    return model.professionalId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - set_default_business_name: INSERT BEFORE - EXECUTE FUNCTION handle_business_name_default()
+  ///   Signature: handle_business_name_default() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for handle_business_name_default>
+  /// - set_default_business_name: UPDATE BEFORE - EXECUTE FUNCTION handle_business_name_default()
+  ///   Signature: handle_business_name_default() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for handle_business_name_default>
   
   /// Create a type-safe query builder for professional_profiles
   /// 

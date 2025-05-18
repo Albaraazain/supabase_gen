@@ -5,11 +5,16 @@ import '../query_builders/session_pause_reasons_query_builder.dart';
 
 
 class SessionPauseReasonsRepository extends BaseRepository<SessionPauseReasonsModel> {
-  SessionPauseReasonsRepository(SupabaseClient client) : super(client, 'session_pause_reasons');
+  SessionPauseReasonsRepository(SupabaseClient client) : super(client, 'session_pause_reasons', primaryKeyColumn: 'pause_id');
   
   @override
   SessionPauseReasonsModel fromJson(Map<String, dynamic> json) {
     return SessionPauseReasonsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(SessionPauseReasonsModel model) {
+    return model.pauseId;
   }
   
   /// Create a type-safe query builder for session_pause_reasons

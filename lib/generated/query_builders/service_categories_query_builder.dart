@@ -175,6 +175,107 @@ class ServiceCategoriesModelQueryBuilder {
     _queryBuilder = _queryBuilder.gte('updated_at', min).lte('updated_at', max);
     return this;
   }
+
+  /// Filter by base_price
+  ServiceCategoriesModelQueryBuilder whereBasePrice(double? value) {
+    _queryBuilder = _queryBuilder.eq('base_price', value);
+    return this;
+  }
+  
+  /// Filter by base_price with multiple values (IN operator)
+  ServiceCategoriesModelQueryBuilder whereBasePriceIn(List<double> values) {
+    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
+    _queryBuilder = _queryBuilder.inFilter('base_price', values);
+    return this;
+  }
+  
+    /// Filter base_price greater than
+  ServiceCategoriesModelQueryBuilder whereBasePriceGreaterThan(double? value) {
+    _queryBuilder = _queryBuilder.gt('base_price', value);
+    return this;
+  }
+  
+  /// Filter base_price greater than or equal
+  ServiceCategoriesModelQueryBuilder whereBasePriceGreaterThanOrEqual(double? value) {
+    _queryBuilder = _queryBuilder.gte('base_price', value);
+    return this;
+  }
+  
+  /// Filter base_price less than
+  ServiceCategoriesModelQueryBuilder whereBasePriceLessThan(double? value) {
+    _queryBuilder = _queryBuilder.lt('base_price', value);
+    return this;
+  }
+  
+  /// Filter base_price less than or equal
+  ServiceCategoriesModelQueryBuilder whereBasePriceLessThanOrEqual(double? value) {
+    _queryBuilder = _queryBuilder.lte('base_price', value);
+    return this;
+  }
+  
+  /// Filter base_price between two values
+  ServiceCategoriesModelQueryBuilder whereBasePriceBetween(double? min, double? max) {
+    _queryBuilder = _queryBuilder.gte('base_price', min).lte('base_price', max);
+    return this;
+  }
+
+  /// Filter by price_unit
+  ServiceCategoriesModelQueryBuilder wherePriceUnit(String? value) {
+    _queryBuilder = _queryBuilder.eq('price_unit', value);
+    return this;
+  }
+  
+  /// Filter by price_unit with multiple values (IN operator)
+  ServiceCategoriesModelQueryBuilder wherePriceUnitIn(List<String> values) {
+    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
+    _queryBuilder = _queryBuilder.inFilter('price_unit', values);
+    return this;
+  }
+  
+  
+
+  /// Filter by estimated_duration
+  ServiceCategoriesModelQueryBuilder whereEstimatedDuration(int? value) {
+    _queryBuilder = _queryBuilder.eq('estimated_duration', value);
+    return this;
+  }
+  
+  /// Filter by estimated_duration with multiple values (IN operator)
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationIn(List<int> values) {
+    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
+    _queryBuilder = _queryBuilder.inFilter('estimated_duration', values);
+    return this;
+  }
+  
+    /// Filter estimated_duration greater than
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationGreaterThan(int? value) {
+    _queryBuilder = _queryBuilder.gt('estimated_duration', value);
+    return this;
+  }
+  
+  /// Filter estimated_duration greater than or equal
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationGreaterThanOrEqual(int? value) {
+    _queryBuilder = _queryBuilder.gte('estimated_duration', value);
+    return this;
+  }
+  
+  /// Filter estimated_duration less than
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationLessThan(int? value) {
+    _queryBuilder = _queryBuilder.lt('estimated_duration', value);
+    return this;
+  }
+  
+  /// Filter estimated_duration less than or equal
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationLessThanOrEqual(int? value) {
+    _queryBuilder = _queryBuilder.lte('estimated_duration', value);
+    return this;
+  }
+  
+  /// Filter estimated_duration between two values
+  ServiceCategoriesModelQueryBuilder whereEstimatedDurationBetween(int? min, int? max) {
+    _queryBuilder = _queryBuilder.gte('estimated_duration', min).lte('estimated_duration', max);
+    return this;
+  }
   
   /// Order by category_id in ascending order
   ServiceCategoriesModelQueryBuilder orderByCategoryIdAsc() {
@@ -245,6 +346,42 @@ class ServiceCategoriesModelQueryBuilder {
   /// Order by updated_at in descending order
   ServiceCategoriesModelQueryBuilder orderByUpdatedAtDesc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: false);
+    return this;
+  }
+
+  /// Order by base_price in ascending order
+  ServiceCategoriesModelQueryBuilder orderByBasePriceAsc() {
+    _queryBuilder = _queryBuilder.order('base_price', ascending: true);
+    return this;
+  }
+  
+  /// Order by base_price in descending order
+  ServiceCategoriesModelQueryBuilder orderByBasePriceDesc() {
+    _queryBuilder = _queryBuilder.order('base_price', ascending: false);
+    return this;
+  }
+
+  /// Order by price_unit in ascending order
+  ServiceCategoriesModelQueryBuilder orderByPriceUnitAsc() {
+    _queryBuilder = _queryBuilder.order('price_unit', ascending: true);
+    return this;
+  }
+  
+  /// Order by price_unit in descending order
+  ServiceCategoriesModelQueryBuilder orderByPriceUnitDesc() {
+    _queryBuilder = _queryBuilder.order('price_unit', ascending: false);
+    return this;
+  }
+
+  /// Order by estimated_duration in ascending order
+  ServiceCategoriesModelQueryBuilder orderByEstimatedDurationAsc() {
+    _queryBuilder = _queryBuilder.order('estimated_duration', ascending: true);
+    return this;
+  }
+  
+  /// Order by estimated_duration in descending order
+  ServiceCategoriesModelQueryBuilder orderByEstimatedDurationDesc() {
+    _queryBuilder = _queryBuilder.order('estimated_duration', ascending: false);
     return this;
   }
   

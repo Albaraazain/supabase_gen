@@ -5,11 +5,16 @@ import '../query_builders/test_jobs_query_builder.dart';
 
 
 class TestJobsRepository extends BaseRepository<TestJobsModel> {
-  TestJobsRepository(SupabaseClient client) : super(client, 'test_jobs');
+  TestJobsRepository(SupabaseClient client) : super(client, 'test_jobs', primaryKeyColumn: 'job_id');
   
   @override
   TestJobsModel fromJson(Map<String, dynamic> json) {
     return TestJobsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(TestJobsModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for test_jobs

@@ -9,6 +9,16 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - update_quote_totals: INSERT BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+///   Signature: calculate_quote_totals() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for calculate_quote_totals>
+/// - update_quote_totals: UPDATE BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+///   Signature: calculate_quote_totals() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for calculate_quote_totals>
+
 // Repository provider
 final serviceQuotesRepositoryProvider = Provider<ServiceQuotesRepository>((ref) {
   AppLogger.debug('Creating ServiceQuotesRepository instance', loggerName: 'Provider');

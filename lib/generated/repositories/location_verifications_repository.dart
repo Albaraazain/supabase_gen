@@ -5,12 +5,23 @@ import '../query_builders/location_verifications_query_builder.dart';
 
 
 class LocationVerificationsRepository extends BaseRepository<LocationVerificationsModel> {
-  LocationVerificationsRepository(SupabaseClient client) : super(client, 'location_verifications');
+  LocationVerificationsRepository(SupabaseClient client) : super(client, 'location_verifications', primaryKeyColumn: 'verification_id');
   
   @override
   LocationVerificationsModel fromJson(Map<String, dynamic> json) {
     return LocationVerificationsModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(LocationVerificationsModel model) {
+    return model.verificationId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - location_verification_status_change: UPDATE AFTER - EXECUTE FUNCTION track_verification_status_change()
+  ///   Signature: track_verification_status_change() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for track_verification_status_change>
   
   /// Create a type-safe query builder for location_verifications
   /// 
@@ -97,46 +108,6 @@ class LocationVerificationsRepository extends BaseRepository<LocationVerificatio
         .from('jobs')
         .select('id')
         .eq('id', jobId)
-        .maybeSingle();
-    
-    return result != null;
-  }
-
-  /// Get the user record associated with this location_verifications
-  /// 
-  /// This retrieves the parent user record for this location_verifications.
-  /// It represents a foreign key relationship from location_verifications.user_id to users.id
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Get the user who created a message
-  /// final user = await messageRepository.getUser(message.userId);
-  /// ```
-  Future<UsersModel?> getUser(String userId) async {
-    final result = await client
-        .from('users')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
-    
-    if (result == null) return null;
-    return UsersModel.fromJson(result);
-  }
-  
-  /// Check if the user record exists for this location_verifications
-  /// 
-  /// A utility method to check if the parent record exists without having to fetch the full record.
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Check if the user exists
-  /// final exists = await messageRepository.userExists(message.userId);
-  /// ```
-  Future<bool> userExists(String userId) async {
-    final result = await client
-        .from('users')
-        .select('id')
-        .eq('id', userId)
         .maybeSingle();
     
     return result != null;

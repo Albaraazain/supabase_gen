@@ -1,6 +1,16 @@
 import '../utils/geo_json.dart';
 
 /// Generated model class for table service_quotes
+/// Database triggers associated with this table:
+/// - update_quote_totals: INSERT BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+///   Signature: calculate_quote_totals() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for calculate_quote_totals>
+/// - update_quote_totals: UPDATE BEFORE - EXECUTE FUNCTION calculate_quote_totals()
+///   Signature: calculate_quote_totals() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for calculate_quote_totals>
+///
 class ServiceQuotesModel {
   /// Primary key field
   /// Non-nullable field

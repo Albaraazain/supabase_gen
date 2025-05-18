@@ -5,11 +5,16 @@ import '../query_builders/job_stage_history_query_builder.dart';
 
 
 class JobStageHistoryRepository extends BaseRepository<JobStageHistoryModel> {
-  JobStageHistoryRepository(SupabaseClient client) : super(client, 'job_stage_history');
+  JobStageHistoryRepository(SupabaseClient client) : super(client, 'job_stage_history', primaryKeyColumn: 'history_id');
   
   @override
   JobStageHistoryModel fromJson(Map<String, dynamic> json) {
     return JobStageHistoryModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(JobStageHistoryModel model) {
+    return model.historyId;
   }
   
   /// Create a type-safe query builder for job_stage_history

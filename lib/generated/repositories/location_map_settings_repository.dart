@@ -5,11 +5,16 @@ import '../query_builders/location_map_settings_query_builder.dart';
 
 
 class LocationMapSettingsRepository extends BaseRepository<LocationMapSettingsModel> {
-  LocationMapSettingsRepository(SupabaseClient client) : super(client, 'location_map_settings');
+  LocationMapSettingsRepository(SupabaseClient client) : super(client, 'location_map_settings', primaryKeyColumn: 'setting_id');
   
   @override
   LocationMapSettingsModel fromJson(Map<String, dynamic> json) {
     return LocationMapSettingsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(LocationMapSettingsModel model) {
+    return model.settingId;
   }
   
   /// Create a type-safe query builder for location_map_settings

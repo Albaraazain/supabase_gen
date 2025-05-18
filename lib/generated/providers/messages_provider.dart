@@ -9,6 +9,12 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - update_conversation_last_message: INSERT AFTER - EXECUTE FUNCTION update_conversation_timestamp()
+///   Signature: update_conversation_timestamp() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_conversation_timestamp>
+
 // Repository provider
 final messagesRepositoryProvider = Provider<MessagesRepository>((ref) {
   AppLogger.debug('Creating MessagesRepository instance', loggerName: 'Provider');

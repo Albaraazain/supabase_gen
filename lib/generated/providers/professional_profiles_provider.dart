@@ -9,6 +9,16 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - set_default_business_name: INSERT BEFORE - EXECUTE FUNCTION handle_business_name_default()
+///   Signature: handle_business_name_default() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for handle_business_name_default>
+/// - set_default_business_name: UPDATE BEFORE - EXECUTE FUNCTION handle_business_name_default()
+///   Signature: handle_business_name_default() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for handle_business_name_default>
+
 // Repository provider
 final professionalProfilesRepositoryProvider = Provider<ProfessionalProfilesRepository>((ref) {
   AppLogger.debug('Creating ProfessionalProfilesRepository instance', loggerName: 'Provider');

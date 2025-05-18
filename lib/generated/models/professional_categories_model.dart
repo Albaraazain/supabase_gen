@@ -1,14 +1,14 @@
 import '../utils/geo_json.dart';
 
-/// Generated model class for table professional_services
-class ProfessionalServicesModel {
+/// Generated model class for table professional_categories
+class ProfessionalCategoriesModel {
   /// Primary key field
   /// Non-nullable field
   final String id;
   /// Unique field
   final String? professionalId;
   /// Unique field
-  final String? serviceId;
+  final String? categoryId;
   final double? priceAdjustment;
   final double? priceRate;
   final bool? isActive;
@@ -16,14 +16,14 @@ class ProfessionalServicesModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
-  ProfessionalServicesModel({this.id = "", this.professionalId, this.serviceId, this.priceAdjustment, this.priceRate, this.isActive, this.isAvailable, this.createdAt, this.updatedAt})
+  ProfessionalCategoriesModel({this.id = "", this.professionalId, this.categoryId, this.priceAdjustment, this.priceRate, this.isActive, this.isAvailable, this.createdAt, this.updatedAt})
       : assert(() { assert(id != null, "id constraint violation"); return true; }());
 
-  factory ProfessionalServicesModel.fromJson(Map<String, dynamic> json) {
-    return ProfessionalServicesModel(
+  factory ProfessionalCategoriesModel.fromJson(Map<String, dynamic> json) {
+    return ProfessionalCategoriesModel(
       id: json['id'] ?? '',
       professionalId: json['professional_id'],
-      serviceId: json['service_id'],
+      categoryId: json['category_id'],
       priceAdjustment: json['price_adjustment'] != null ? _toDouble(json['price_adjustment']) : null,
       priceRate: json['price_rate'] != null ? _toDouble(json['price_rate']) : null,
       isActive: json['is_active'],
@@ -37,7 +37,7 @@ class ProfessionalServicesModel {
     return {
       'id': id,
       'professional_id': professionalId,
-      'service_id': serviceId,
+      'category_id': categoryId,
       'price_adjustment': priceAdjustment,
       'price_rate': priceRate,
       'is_active': isActive,
@@ -50,15 +50,15 @@ class ProfessionalServicesModel {
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is ProfessionalServicesModel && other.id == id && other.professionalId == professionalId && other.serviceId == serviceId && other.priceAdjustment == priceAdjustment && other.priceRate == priceRate && other.isActive == isActive && other.isAvailable == isAvailable && other.createdAt == createdAt && other.updatedAt == updatedAt;
+    return other is ProfessionalCategoriesModel && other.id == id && other.professionalId == professionalId && other.categoryId == categoryId && other.priceAdjustment == priceAdjustment && other.priceRate == priceRate && other.isActive == isActive && other.isAvailable == isAvailable && other.createdAt == createdAt && other.updatedAt == updatedAt;
   }
 
   @override
-  int get hashCode => id.hashCode ^ professionalId.hashCode ^ serviceId.hashCode ^ priceAdjustment.hashCode ^ priceRate.hashCode ^ isActive.hashCode ^ isAvailable.hashCode ^ createdAt.hashCode ^ updatedAt.hashCode;
+  int get hashCode => id.hashCode ^ professionalId.hashCode ^ categoryId.hashCode ^ priceAdjustment.hashCode ^ priceRate.hashCode ^ isActive.hashCode ^ isAvailable.hashCode ^ createdAt.hashCode ^ updatedAt.hashCode;
 
   @override
   String toString() {
-    return 'ProfessionalServicesModel(id: $id, professionalId: $professionalId, serviceId: $serviceId, priceAdjustment: $priceAdjustment, priceRate: $priceRate, isActive: $isActive, isAvailable: $isAvailable, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ProfessionalCategoriesModel(id: $id, professionalId: $professionalId, categoryId: $categoryId, priceAdjustment: $priceAdjustment, priceRate: $priceRate, isActive: $isActive, isAvailable: $isAvailable, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
   // Primary identifier is already defined as a field
 }

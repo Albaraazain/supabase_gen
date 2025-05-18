@@ -5,12 +5,23 @@ import '../query_builders/preparation_checks_query_builder.dart';
 
 
 class PreparationChecksRepository extends BaseRepository<PreparationChecksModel> {
-  PreparationChecksRepository(SupabaseClient client) : super(client, 'preparation_checks');
+  PreparationChecksRepository(SupabaseClient client) : super(client, 'preparation_checks', primaryKeyColumn: 'check_id');
   
   @override
   PreparationChecksModel fromJson(Map<String, dynamic> json) {
     return PreparationChecksModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(PreparationChecksModel model) {
+    return model.checkId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - update_preparation_checks_updated_at: UPDATE BEFORE - EXECUTE FUNCTION update_preparation_checks_updated_at()
+  ///   Signature: update_preparation_checks_updated_at() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_preparation_checks_updated_at>
   
   /// Create a type-safe query builder for preparation_checks
   /// 

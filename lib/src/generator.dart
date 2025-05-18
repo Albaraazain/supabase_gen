@@ -267,12 +267,12 @@ The SQL code is available in the accompanying `rpc_functions_setup.sql` file.
         'logger_init.dart',
       );
       final initContent = '''// Generated logger initialization code
-import 'package:logging/logging.dart';
+import 'package:logger/logger.dart';
 import './utils/app_logger.dart';
 
 /// Initialize all logging for the application
 void initializeLogging({
-  Level level = Level.INFO, 
+  Level? level, 
   bool colorize = true,
   bool includeCallerInfo = true,
 }) {

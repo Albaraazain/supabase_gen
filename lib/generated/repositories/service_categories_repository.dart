@@ -5,11 +5,16 @@ import '../query_builders/service_categories_query_builder.dart';
 
 
 class ServiceCategoriesRepository extends BaseRepository<ServiceCategoriesModel> {
-  ServiceCategoriesRepository(SupabaseClient client) : super(client, 'service_categories');
+  ServiceCategoriesRepository(SupabaseClient client) : super(client, 'service_categories', primaryKeyColumn: 'category_id');
   
   @override
   ServiceCategoriesModel fromJson(Map<String, dynamic> json) {
     return ServiceCategoriesModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ServiceCategoriesModel model) {
+    return model.categoryId;
   }
   
   /// Create a type-safe query builder for service_categories

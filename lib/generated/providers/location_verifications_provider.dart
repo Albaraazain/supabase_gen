@@ -9,6 +9,12 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - location_verification_status_change: UPDATE AFTER - EXECUTE FUNCTION track_verification_status_change()
+///   Signature: track_verification_status_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for track_verification_status_change>
+
 // Repository provider
 final locationVerificationsRepositoryProvider = Provider<LocationVerificationsRepository>((ref) {
   AppLogger.debug('Creating LocationVerificationsRepository instance', loggerName: 'Provider');

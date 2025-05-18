@@ -1,5 +1,15 @@
 
 /// Generated model class for table finding_photos
+/// Database triggers associated with this table:
+/// - update_finding_photo_count: INSERT AFTER - EXECUTE FUNCTION update_finding_photo_count()
+///   Signature: update_finding_photo_count() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_finding_photo_count>
+/// - update_finding_photo_count: DELETE AFTER - EXECUTE FUNCTION update_finding_photo_count()
+///   Signature: update_finding_photo_count() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_finding_photo_count>
+///
 class FindingPhotosModel {
   /// Primary key field
   /// Non-nullable field

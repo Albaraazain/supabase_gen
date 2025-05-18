@@ -9,6 +9,16 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - update_finding_photo_count: INSERT AFTER - EXECUTE FUNCTION update_finding_photo_count()
+///   Signature: update_finding_photo_count() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_finding_photo_count>
+/// - update_finding_photo_count: DELETE AFTER - EXECUTE FUNCTION update_finding_photo_count()
+///   Signature: update_finding_photo_count() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_finding_photo_count>
+
 // Repository provider
 final findingPhotosRepositoryProvider = Provider<FindingPhotosRepository>((ref) {
   AppLogger.debug('Creating FindingPhotosRepository instance', loggerName: 'Provider');

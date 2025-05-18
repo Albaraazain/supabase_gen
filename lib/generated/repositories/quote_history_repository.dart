@@ -5,11 +5,16 @@ import '../query_builders/quote_history_query_builder.dart';
 
 
 class QuoteHistoryRepository extends BaseRepository<QuoteHistoryModel> {
-  QuoteHistoryRepository(SupabaseClient client) : super(client, 'quote_history');
+  QuoteHistoryRepository(SupabaseClient client) : super(client, 'quote_history', primaryKeyColumn: 'history_id');
   
   @override
   QuoteHistoryModel fromJson(Map<String, dynamic> json) {
     return QuoteHistoryModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(QuoteHistoryModel model) {
+    return model.historyId;
   }
   
   /// Create a type-safe query builder for quote_history

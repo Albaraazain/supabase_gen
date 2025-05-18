@@ -1,5 +1,11 @@
 
 /// Generated model class for table messages
+/// Database triggers associated with this table:
+/// - update_conversation_last_message: INSERT AFTER - EXECUTE FUNCTION update_conversation_timestamp()
+///   Signature: update_conversation_timestamp() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_conversation_timestamp>
+///
 class MessagesModel {
   /// Primary key field
   /// Non-nullable field

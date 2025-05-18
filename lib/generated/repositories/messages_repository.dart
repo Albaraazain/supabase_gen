@@ -5,12 +5,23 @@ import '../query_builders/messages_query_builder.dart';
 
 
 class MessagesRepository extends BaseRepository<MessagesModel> {
-  MessagesRepository(SupabaseClient client) : super(client, 'messages');
+  MessagesRepository(SupabaseClient client) : super(client, 'messages', primaryKeyColumn: 'message_id');
   
   @override
   MessagesModel fromJson(Map<String, dynamic> json) {
     return MessagesModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(MessagesModel model) {
+    return model.messageId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - update_conversation_last_message: INSERT AFTER - EXECUTE FUNCTION update_conversation_timestamp()
+  ///   Signature: update_conversation_timestamp() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_conversation_timestamp>
   
   /// Create a type-safe query builder for messages
   /// 

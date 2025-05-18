@@ -5,11 +5,16 @@ import '../query_builders/work_sessions_query_builder.dart';
 
 
 class WorkSessionsRepository extends BaseRepository<WorkSessionsModel> {
-  WorkSessionsRepository(SupabaseClient client) : super(client, 'work_sessions');
+  WorkSessionsRepository(SupabaseClient client) : super(client, 'work_sessions', primaryKeyColumn: 'session_id');
   
   @override
   WorkSessionsModel fromJson(Map<String, dynamic> json) {
     return WorkSessionsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(WorkSessionsModel model) {
+    return model.sessionId;
   }
   
   /// Create a type-safe query builder for work_sessions

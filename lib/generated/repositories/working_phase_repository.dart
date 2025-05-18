@@ -5,11 +5,16 @@ import '../query_builders/working_phase_query_builder.dart';
 
 
 class WorkingPhaseRepository extends BaseRepository<WorkingPhaseModel> {
-  WorkingPhaseRepository(SupabaseClient client) : super(client, 'working_phase');
+  WorkingPhaseRepository(SupabaseClient client) : super(client, 'working_phase', primaryKeyColumn: 'job_id');
   
   @override
   WorkingPhaseModel fromJson(Map<String, dynamic> json) {
     return WorkingPhaseModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(WorkingPhaseModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for working_phase

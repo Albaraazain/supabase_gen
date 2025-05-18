@@ -5,11 +5,16 @@ import '../query_builders/work_tasks_query_builder.dart';
 
 
 class WorkTasksRepository extends BaseRepository<WorkTasksModel> {
-  WorkTasksRepository(SupabaseClient client) : super(client, 'work_tasks');
+  WorkTasksRepository(SupabaseClient client) : super(client, 'work_tasks', primaryKeyColumn: 'task_id');
   
   @override
   WorkTasksModel fromJson(Map<String, dynamic> json) {
     return WorkTasksModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(WorkTasksModel model) {
+    return model.taskId;
   }
   
   /// Create a type-safe query builder for work_tasks

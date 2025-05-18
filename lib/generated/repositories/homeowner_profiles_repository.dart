@@ -5,11 +5,16 @@ import '../query_builders/homeowner_profiles_query_builder.dart';
 
 
 class HomeownerProfilesRepository extends BaseRepository<HomeownerProfilesModel> {
-  HomeownerProfilesRepository(SupabaseClient client) : super(client, 'homeowner_profiles');
+  HomeownerProfilesRepository(SupabaseClient client) : super(client, 'homeowner_profiles', primaryKeyColumn: 'homeowner_id');
   
   @override
   HomeownerProfilesModel fromJson(Map<String, dynamic> json) {
     return HomeownerProfilesModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(HomeownerProfilesModel model) {
+    return model.homeownerId;
   }
   
   /// Create a type-safe query builder for homeowner_profiles

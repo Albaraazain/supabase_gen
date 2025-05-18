@@ -5,11 +5,16 @@ import '../query_builders/task_photos_query_builder.dart';
 
 
 class TaskPhotosRepository extends BaseRepository<TaskPhotosModel> {
-  TaskPhotosRepository(SupabaseClient client) : super(client, 'task_photos');
+  TaskPhotosRepository(SupabaseClient client) : super(client, 'task_photos', primaryKeyColumn: 'task_photo_id');
   
   @override
   TaskPhotosModel fromJson(Map<String, dynamic> json) {
     return TaskPhotosModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(TaskPhotosModel model) {
+    return model.taskPhotoId;
   }
   
   /// Create a type-safe query builder for task_photos

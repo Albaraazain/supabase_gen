@@ -1,6 +1,20 @@
 import '../utils/geo_json.dart';
 
 /// Generated model class for table quote_line_items
+/// Database triggers associated with this table:
+/// - line_item_changes: INSERT AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+/// - line_item_changes: DELETE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+/// - line_item_changes: UPDATE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+///
 class QuoteLineItemsModel {
   /// Primary key field
   /// Non-nullable field

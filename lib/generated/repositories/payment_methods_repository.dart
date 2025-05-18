@@ -5,11 +5,16 @@ import '../query_builders/payment_methods_query_builder.dart';
 
 
 class PaymentMethodsRepository extends BaseRepository<PaymentMethodsModel> {
-  PaymentMethodsRepository(SupabaseClient client) : super(client, 'payment_methods');
+  PaymentMethodsRepository(SupabaseClient client) : super(client, 'payment_methods', primaryKeyColumn: 'id');
   
   @override
   PaymentMethodsModel fromJson(Map<String, dynamic> json) {
     return PaymentMethodsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(PaymentMethodsModel model) {
+    return model.id;
   }
   
   /// Create a type-safe query builder for payment_methods
@@ -56,43 +61,5 @@ class PaymentMethodsRepository extends BaseRepository<PaymentMethodsModel> {
     // 2200_17819_3_not_null: Database CHECK constraint
     // Add custom validation logic here
   }
-  /// Get the user record associated with this payment_methods
-  /// 
-  /// This retrieves the parent user record for this payment_methods.
-  /// It represents a foreign key relationship from payment_methods.user_id to users.id
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Get the user who created a message
-  /// final user = await messageRepository.getUser(message.userId);
-  /// ```
-  Future<UsersModel?> getUser(String userId) async {
-    final result = await client
-        .from('users')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
-    
-    if (result == null) return null;
-    return UsersModel.fromJson(result);
-  }
-  
-  /// Check if the user record exists for this payment_methods
-  /// 
-  /// A utility method to check if the parent record exists without having to fetch the full record.
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Check if the user exists
-  /// final exists = await messageRepository.userExists(message.userId);
-  /// ```
-  Future<bool> userExists(String userId) async {
-    final result = await client
-        .from('users')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-    
-    return result != null;
-  }
+
 }

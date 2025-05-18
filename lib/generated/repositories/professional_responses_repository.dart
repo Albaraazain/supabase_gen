@@ -5,11 +5,16 @@ import '../query_builders/professional_responses_query_builder.dart';
 
 
 class ProfessionalResponsesRepository extends BaseRepository<ProfessionalResponsesModel> {
-  ProfessionalResponsesRepository(SupabaseClient client) : super(client, 'professional_responses');
+  ProfessionalResponsesRepository(SupabaseClient client) : super(client, 'professional_responses', primaryKeyColumn: 'response_id');
   
   @override
   ProfessionalResponsesModel fromJson(Map<String, dynamic> json) {
     return ProfessionalResponsesModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ProfessionalResponsesModel model) {
+    return model.responseId;
   }
   
   /// Create a type-safe query builder for professional_responses

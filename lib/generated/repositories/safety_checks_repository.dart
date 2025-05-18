@@ -5,11 +5,16 @@ import '../query_builders/safety_checks_query_builder.dart';
 
 
 class SafetyChecksRepository extends BaseRepository<SafetyChecksModel> {
-  SafetyChecksRepository(SupabaseClient client) : super(client, 'safety_checks');
+  SafetyChecksRepository(SupabaseClient client) : super(client, 'safety_checks', primaryKeyColumn: 'check_id');
   
   @override
   SafetyChecksModel fromJson(Map<String, dynamic> json) {
     return SafetyChecksModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(SafetyChecksModel model) {
+    return model.checkId;
   }
   
   /// Create a type-safe query builder for safety_checks

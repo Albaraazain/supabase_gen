@@ -5,12 +5,27 @@ import '../query_builders/finding_photos_query_builder.dart';
 
 
 class FindingPhotosRepository extends BaseRepository<FindingPhotosModel> {
-  FindingPhotosRepository(SupabaseClient client) : super(client, 'finding_photos');
+  FindingPhotosRepository(SupabaseClient client) : super(client, 'finding_photos', primaryKeyColumn: 'finding_photo_id');
   
   @override
   FindingPhotosModel fromJson(Map<String, dynamic> json) {
     return FindingPhotosModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(FindingPhotosModel model) {
+    return model.findingPhotoId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - update_finding_photo_count: INSERT AFTER - EXECUTE FUNCTION update_finding_photo_count()
+  ///   Signature: update_finding_photo_count() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_finding_photo_count>
+  /// - update_finding_photo_count: DELETE AFTER - EXECUTE FUNCTION update_finding_photo_count()
+  ///   Signature: update_finding_photo_count() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_finding_photo_count>
   
   /// Create a type-safe query builder for finding_photos
   /// 

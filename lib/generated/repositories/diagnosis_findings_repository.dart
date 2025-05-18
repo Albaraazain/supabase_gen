@@ -5,11 +5,16 @@ import '../query_builders/diagnosis_findings_query_builder.dart';
 
 
 class DiagnosisFindingsRepository extends BaseRepository<DiagnosisFindingsModel> {
-  DiagnosisFindingsRepository(SupabaseClient client) : super(client, 'diagnosis_findings');
+  DiagnosisFindingsRepository(SupabaseClient client) : super(client, 'diagnosis_findings', primaryKeyColumn: 'finding_id');
   
   @override
   DiagnosisFindingsModel fromJson(Map<String, dynamic> json) {
     return DiagnosisFindingsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(DiagnosisFindingsModel model) {
+    return model.findingId;
   }
   
   /// Create a type-safe query builder for diagnosis_findings

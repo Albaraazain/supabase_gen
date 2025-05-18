@@ -5,12 +5,31 @@ import '../query_builders/quote_line_items_query_builder.dart';
 
 
 class QuoteLineItemsRepository extends BaseRepository<QuoteLineItemsModel> {
-  QuoteLineItemsRepository(SupabaseClient client) : super(client, 'quote_line_items');
+  QuoteLineItemsRepository(SupabaseClient client) : super(client, 'quote_line_items', primaryKeyColumn: 'line_item_id');
   
   @override
   QuoteLineItemsModel fromJson(Map<String, dynamic> json) {
     return QuoteLineItemsModel.fromJson(json);
   }
+  
+  @override
+  String? getPrimaryKeyValue(QuoteLineItemsModel model) {
+    return model.lineItemId;
+  }
+
+  /// Note: This table has the following database triggers that may affect operations:
+    /// - line_item_changes: INSERT AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+  ///   Signature: update_quote_on_line_item_change() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_quote_on_line_item_change>
+  /// - line_item_changes: DELETE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+  ///   Signature: update_quote_on_line_item_change() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_quote_on_line_item_change>
+  /// - line_item_changes: UPDATE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+  ///   Signature: update_quote_on_line_item_change() RETURNS trigger
+  ///   Language: plpgsql
+  ///   Body: <Function body not available for update_quote_on_line_item_change>
   
   /// Create a type-safe query builder for quote_line_items
   /// 

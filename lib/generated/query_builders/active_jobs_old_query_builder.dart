@@ -1,43 +1,43 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/active_jobs_model.dart';
+import '../models/active_jobs_old_model.dart';
 
-/// A type-safe query builder for ActiveJobsModel
-class ActiveJobsModelQueryBuilder {
+/// A type-safe query builder for ActiveJobsOldModel
+class ActiveJobsOldModelQueryBuilder {
   // PostgrestFilterBuilder<dynamic> will be properly typed when imported
   // in the generated file
   late dynamic _queryBuilder;
   final dynamic _client;
   
-  ActiveJobsModelQueryBuilder(this._client) {
-    _queryBuilder = _client.from('active_jobs').select();
+  ActiveJobsOldModelQueryBuilder(this._client) {
+    _queryBuilder = _client.from('active_jobs_old').select();
   }
   
   /// Set the fields to select
-  ActiveJobsModelQueryBuilder select(String fields) {
-    _queryBuilder = _client.from('active_jobs').select(fields);
+  ActiveJobsOldModelQueryBuilder select(String fields) {
+    _queryBuilder = _client.from('active_jobs_old').select(fields);
     return this;
   }
   
   /// Limit the number of rows returned
-  ActiveJobsModelQueryBuilder limit(int limit) {
+  ActiveJobsOldModelQueryBuilder limit(int limit) {
     _queryBuilder = _queryBuilder.limit(limit);
     return this;
   }
   
   /// Set the range of rows to return
-  ActiveJobsModelQueryBuilder range(int start, int end) {
+  ActiveJobsOldModelQueryBuilder range(int start, int end) {
     _queryBuilder = _queryBuilder.range(start, end);
     return this;
   }
   
   /// Filter by job_id
-  ActiveJobsModelQueryBuilder whereJobId(String value) {
+  ActiveJobsOldModelQueryBuilder whereJobId(String value) {
     _queryBuilder = _queryBuilder.eq('job_id', value);
     return this;
   }
   
   /// Filter by job_id with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereJobIdIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereJobIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('job_id', values);
     return this;
@@ -46,13 +46,13 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by homeowner_id
-  ActiveJobsModelQueryBuilder whereHomeownerId(String value) {
+  ActiveJobsOldModelQueryBuilder whereHomeownerId(String value) {
     _queryBuilder = _queryBuilder.eq('homeowner_id', value);
     return this;
   }
   
   /// Filter by homeowner_id with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereHomeownerIdIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereHomeownerIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('homeowner_id', values);
     return this;
@@ -61,13 +61,13 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by professional_id
-  ActiveJobsModelQueryBuilder whereProfessionalId(String? value) {
+  ActiveJobsOldModelQueryBuilder whereProfessionalId(String? value) {
     _queryBuilder = _queryBuilder.eq('professional_id', value);
     return this;
   }
   
   /// Filter by professional_id with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereProfessionalIdIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereProfessionalIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('professional_id', values);
     return this;
@@ -76,13 +76,13 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by service_id
-  ActiveJobsModelQueryBuilder whereServiceId(String value) {
+  ActiveJobsOldModelQueryBuilder whereServiceId(String value) {
     _queryBuilder = _queryBuilder.eq('service_id', value);
     return this;
   }
   
   /// Filter by service_id with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereServiceIdIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereServiceIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('service_id', values);
     return this;
@@ -91,13 +91,13 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by current_stage
-  ActiveJobsModelQueryBuilder whereCurrentStage(String value) {
+  ActiveJobsOldModelQueryBuilder whereCurrentStage(String value) {
     _queryBuilder = _queryBuilder.eq('current_stage', value);
     return this;
   }
   
   /// Filter by current_stage with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereCurrentStageIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereCurrentStageIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('current_stage', values);
     return this;
@@ -106,99 +106,99 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by created_at
-  ActiveJobsModelQueryBuilder whereCreatedAt(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAt(DateTime value) {
     _queryBuilder = _queryBuilder.eq('created_at', value);
     return this;
   }
   
   /// Filter by created_at with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('created_at', values);
     return this;
   }
   
     /// Filter created_at greater than
-  ActiveJobsModelQueryBuilder whereCreatedAtGreaterThan(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtGreaterThan(DateTime value) {
     _queryBuilder = _queryBuilder.gt('created_at', value);
     return this;
   }
   
   /// Filter created_at greater than or equal
-  ActiveJobsModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime value) {
     _queryBuilder = _queryBuilder.gte('created_at', value);
     return this;
   }
   
   /// Filter created_at less than
-  ActiveJobsModelQueryBuilder whereCreatedAtLessThan(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtLessThan(DateTime value) {
     _queryBuilder = _queryBuilder.lt('created_at', value);
     return this;
   }
   
   /// Filter created_at less than or equal
-  ActiveJobsModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime value) {
     _queryBuilder = _queryBuilder.lte('created_at', value);
     return this;
   }
   
   /// Filter created_at between two values
-  ActiveJobsModelQueryBuilder whereCreatedAtBetween(DateTime min, DateTime max) {
+  ActiveJobsOldModelQueryBuilder whereCreatedAtBetween(DateTime min, DateTime max) {
     _queryBuilder = _queryBuilder.gte('created_at', min).lte('created_at', max);
     return this;
   }
 
   /// Filter by updated_at
-  ActiveJobsModelQueryBuilder whereUpdatedAt(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAt(DateTime value) {
     _queryBuilder = _queryBuilder.eq('updated_at', value);
     return this;
   }
   
   /// Filter by updated_at with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('updated_at', values);
     return this;
   }
   
     /// Filter updated_at greater than
-  ActiveJobsModelQueryBuilder whereUpdatedAtGreaterThan(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtGreaterThan(DateTime value) {
     _queryBuilder = _queryBuilder.gt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at greater than or equal
-  ActiveJobsModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime value) {
     _queryBuilder = _queryBuilder.gte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than
-  ActiveJobsModelQueryBuilder whereUpdatedAtLessThan(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtLessThan(DateTime value) {
     _queryBuilder = _queryBuilder.lt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than or equal
-  ActiveJobsModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime value) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime value) {
     _queryBuilder = _queryBuilder.lte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at between two values
-  ActiveJobsModelQueryBuilder whereUpdatedAtBetween(DateTime min, DateTime max) {
+  ActiveJobsOldModelQueryBuilder whereUpdatedAtBetween(DateTime min, DateTime max) {
     _queryBuilder = _queryBuilder.gte('updated_at', min).lte('updated_at', max);
     return this;
   }
 
   /// Filter by metadata
-  ActiveJobsModelQueryBuilder whereMetadata(Map<String, dynamic>? value) {
+  ActiveJobsOldModelQueryBuilder whereMetadata(Map<String, dynamic>? value) {
     _queryBuilder = _queryBuilder.eq('metadata', value);
     return this;
   }
   
   /// Filter by metadata with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereMetadataIn(List<Map<String, dynamic>> values) {
+  ActiveJobsOldModelQueryBuilder whereMetadataIn(List<Map<String, dynamic>> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('metadata', values);
     return this;
@@ -207,142 +207,142 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by stage_updated_at
-  ActiveJobsModelQueryBuilder whereStageUpdatedAt(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAt(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('stage_updated_at', value);
     return this;
   }
   
   /// Filter by stage_updated_at with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtIn(List<DateTime> values) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('stage_updated_at', values);
     return this;
   }
   
     /// Filter stage_updated_at greater than
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtGreaterThan(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('stage_updated_at', value);
     return this;
   }
   
   /// Filter stage_updated_at greater than or equal
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtGreaterThanOrEqual(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('stage_updated_at', value);
     return this;
   }
   
   /// Filter stage_updated_at less than
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtLessThan(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('stage_updated_at', value);
     return this;
   }
   
   /// Filter stage_updated_at less than or equal
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtLessThanOrEqual(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('stage_updated_at', value);
     return this;
   }
   
   /// Filter stage_updated_at between two values
-  ActiveJobsModelQueryBuilder whereStageUpdatedAtBetween(DateTime? min, DateTime? max) {
+  ActiveJobsOldModelQueryBuilder whereStageUpdatedAtBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('stage_updated_at', min).lte('stage_updated_at', max);
     return this;
   }
 
   /// Filter by scheduled_time
-  ActiveJobsModelQueryBuilder whereScheduledTime(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTime(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('scheduled_time', value);
     return this;
   }
   
   /// Filter by scheduled_time with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereScheduledTimeIn(List<DateTime> values) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('scheduled_time', values);
     return this;
   }
   
     /// Filter scheduled_time greater than
-  ActiveJobsModelQueryBuilder whereScheduledTimeGreaterThan(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('scheduled_time', value);
     return this;
   }
   
   /// Filter scheduled_time greater than or equal
-  ActiveJobsModelQueryBuilder whereScheduledTimeGreaterThanOrEqual(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('scheduled_time', value);
     return this;
   }
   
   /// Filter scheduled_time less than
-  ActiveJobsModelQueryBuilder whereScheduledTimeLessThan(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('scheduled_time', value);
     return this;
   }
   
   /// Filter scheduled_time less than or equal
-  ActiveJobsModelQueryBuilder whereScheduledTimeLessThanOrEqual(DateTime? value) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('scheduled_time', value);
     return this;
   }
   
   /// Filter scheduled_time between two values
-  ActiveJobsModelQueryBuilder whereScheduledTimeBetween(DateTime? min, DateTime? max) {
+  ActiveJobsOldModelQueryBuilder whereScheduledTimeBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('scheduled_time', min).lte('scheduled_time', max);
     return this;
   }
 
   /// Filter by estimated_duration
-  ActiveJobsModelQueryBuilder whereEstimatedDuration(int? value) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDuration(int? value) {
     _queryBuilder = _queryBuilder.eq('estimated_duration', value);
     return this;
   }
   
   /// Filter by estimated_duration with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereEstimatedDurationIn(List<int> values) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationIn(List<int> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('estimated_duration', values);
     return this;
   }
   
     /// Filter estimated_duration greater than
-  ActiveJobsModelQueryBuilder whereEstimatedDurationGreaterThan(int? value) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationGreaterThan(int? value) {
     _queryBuilder = _queryBuilder.gt('estimated_duration', value);
     return this;
   }
   
   /// Filter estimated_duration greater than or equal
-  ActiveJobsModelQueryBuilder whereEstimatedDurationGreaterThanOrEqual(int? value) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationGreaterThanOrEqual(int? value) {
     _queryBuilder = _queryBuilder.gte('estimated_duration', value);
     return this;
   }
   
   /// Filter estimated_duration less than
-  ActiveJobsModelQueryBuilder whereEstimatedDurationLessThan(int? value) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationLessThan(int? value) {
     _queryBuilder = _queryBuilder.lt('estimated_duration', value);
     return this;
   }
   
   /// Filter estimated_duration less than or equal
-  ActiveJobsModelQueryBuilder whereEstimatedDurationLessThanOrEqual(int? value) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationLessThanOrEqual(int? value) {
     _queryBuilder = _queryBuilder.lte('estimated_duration', value);
     return this;
   }
   
   /// Filter estimated_duration between two values
-  ActiveJobsModelQueryBuilder whereEstimatedDurationBetween(int? min, int? max) {
+  ActiveJobsOldModelQueryBuilder whereEstimatedDurationBetween(int? min, int? max) {
     _queryBuilder = _queryBuilder.gte('estimated_duration', min).lte('estimated_duration', max);
     return this;
   }
 
   /// Filter by stage_notes
-  ActiveJobsModelQueryBuilder whereStageNotes(String? value) {
+  ActiveJobsOldModelQueryBuilder whereStageNotes(String? value) {
     _queryBuilder = _queryBuilder.eq('stage_notes', value);
     return this;
   }
   
   /// Filter by stage_notes with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereStageNotesIn(List<String> values) {
+  ActiveJobsOldModelQueryBuilder whereStageNotesIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('stage_notes', values);
     return this;
@@ -351,183 +351,210 @@ class ActiveJobsModelQueryBuilder {
   
 
   /// Filter by stage_metadata
-  ActiveJobsModelQueryBuilder whereStageMetadata(Map<String, dynamic>? value) {
+  ActiveJobsOldModelQueryBuilder whereStageMetadata(Map<String, dynamic>? value) {
     _queryBuilder = _queryBuilder.eq('stage_metadata', value);
     return this;
   }
   
   /// Filter by stage_metadata with multiple values (IN operator)
-  ActiveJobsModelQueryBuilder whereStageMetadataIn(List<Map<String, dynamic>> values) {
+  ActiveJobsOldModelQueryBuilder whereStageMetadataIn(List<Map<String, dynamic>> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('stage_metadata', values);
     return this;
   }
   
   
+
+  /// Filter by category_id
+  ActiveJobsOldModelQueryBuilder whereCategoryId(String? value) {
+    _queryBuilder = _queryBuilder.eq('category_id', value);
+    return this;
+  }
+  
+  /// Filter by category_id with multiple values (IN operator)
+  ActiveJobsOldModelQueryBuilder whereCategoryIdIn(List<String> values) {
+    // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
+    _queryBuilder = _queryBuilder.inFilter('category_id', values);
+    return this;
+  }
+  
+  
   
   /// Order by job_id in ascending order
-  ActiveJobsModelQueryBuilder orderByJobIdAsc() {
+  ActiveJobsOldModelQueryBuilder orderByJobIdAsc() {
     _queryBuilder = _queryBuilder.order('job_id', ascending: true);
     return this;
   }
   
   /// Order by job_id in descending order
-  ActiveJobsModelQueryBuilder orderByJobIdDesc() {
+  ActiveJobsOldModelQueryBuilder orderByJobIdDesc() {
     _queryBuilder = _queryBuilder.order('job_id', ascending: false);
     return this;
   }
 
   /// Order by homeowner_id in ascending order
-  ActiveJobsModelQueryBuilder orderByHomeownerIdAsc() {
+  ActiveJobsOldModelQueryBuilder orderByHomeownerIdAsc() {
     _queryBuilder = _queryBuilder.order('homeowner_id', ascending: true);
     return this;
   }
   
   /// Order by homeowner_id in descending order
-  ActiveJobsModelQueryBuilder orderByHomeownerIdDesc() {
+  ActiveJobsOldModelQueryBuilder orderByHomeownerIdDesc() {
     _queryBuilder = _queryBuilder.order('homeowner_id', ascending: false);
     return this;
   }
 
   /// Order by professional_id in ascending order
-  ActiveJobsModelQueryBuilder orderByProfessionalIdAsc() {
+  ActiveJobsOldModelQueryBuilder orderByProfessionalIdAsc() {
     _queryBuilder = _queryBuilder.order('professional_id', ascending: true);
     return this;
   }
   
   /// Order by professional_id in descending order
-  ActiveJobsModelQueryBuilder orderByProfessionalIdDesc() {
+  ActiveJobsOldModelQueryBuilder orderByProfessionalIdDesc() {
     _queryBuilder = _queryBuilder.order('professional_id', ascending: false);
     return this;
   }
 
   /// Order by service_id in ascending order
-  ActiveJobsModelQueryBuilder orderByServiceIdAsc() {
+  ActiveJobsOldModelQueryBuilder orderByServiceIdAsc() {
     _queryBuilder = _queryBuilder.order('service_id', ascending: true);
     return this;
   }
   
   /// Order by service_id in descending order
-  ActiveJobsModelQueryBuilder orderByServiceIdDesc() {
+  ActiveJobsOldModelQueryBuilder orderByServiceIdDesc() {
     _queryBuilder = _queryBuilder.order('service_id', ascending: false);
     return this;
   }
 
   /// Order by current_stage in ascending order
-  ActiveJobsModelQueryBuilder orderByCurrentStageAsc() {
+  ActiveJobsOldModelQueryBuilder orderByCurrentStageAsc() {
     _queryBuilder = _queryBuilder.order('current_stage', ascending: true);
     return this;
   }
   
   /// Order by current_stage in descending order
-  ActiveJobsModelQueryBuilder orderByCurrentStageDesc() {
+  ActiveJobsOldModelQueryBuilder orderByCurrentStageDesc() {
     _queryBuilder = _queryBuilder.order('current_stage', ascending: false);
     return this;
   }
 
   /// Order by created_at in ascending order
-  ActiveJobsModelQueryBuilder orderByCreatedAtAsc() {
+  ActiveJobsOldModelQueryBuilder orderByCreatedAtAsc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: true);
     return this;
   }
   
   /// Order by created_at in descending order
-  ActiveJobsModelQueryBuilder orderByCreatedAtDesc() {
+  ActiveJobsOldModelQueryBuilder orderByCreatedAtDesc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: false);
     return this;
   }
 
   /// Order by updated_at in ascending order
-  ActiveJobsModelQueryBuilder orderByUpdatedAtAsc() {
+  ActiveJobsOldModelQueryBuilder orderByUpdatedAtAsc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: true);
     return this;
   }
   
   /// Order by updated_at in descending order
-  ActiveJobsModelQueryBuilder orderByUpdatedAtDesc() {
+  ActiveJobsOldModelQueryBuilder orderByUpdatedAtDesc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: false);
     return this;
   }
 
   /// Order by metadata in ascending order
-  ActiveJobsModelQueryBuilder orderByMetadataAsc() {
+  ActiveJobsOldModelQueryBuilder orderByMetadataAsc() {
     _queryBuilder = _queryBuilder.order('metadata', ascending: true);
     return this;
   }
   
   /// Order by metadata in descending order
-  ActiveJobsModelQueryBuilder orderByMetadataDesc() {
+  ActiveJobsOldModelQueryBuilder orderByMetadataDesc() {
     _queryBuilder = _queryBuilder.order('metadata', ascending: false);
     return this;
   }
 
   /// Order by stage_updated_at in ascending order
-  ActiveJobsModelQueryBuilder orderByStageUpdatedAtAsc() {
+  ActiveJobsOldModelQueryBuilder orderByStageUpdatedAtAsc() {
     _queryBuilder = _queryBuilder.order('stage_updated_at', ascending: true);
     return this;
   }
   
   /// Order by stage_updated_at in descending order
-  ActiveJobsModelQueryBuilder orderByStageUpdatedAtDesc() {
+  ActiveJobsOldModelQueryBuilder orderByStageUpdatedAtDesc() {
     _queryBuilder = _queryBuilder.order('stage_updated_at', ascending: false);
     return this;
   }
 
   /// Order by scheduled_time in ascending order
-  ActiveJobsModelQueryBuilder orderByScheduledTimeAsc() {
+  ActiveJobsOldModelQueryBuilder orderByScheduledTimeAsc() {
     _queryBuilder = _queryBuilder.order('scheduled_time', ascending: true);
     return this;
   }
   
   /// Order by scheduled_time in descending order
-  ActiveJobsModelQueryBuilder orderByScheduledTimeDesc() {
+  ActiveJobsOldModelQueryBuilder orderByScheduledTimeDesc() {
     _queryBuilder = _queryBuilder.order('scheduled_time', ascending: false);
     return this;
   }
 
   /// Order by estimated_duration in ascending order
-  ActiveJobsModelQueryBuilder orderByEstimatedDurationAsc() {
+  ActiveJobsOldModelQueryBuilder orderByEstimatedDurationAsc() {
     _queryBuilder = _queryBuilder.order('estimated_duration', ascending: true);
     return this;
   }
   
   /// Order by estimated_duration in descending order
-  ActiveJobsModelQueryBuilder orderByEstimatedDurationDesc() {
+  ActiveJobsOldModelQueryBuilder orderByEstimatedDurationDesc() {
     _queryBuilder = _queryBuilder.order('estimated_duration', ascending: false);
     return this;
   }
 
   /// Order by stage_notes in ascending order
-  ActiveJobsModelQueryBuilder orderByStageNotesAsc() {
+  ActiveJobsOldModelQueryBuilder orderByStageNotesAsc() {
     _queryBuilder = _queryBuilder.order('stage_notes', ascending: true);
     return this;
   }
   
   /// Order by stage_notes in descending order
-  ActiveJobsModelQueryBuilder orderByStageNotesDesc() {
+  ActiveJobsOldModelQueryBuilder orderByStageNotesDesc() {
     _queryBuilder = _queryBuilder.order('stage_notes', ascending: false);
     return this;
   }
 
   /// Order by stage_metadata in ascending order
-  ActiveJobsModelQueryBuilder orderByStageMetadataAsc() {
+  ActiveJobsOldModelQueryBuilder orderByStageMetadataAsc() {
     _queryBuilder = _queryBuilder.order('stage_metadata', ascending: true);
     return this;
   }
   
   /// Order by stage_metadata in descending order
-  ActiveJobsModelQueryBuilder orderByStageMetadataDesc() {
+  ActiveJobsOldModelQueryBuilder orderByStageMetadataDesc() {
     _queryBuilder = _queryBuilder.order('stage_metadata', ascending: false);
     return this;
   }
+
+  /// Order by category_id in ascending order
+  ActiveJobsOldModelQueryBuilder orderByCategoryIdAsc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: true);
+    return this;
+  }
   
-  /// Execute the query and return the results as a list of ActiveJobsModel
-  Future<List<ActiveJobsModel>> get() async {
+  /// Order by category_id in descending order
+  ActiveJobsOldModelQueryBuilder orderByCategoryIdDesc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: false);
+    return this;
+  }
+  
+  /// Execute the query and return the results as a list of ActiveJobsOldModel
+  Future<List<ActiveJobsOldModel>> get() async {
     try {
       final response = await _queryBuilder;
       
       return (response as List<dynamic>)
-          .map((json) => ActiveJobsModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => ActiveJobsOldModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error executing query: $e');
@@ -536,13 +563,13 @@ class ActiveJobsModelQueryBuilder {
   }
   
   /// Execute the query and return a single result or null
-  Future<ActiveJobsModel?> getSingle() async {
+  Future<ActiveJobsOldModel?> getSingle() async {
     try {
       _queryBuilder = _queryBuilder.limit(1);
       final response = await _queryBuilder;
       
       if (response is List && response.isNotEmpty) {
-        return ActiveJobsModel.fromJson(response.first as Map<String, dynamic>);
+        return ActiveJobsOldModel.fromJson(response.first as Map<String, dynamic>);
       }
       
       return null;

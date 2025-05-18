@@ -5,11 +5,16 @@ import '../query_builders/en_route_phase_query_builder.dart';
 
 
 class EnRoutePhaseRepository extends BaseRepository<EnRoutePhaseModel> {
-  EnRoutePhaseRepository(SupabaseClient client) : super(client, 'en_route_phase');
+  EnRoutePhaseRepository(SupabaseClient client) : super(client, 'en_route_phase', primaryKeyColumn: 'job_id');
   
   @override
   EnRoutePhaseModel fromJson(Map<String, dynamic> json) {
     return EnRoutePhaseModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(EnRoutePhaseModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for en_route_phase

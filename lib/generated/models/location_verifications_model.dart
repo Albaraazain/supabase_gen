@@ -1,6 +1,12 @@
 import '../utils/geo_json.dart';
 
 /// Generated model class for table location_verifications
+/// Database triggers associated with this table:
+/// - location_verification_status_change: UPDATE AFTER - EXECUTE FUNCTION track_verification_status_change()
+///   Signature: track_verification_status_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for track_verification_status_change>
+///
 class LocationVerificationsModel {
   /// Primary key field
   /// Non-nullable field

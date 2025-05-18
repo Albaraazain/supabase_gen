@@ -14,6 +14,9 @@ No description available for this table.
 | `icon_url` | `text` | Yes | None | - |
 | `created_at` | `timestamp with time zone` | Yes | now() | - |
 | `updated_at` | `timestamp with time zone` | Yes | now() | - |
+| `base_price` | `numeric` | Yes | None | - |
+| `price_unit` | `text` | Yes | None | - |
+| `estimated_duration` | `integer` | Yes | None | - |
 
 ### One-to-Many Relationships
 

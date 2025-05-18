@@ -6,7 +6,6 @@ class JobBroadcastsModel {
   /// Non-nullable field
   final String broadcastId;
   final String? homeownerId;
-  final String? serviceId;
   /// Non-nullable field
   final String title;
   final String? description;
@@ -25,15 +24,15 @@ class JobBroadcastsModel {
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? expiresAt;
+  final String? categoryId;
 
-  JobBroadcastsModel({this.broadcastId = "", this.homeownerId, this.serviceId, required this.title, this.description, this.address, this.city, this.state, this.zipCode, this.latitude, this.longitude, this.locationAddress, this.scheduledTime, this.priceRangeMin, this.priceRangeMax, this.status, this.urgencyLevel, this.createdAt, this.updatedAt, this.expiresAt})
+  JobBroadcastsModel({this.broadcastId = "", this.homeownerId, required this.title, this.description, this.address, this.city, this.state, this.zipCode, this.latitude, this.longitude, this.locationAddress, this.scheduledTime, this.priceRangeMin, this.priceRangeMax, this.status, this.urgencyLevel, this.createdAt, this.updatedAt, this.expiresAt, this.categoryId})
       : assert(() { assert(broadcastId != null, "broadcast_id constraint violation"); assert(title != null, "title constraint violation"); return true; }());
 
   factory JobBroadcastsModel.fromJson(Map<String, dynamic> json) {
     return JobBroadcastsModel(
       broadcastId: json['broadcast_id'] ?? '',
       homeownerId: json['homeowner_id'],
-      serviceId: json['service_id'],
       title: json['title'] ?? '',
       description: json['description'],
       address: json['address'],
@@ -51,6 +50,7 @@ class JobBroadcastsModel {
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,
       expiresAt: json['expires_at'] != null ? DateTime.parse(json['expires_at'].toString()) : null,
+      categoryId: json['category_id'],
     );
   }
 
@@ -58,7 +58,6 @@ class JobBroadcastsModel {
     return {
       'broadcast_id': broadcastId,
       'homeowner_id': homeownerId,
-      'service_id': serviceId,
       'title': title,
       'description': description,
       'address': address,
@@ -76,21 +75,22 @@ class JobBroadcastsModel {
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
       'expires_at': expiresAt?.toIso8601String(),
+      'category_id': categoryId,
     };
   }
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
-    return other is JobBroadcastsModel && other.broadcastId == broadcastId && other.homeownerId == homeownerId && other.serviceId == serviceId && other.title == title && other.description == description && other.address == address && other.city == city && other.state == state && other.zipCode == zipCode && other.latitude == latitude && other.longitude == longitude && other.locationAddress == locationAddress && other.scheduledTime == scheduledTime && other.priceRangeMin == priceRangeMin && other.priceRangeMax == priceRangeMax && other.status == status && other.urgencyLevel == urgencyLevel && other.createdAt == createdAt && other.updatedAt == updatedAt && other.expiresAt == expiresAt;
+    return other is JobBroadcastsModel && other.broadcastId == broadcastId && other.homeownerId == homeownerId && other.title == title && other.description == description && other.address == address && other.city == city && other.state == state && other.zipCode == zipCode && other.latitude == latitude && other.longitude == longitude && other.locationAddress == locationAddress && other.scheduledTime == scheduledTime && other.priceRangeMin == priceRangeMin && other.priceRangeMax == priceRangeMax && other.status == status && other.urgencyLevel == urgencyLevel && other.createdAt == createdAt && other.updatedAt == updatedAt && other.expiresAt == expiresAt && other.categoryId == categoryId;
   }
 
   @override
-  int get hashCode => broadcastId.hashCode ^ homeownerId.hashCode ^ serviceId.hashCode ^ title.hashCode ^ description.hashCode ^ address.hashCode ^ city.hashCode ^ state.hashCode ^ zipCode.hashCode ^ latitude.hashCode ^ longitude.hashCode ^ locationAddress.hashCode ^ scheduledTime.hashCode ^ priceRangeMin.hashCode ^ priceRangeMax.hashCode ^ status.hashCode ^ urgencyLevel.hashCode ^ createdAt.hashCode ^ updatedAt.hashCode ^ expiresAt.hashCode;
+  int get hashCode => broadcastId.hashCode ^ homeownerId.hashCode ^ title.hashCode ^ description.hashCode ^ address.hashCode ^ city.hashCode ^ state.hashCode ^ zipCode.hashCode ^ latitude.hashCode ^ longitude.hashCode ^ locationAddress.hashCode ^ scheduledTime.hashCode ^ priceRangeMin.hashCode ^ priceRangeMax.hashCode ^ status.hashCode ^ urgencyLevel.hashCode ^ createdAt.hashCode ^ updatedAt.hashCode ^ expiresAt.hashCode ^ categoryId.hashCode;
 
   @override
   String toString() {
-    return 'JobBroadcastsModel(broadcastId: $broadcastId, homeownerId: $homeownerId, serviceId: $serviceId, title: $title, description: $description, address: $address, city: $city, state: $state, zipCode: $zipCode, latitude: $latitude, longitude: $longitude, locationAddress: $locationAddress, scheduledTime: $scheduledTime, priceRangeMin: $priceRangeMin, priceRangeMax: $priceRangeMax, status: $status, urgencyLevel: $urgencyLevel, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt)';
+    return 'JobBroadcastsModel(broadcastId: $broadcastId, homeownerId: $homeownerId, title: $title, description: $description, address: $address, city: $city, state: $state, zipCode: $zipCode, latitude: $latitude, longitude: $longitude, locationAddress: $locationAddress, scheduledTime: $scheduledTime, priceRangeMin: $priceRangeMin, priceRangeMax: $priceRangeMax, status: $status, urgencyLevel: $urgencyLevel, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, categoryId: $categoryId)';
   }
   /// Get the primary identifier for this record
   String get id => broadcastId;

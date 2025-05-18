@@ -5,11 +5,16 @@ import '../query_builders/quote_phase_query_builder.dart';
 
 
 class QuotePhaseRepository extends BaseRepository<QuotePhaseModel> {
-  QuotePhaseRepository(SupabaseClient client) : super(client, 'quote_phase');
+  QuotePhaseRepository(SupabaseClient client) : super(client, 'quote_phase', primaryKeyColumn: 'job_id');
   
   @override
   QuotePhaseModel fromJson(Map<String, dynamic> json) {
     return QuotePhaseModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(QuotePhaseModel model) {
+    return model.jobId;
   }
   
   /// Create a type-safe query builder for quote_phase

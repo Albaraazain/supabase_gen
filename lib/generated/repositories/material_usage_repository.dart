@@ -5,11 +5,16 @@ import '../query_builders/material_usage_query_builder.dart';
 
 
 class MaterialUsageRepository extends BaseRepository<MaterialUsageModel> {
-  MaterialUsageRepository(SupabaseClient client) : super(client, 'material_usage');
+  MaterialUsageRepository(SupabaseClient client) : super(client, 'material_usage', primaryKeyColumn: 'usage_id');
   
   @override
   MaterialUsageModel fromJson(Map<String, dynamic> json) {
     return MaterialUsageModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(MaterialUsageModel model) {
+    return model.usageId;
   }
   
   /// Create a type-safe query builder for material_usage

@@ -9,6 +9,12 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - update_preparation_checks_updated_at: UPDATE BEFORE - EXECUTE FUNCTION update_preparation_checks_updated_at()
+///   Signature: update_preparation_checks_updated_at() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_preparation_checks_updated_at>
+
 // Repository provider
 final preparationChecksRepositoryProvider = Provider<PreparationChecksRepository>((ref) {
   AppLogger.debug('Creating PreparationChecksRepository instance', loggerName: 'Provider');

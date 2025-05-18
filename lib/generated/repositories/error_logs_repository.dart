@@ -5,11 +5,16 @@ import '../query_builders/error_logs_query_builder.dart';
 
 
 class ErrorLogsRepository extends BaseRepository<ErrorLogsModel> {
-  ErrorLogsRepository(SupabaseClient client) : super(client, 'error_logs');
+  ErrorLogsRepository(SupabaseClient client) : super(client, 'error_logs', primaryKeyColumn: 'log_id');
   
   @override
   ErrorLogsModel fromJson(Map<String, dynamic> json) {
     return ErrorLogsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ErrorLogsModel model) {
+    return model.logId;
   }
   
   /// Create a type-safe query builder for error_logs
@@ -55,43 +60,5 @@ class ErrorLogsRepository extends BaseRepository<ErrorLogsModel> {
     // 2200_17686_2_not_null: Database CHECK constraint
     // Add custom validation logic here
   }
-  /// Get the user record associated with this error_logs
-  /// 
-  /// This retrieves the parent user record for this error_logs.
-  /// It represents a foreign key relationship from error_logs.user_id to users.id
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Get the user who created a message
-  /// final user = await messageRepository.getUser(message.userId);
-  /// ```
-  Future<UsersModel?> getUser(String userId) async {
-    final result = await client
-        .from('users')
-        .select()
-        .eq('id', userId)
-        .maybeSingle();
-    
-    if (result == null) return null;
-    return UsersModel.fromJson(result);
-  }
-  
-  /// Check if the user record exists for this error_logs
-  /// 
-  /// A utility method to check if the parent record exists without having to fetch the full record.
-  /// 
-  /// Example:
-  /// ```dart
-  /// // Check if the user exists
-  /// final exists = await messageRepository.userExists(message.userId);
-  /// ```
-  Future<bool> userExists(String userId) async {
-    final result = await client
-        .from('users')
-        .select('id')
-        .eq('id', userId)
-        .maybeSingle();
-    
-    return result != null;
-  }
+
 }

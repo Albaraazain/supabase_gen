@@ -1,43 +1,43 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/professional_services_model.dart';
+import '../models/professional_categories_model.dart';
 
-/// A type-safe query builder for ProfessionalServicesModel
-class ProfessionalServicesModelQueryBuilder {
+/// A type-safe query builder for ProfessionalCategoriesModel
+class ProfessionalCategoriesModelQueryBuilder {
   // PostgrestFilterBuilder<dynamic> will be properly typed when imported
   // in the generated file
   late dynamic _queryBuilder;
   final dynamic _client;
   
-  ProfessionalServicesModelQueryBuilder(this._client) {
-    _queryBuilder = _client.from('professional_services').select();
+  ProfessionalCategoriesModelQueryBuilder(this._client) {
+    _queryBuilder = _client.from('professional_categories').select();
   }
   
   /// Set the fields to select
-  ProfessionalServicesModelQueryBuilder select(String fields) {
-    _queryBuilder = _client.from('professional_services').select(fields);
+  ProfessionalCategoriesModelQueryBuilder select(String fields) {
+    _queryBuilder = _client.from('professional_categories').select(fields);
     return this;
   }
   
   /// Limit the number of rows returned
-  ProfessionalServicesModelQueryBuilder limit(int limit) {
+  ProfessionalCategoriesModelQueryBuilder limit(int limit) {
     _queryBuilder = _queryBuilder.limit(limit);
     return this;
   }
   
   /// Set the range of rows to return
-  ProfessionalServicesModelQueryBuilder range(int start, int end) {
+  ProfessionalCategoriesModelQueryBuilder range(int start, int end) {
     _queryBuilder = _queryBuilder.range(start, end);
     return this;
   }
   
   /// Filter by id
-  ProfessionalServicesModelQueryBuilder whereId(String value) {
+  ProfessionalCategoriesModelQueryBuilder whereId(String value) {
     _queryBuilder = _queryBuilder.eq('id', value);
     return this;
   }
   
   /// Filter by id with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereIdIn(List<String> values) {
+  ProfessionalCategoriesModelQueryBuilder whereIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('id', values);
     return this;
@@ -46,13 +46,13 @@ class ProfessionalServicesModelQueryBuilder {
   
 
   /// Filter by professional_id
-  ProfessionalServicesModelQueryBuilder whereProfessionalId(String? value) {
+  ProfessionalCategoriesModelQueryBuilder whereProfessionalId(String? value) {
     _queryBuilder = _queryBuilder.eq('professional_id', value);
     return this;
   }
   
   /// Filter by professional_id with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereProfessionalIdIn(List<String> values) {
+  ProfessionalCategoriesModelQueryBuilder whereProfessionalIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('professional_id', values);
     return this;
@@ -60,115 +60,115 @@ class ProfessionalServicesModelQueryBuilder {
   
   
 
-  /// Filter by service_id
-  ProfessionalServicesModelQueryBuilder whereServiceId(String? value) {
-    _queryBuilder = _queryBuilder.eq('service_id', value);
+  /// Filter by category_id
+  ProfessionalCategoriesModelQueryBuilder whereCategoryId(String? value) {
+    _queryBuilder = _queryBuilder.eq('category_id', value);
     return this;
   }
   
-  /// Filter by service_id with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereServiceIdIn(List<String> values) {
+  /// Filter by category_id with multiple values (IN operator)
+  ProfessionalCategoriesModelQueryBuilder whereCategoryIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
-    _queryBuilder = _queryBuilder.inFilter('service_id', values);
+    _queryBuilder = _queryBuilder.inFilter('category_id', values);
     return this;
   }
   
   
 
   /// Filter by price_adjustment
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustment(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustment(double? value) {
     _queryBuilder = _queryBuilder.eq('price_adjustment', value);
     return this;
   }
   
   /// Filter by price_adjustment with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentIn(List<double> values) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentIn(List<double> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('price_adjustment', values);
     return this;
   }
   
     /// Filter price_adjustment greater than
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentGreaterThan(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentGreaterThan(double? value) {
     _queryBuilder = _queryBuilder.gt('price_adjustment', value);
     return this;
   }
   
   /// Filter price_adjustment greater than or equal
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentGreaterThanOrEqual(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentGreaterThanOrEqual(double? value) {
     _queryBuilder = _queryBuilder.gte('price_adjustment', value);
     return this;
   }
   
   /// Filter price_adjustment less than
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentLessThan(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentLessThan(double? value) {
     _queryBuilder = _queryBuilder.lt('price_adjustment', value);
     return this;
   }
   
   /// Filter price_adjustment less than or equal
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentLessThanOrEqual(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentLessThanOrEqual(double? value) {
     _queryBuilder = _queryBuilder.lte('price_adjustment', value);
     return this;
   }
   
   /// Filter price_adjustment between two values
-  ProfessionalServicesModelQueryBuilder wherePriceAdjustmentBetween(double? min, double? max) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceAdjustmentBetween(double? min, double? max) {
     _queryBuilder = _queryBuilder.gte('price_adjustment', min).lte('price_adjustment', max);
     return this;
   }
 
   /// Filter by price_rate
-  ProfessionalServicesModelQueryBuilder wherePriceRate(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRate(double? value) {
     _queryBuilder = _queryBuilder.eq('price_rate', value);
     return this;
   }
   
   /// Filter by price_rate with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder wherePriceRateIn(List<double> values) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateIn(List<double> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('price_rate', values);
     return this;
   }
   
     /// Filter price_rate greater than
-  ProfessionalServicesModelQueryBuilder wherePriceRateGreaterThan(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateGreaterThan(double? value) {
     _queryBuilder = _queryBuilder.gt('price_rate', value);
     return this;
   }
   
   /// Filter price_rate greater than or equal
-  ProfessionalServicesModelQueryBuilder wherePriceRateGreaterThanOrEqual(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateGreaterThanOrEqual(double? value) {
     _queryBuilder = _queryBuilder.gte('price_rate', value);
     return this;
   }
   
   /// Filter price_rate less than
-  ProfessionalServicesModelQueryBuilder wherePriceRateLessThan(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateLessThan(double? value) {
     _queryBuilder = _queryBuilder.lt('price_rate', value);
     return this;
   }
   
   /// Filter price_rate less than or equal
-  ProfessionalServicesModelQueryBuilder wherePriceRateLessThanOrEqual(double? value) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateLessThanOrEqual(double? value) {
     _queryBuilder = _queryBuilder.lte('price_rate', value);
     return this;
   }
   
   /// Filter price_rate between two values
-  ProfessionalServicesModelQueryBuilder wherePriceRateBetween(double? min, double? max) {
+  ProfessionalCategoriesModelQueryBuilder wherePriceRateBetween(double? min, double? max) {
     _queryBuilder = _queryBuilder.gte('price_rate', min).lte('price_rate', max);
     return this;
   }
 
   /// Filter by is_active
-  ProfessionalServicesModelQueryBuilder whereIsActive(bool? value) {
+  ProfessionalCategoriesModelQueryBuilder whereIsActive(bool? value) {
     _queryBuilder = _queryBuilder.eq('is_active', value);
     return this;
   }
   
   /// Filter by is_active with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereIsActiveIn(List<bool> values) {
+  ProfessionalCategoriesModelQueryBuilder whereIsActiveIn(List<bool> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('is_active', values);
     return this;
@@ -177,13 +177,13 @@ class ProfessionalServicesModelQueryBuilder {
   
 
   /// Filter by is_available
-  ProfessionalServicesModelQueryBuilder whereIsAvailable(bool? value) {
+  ProfessionalCategoriesModelQueryBuilder whereIsAvailable(bool? value) {
     _queryBuilder = _queryBuilder.eq('is_available', value);
     return this;
   }
   
   /// Filter by is_available with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereIsAvailableIn(List<bool> values) {
+  ProfessionalCategoriesModelQueryBuilder whereIsAvailableIn(List<bool> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('is_available', values);
     return this;
@@ -192,206 +192,206 @@ class ProfessionalServicesModelQueryBuilder {
   
 
   /// Filter by created_at
-  ProfessionalServicesModelQueryBuilder whereCreatedAt(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAt(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('created_at', value);
     return this;
   }
   
   /// Filter by created_at with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('created_at', values);
     return this;
   }
   
     /// Filter created_at greater than
-  ProfessionalServicesModelQueryBuilder whereCreatedAtGreaterThan(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('created_at', value);
     return this;
   }
   
   /// Filter created_at greater than or equal
-  ProfessionalServicesModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('created_at', value);
     return this;
   }
   
   /// Filter created_at less than
-  ProfessionalServicesModelQueryBuilder whereCreatedAtLessThan(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('created_at', value);
     return this;
   }
   
   /// Filter created_at less than or equal
-  ProfessionalServicesModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('created_at', value);
     return this;
   }
   
   /// Filter created_at between two values
-  ProfessionalServicesModelQueryBuilder whereCreatedAtBetween(DateTime? min, DateTime? max) {
+  ProfessionalCategoriesModelQueryBuilder whereCreatedAtBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('created_at', min).lte('created_at', max);
     return this;
   }
 
   /// Filter by updated_at
-  ProfessionalServicesModelQueryBuilder whereUpdatedAt(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAt(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('updated_at', value);
     return this;
   }
   
   /// Filter by updated_at with multiple values (IN operator)
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('updated_at', values);
     return this;
   }
   
     /// Filter updated_at greater than
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtGreaterThan(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at greater than or equal
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtLessThan(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than or equal
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime? value) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at between two values
-  ProfessionalServicesModelQueryBuilder whereUpdatedAtBetween(DateTime? min, DateTime? max) {
+  ProfessionalCategoriesModelQueryBuilder whereUpdatedAtBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('updated_at', min).lte('updated_at', max);
     return this;
   }
   
   /// Order by id in ascending order
-  ProfessionalServicesModelQueryBuilder orderByIdAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIdAsc() {
     _queryBuilder = _queryBuilder.order('id', ascending: true);
     return this;
   }
   
   /// Order by id in descending order
-  ProfessionalServicesModelQueryBuilder orderByIdDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIdDesc() {
     _queryBuilder = _queryBuilder.order('id', ascending: false);
     return this;
   }
 
   /// Order by professional_id in ascending order
-  ProfessionalServicesModelQueryBuilder orderByProfessionalIdAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByProfessionalIdAsc() {
     _queryBuilder = _queryBuilder.order('professional_id', ascending: true);
     return this;
   }
   
   /// Order by professional_id in descending order
-  ProfessionalServicesModelQueryBuilder orderByProfessionalIdDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByProfessionalIdDesc() {
     _queryBuilder = _queryBuilder.order('professional_id', ascending: false);
     return this;
   }
 
-  /// Order by service_id in ascending order
-  ProfessionalServicesModelQueryBuilder orderByServiceIdAsc() {
-    _queryBuilder = _queryBuilder.order('service_id', ascending: true);
+  /// Order by category_id in ascending order
+  ProfessionalCategoriesModelQueryBuilder orderByCategoryIdAsc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: true);
     return this;
   }
   
-  /// Order by service_id in descending order
-  ProfessionalServicesModelQueryBuilder orderByServiceIdDesc() {
-    _queryBuilder = _queryBuilder.order('service_id', ascending: false);
+  /// Order by category_id in descending order
+  ProfessionalCategoriesModelQueryBuilder orderByCategoryIdDesc() {
+    _queryBuilder = _queryBuilder.order('category_id', ascending: false);
     return this;
   }
 
   /// Order by price_adjustment in ascending order
-  ProfessionalServicesModelQueryBuilder orderByPriceAdjustmentAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByPriceAdjustmentAsc() {
     _queryBuilder = _queryBuilder.order('price_adjustment', ascending: true);
     return this;
   }
   
   /// Order by price_adjustment in descending order
-  ProfessionalServicesModelQueryBuilder orderByPriceAdjustmentDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByPriceAdjustmentDesc() {
     _queryBuilder = _queryBuilder.order('price_adjustment', ascending: false);
     return this;
   }
 
   /// Order by price_rate in ascending order
-  ProfessionalServicesModelQueryBuilder orderByPriceRateAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByPriceRateAsc() {
     _queryBuilder = _queryBuilder.order('price_rate', ascending: true);
     return this;
   }
   
   /// Order by price_rate in descending order
-  ProfessionalServicesModelQueryBuilder orderByPriceRateDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByPriceRateDesc() {
     _queryBuilder = _queryBuilder.order('price_rate', ascending: false);
     return this;
   }
 
   /// Order by is_active in ascending order
-  ProfessionalServicesModelQueryBuilder orderByIsActiveAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIsActiveAsc() {
     _queryBuilder = _queryBuilder.order('is_active', ascending: true);
     return this;
   }
   
   /// Order by is_active in descending order
-  ProfessionalServicesModelQueryBuilder orderByIsActiveDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIsActiveDesc() {
     _queryBuilder = _queryBuilder.order('is_active', ascending: false);
     return this;
   }
 
   /// Order by is_available in ascending order
-  ProfessionalServicesModelQueryBuilder orderByIsAvailableAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIsAvailableAsc() {
     _queryBuilder = _queryBuilder.order('is_available', ascending: true);
     return this;
   }
   
   /// Order by is_available in descending order
-  ProfessionalServicesModelQueryBuilder orderByIsAvailableDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByIsAvailableDesc() {
     _queryBuilder = _queryBuilder.order('is_available', ascending: false);
     return this;
   }
 
   /// Order by created_at in ascending order
-  ProfessionalServicesModelQueryBuilder orderByCreatedAtAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByCreatedAtAsc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: true);
     return this;
   }
   
   /// Order by created_at in descending order
-  ProfessionalServicesModelQueryBuilder orderByCreatedAtDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByCreatedAtDesc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: false);
     return this;
   }
 
   /// Order by updated_at in ascending order
-  ProfessionalServicesModelQueryBuilder orderByUpdatedAtAsc() {
+  ProfessionalCategoriesModelQueryBuilder orderByUpdatedAtAsc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: true);
     return this;
   }
   
   /// Order by updated_at in descending order
-  ProfessionalServicesModelQueryBuilder orderByUpdatedAtDesc() {
+  ProfessionalCategoriesModelQueryBuilder orderByUpdatedAtDesc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: false);
     return this;
   }
   
-  /// Execute the query and return the results as a list of ProfessionalServicesModel
-  Future<List<ProfessionalServicesModel>> get() async {
+  /// Execute the query and return the results as a list of ProfessionalCategoriesModel
+  Future<List<ProfessionalCategoriesModel>> get() async {
     try {
       final response = await _queryBuilder;
       
       return (response as List<dynamic>)
-          .map((json) => ProfessionalServicesModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => ProfessionalCategoriesModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error executing query: $e');
@@ -400,13 +400,13 @@ class ProfessionalServicesModelQueryBuilder {
   }
   
   /// Execute the query and return a single result or null
-  Future<ProfessionalServicesModel?> getSingle() async {
+  Future<ProfessionalCategoriesModel?> getSingle() async {
     try {
       _queryBuilder = _queryBuilder.limit(1);
       final response = await _queryBuilder;
       
       if (response is List && response.isNotEmpty) {
-        return ProfessionalServicesModel.fromJson(response.first as Map<String, dynamic>);
+        return ProfessionalCategoriesModel.fromJson(response.first as Map<String, dynamic>);
       }
       
       return null;

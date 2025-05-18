@@ -5,11 +5,16 @@ import '../query_builders/homeowner_location_updates_query_builder.dart';
 
 
 class HomeownerLocationUpdatesRepository extends BaseRepository<HomeownerLocationUpdatesModel> {
-  HomeownerLocationUpdatesRepository(SupabaseClient client) : super(client, 'homeowner_location_updates');
+  HomeownerLocationUpdatesRepository(SupabaseClient client) : super(client, 'homeowner_location_updates', primaryKeyColumn: 'id');
   
   @override
   HomeownerLocationUpdatesModel fromJson(Map<String, dynamic> json) {
     return HomeownerLocationUpdatesModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(HomeownerLocationUpdatesModel model) {
+    return model.id;
   }
   
   /// Create a type-safe query builder for homeowner_location_updates

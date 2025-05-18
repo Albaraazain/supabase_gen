@@ -9,6 +9,20 @@ import '../utils/app_cache.dart';
 import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
+/// Database triggers associated with this table that may affect operations:
+/// - line_item_changes: INSERT AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+/// - line_item_changes: DELETE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+/// - line_item_changes: UPDATE AFTER - EXECUTE FUNCTION update_quote_on_line_item_change()
+///   Signature: update_quote_on_line_item_change() RETURNS trigger
+///   Language: plpgsql
+///   Body: <Function body not available for update_quote_on_line_item_change>
+
 // Repository provider
 final quoteLineItemsRepositoryProvider = Provider<QuoteLineItemsRepository>((ref) {
   AppLogger.debug('Creating QuoteLineItemsRepository instance', loggerName: 'Provider');

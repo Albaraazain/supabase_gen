@@ -1,58 +1,58 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../models/users_model.dart';
+import '../models/profile_base_model.dart';
 
-/// A type-safe query builder for UsersModel
-class UsersModelQueryBuilder {
+/// A type-safe query builder for ProfileBaseModel
+class ProfileBaseModelQueryBuilder {
   // PostgrestFilterBuilder<dynamic> will be properly typed when imported
   // in the generated file
   late dynamic _queryBuilder;
   final dynamic _client;
   
-  UsersModelQueryBuilder(this._client) {
-    _queryBuilder = _client.from('users').select();
+  ProfileBaseModelQueryBuilder(this._client) {
+    _queryBuilder = _client.from('profile_base').select();
   }
   
   /// Set the fields to select
-  UsersModelQueryBuilder select(String fields) {
-    _queryBuilder = _client.from('users').select(fields);
+  ProfileBaseModelQueryBuilder select(String fields) {
+    _queryBuilder = _client.from('profile_base').select(fields);
     return this;
   }
   
   /// Limit the number of rows returned
-  UsersModelQueryBuilder limit(int limit) {
+  ProfileBaseModelQueryBuilder limit(int limit) {
     _queryBuilder = _queryBuilder.limit(limit);
     return this;
   }
   
   /// Set the range of rows to return
-  UsersModelQueryBuilder range(int start, int end) {
+  ProfileBaseModelQueryBuilder range(int start, int end) {
     _queryBuilder = _queryBuilder.range(start, end);
     return this;
   }
   
-  /// Filter by user_id
-  UsersModelQueryBuilder whereUserId(String value) {
-    _queryBuilder = _queryBuilder.eq('user_id', value);
+  /// Filter by id
+  ProfileBaseModelQueryBuilder whereId(String value) {
+    _queryBuilder = _queryBuilder.eq('id', value);
     return this;
   }
   
-  /// Filter by user_id with multiple values (IN operator)
-  UsersModelQueryBuilder whereUserIdIn(List<String> values) {
+  /// Filter by id with multiple values (IN operator)
+  ProfileBaseModelQueryBuilder whereIdIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
-    _queryBuilder = _queryBuilder.inFilter('user_id', values);
+    _queryBuilder = _queryBuilder.inFilter('id', values);
     return this;
   }
   
   
 
   /// Filter by email
-  UsersModelQueryBuilder whereEmail(String value) {
+  ProfileBaseModelQueryBuilder whereEmail(String value) {
     _queryBuilder = _queryBuilder.eq('email', value);
     return this;
   }
   
   /// Filter by email with multiple values (IN operator)
-  UsersModelQueryBuilder whereEmailIn(List<String> values) {
+  ProfileBaseModelQueryBuilder whereEmailIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('email', values);
     return this;
@@ -61,13 +61,13 @@ class UsersModelQueryBuilder {
   
 
   /// Filter by full_name
-  UsersModelQueryBuilder whereFullName(String value) {
+  ProfileBaseModelQueryBuilder whereFullName(String value) {
     _queryBuilder = _queryBuilder.eq('full_name', value);
     return this;
   }
   
   /// Filter by full_name with multiple values (IN operator)
-  UsersModelQueryBuilder whereFullNameIn(List<String> values) {
+  ProfileBaseModelQueryBuilder whereFullNameIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('full_name', values);
     return this;
@@ -76,13 +76,13 @@ class UsersModelQueryBuilder {
   
 
   /// Filter by phone
-  UsersModelQueryBuilder wherePhone(String? value) {
+  ProfileBaseModelQueryBuilder wherePhone(String? value) {
     _queryBuilder = _queryBuilder.eq('phone', value);
     return this;
   }
   
   /// Filter by phone with multiple values (IN operator)
-  UsersModelQueryBuilder wherePhoneIn(List<String> values) {
+  ProfileBaseModelQueryBuilder wherePhoneIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('phone', values);
     return this;
@@ -91,13 +91,13 @@ class UsersModelQueryBuilder {
   
 
   /// Filter by profile_image_url
-  UsersModelQueryBuilder whereProfileImageUrl(String? value) {
+  ProfileBaseModelQueryBuilder whereProfileImageUrl(String? value) {
     _queryBuilder = _queryBuilder.eq('profile_image_url', value);
     return this;
   }
   
   /// Filter by profile_image_url with multiple values (IN operator)
-  UsersModelQueryBuilder whereProfileImageUrlIn(List<String> values) {
+  ProfileBaseModelQueryBuilder whereProfileImageUrlIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('profile_image_url', values);
     return this;
@@ -106,13 +106,13 @@ class UsersModelQueryBuilder {
   
 
   /// Filter by user_type
-  UsersModelQueryBuilder whereUserType(String value) {
+  ProfileBaseModelQueryBuilder whereUserType(String value) {
     _queryBuilder = _queryBuilder.eq('user_type', value);
     return this;
   }
   
   /// Filter by user_type with multiple values (IN operator)
-  UsersModelQueryBuilder whereUserTypeIn(List<String> values) {
+  ProfileBaseModelQueryBuilder whereUserTypeIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('user_type', values);
     return this;
@@ -121,99 +121,99 @@ class UsersModelQueryBuilder {
   
 
   /// Filter by created_at
-  UsersModelQueryBuilder whereCreatedAt(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereCreatedAt(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('created_at', value);
     return this;
   }
   
   /// Filter by created_at with multiple values (IN operator)
-  UsersModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
+  ProfileBaseModelQueryBuilder whereCreatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('created_at', values);
     return this;
   }
   
     /// Filter created_at greater than
-  UsersModelQueryBuilder whereCreatedAtGreaterThan(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereCreatedAtGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('created_at', value);
     return this;
   }
   
   /// Filter created_at greater than or equal
-  UsersModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereCreatedAtGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('created_at', value);
     return this;
   }
   
   /// Filter created_at less than
-  UsersModelQueryBuilder whereCreatedAtLessThan(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereCreatedAtLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('created_at', value);
     return this;
   }
   
   /// Filter created_at less than or equal
-  UsersModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereCreatedAtLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('created_at', value);
     return this;
   }
   
   /// Filter created_at between two values
-  UsersModelQueryBuilder whereCreatedAtBetween(DateTime? min, DateTime? max) {
+  ProfileBaseModelQueryBuilder whereCreatedAtBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('created_at', min).lte('created_at', max);
     return this;
   }
 
   /// Filter by updated_at
-  UsersModelQueryBuilder whereUpdatedAt(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereUpdatedAt(DateTime? value) {
     _queryBuilder = _queryBuilder.eq('updated_at', value);
     return this;
   }
   
   /// Filter by updated_at with multiple values (IN operator)
-  UsersModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtIn(List<DateTime> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('updated_at', values);
     return this;
   }
   
     /// Filter updated_at greater than
-  UsersModelQueryBuilder whereUpdatedAtGreaterThan(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtGreaterThan(DateTime? value) {
     _queryBuilder = _queryBuilder.gt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at greater than or equal
-  UsersModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtGreaterThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.gte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than
-  UsersModelQueryBuilder whereUpdatedAtLessThan(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtLessThan(DateTime? value) {
     _queryBuilder = _queryBuilder.lt('updated_at', value);
     return this;
   }
   
   /// Filter updated_at less than or equal
-  UsersModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime? value) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtLessThanOrEqual(DateTime? value) {
     _queryBuilder = _queryBuilder.lte('updated_at', value);
     return this;
   }
   
   /// Filter updated_at between two values
-  UsersModelQueryBuilder whereUpdatedAtBetween(DateTime? min, DateTime? max) {
+  ProfileBaseModelQueryBuilder whereUpdatedAtBetween(DateTime? min, DateTime? max) {
     _queryBuilder = _queryBuilder.gte('updated_at', min).lte('updated_at', max);
     return this;
   }
 
   /// Filter by status
-  UsersModelQueryBuilder whereStatus(String? value) {
+  ProfileBaseModelQueryBuilder whereStatus(String? value) {
     _queryBuilder = _queryBuilder.eq('status', value);
     return this;
   }
   
   /// Filter by status with multiple values (IN operator)
-  UsersModelQueryBuilder whereStatusIn(List<String> values) {
+  ProfileBaseModelQueryBuilder whereStatusIn(List<String> values) {
     // Use inFilter for Supabase 2.9.0+ compatibility, but keep in_ for backward compatibility
     _queryBuilder = _queryBuilder.inFilter('status', values);
     return this;
@@ -221,121 +221,121 @@ class UsersModelQueryBuilder {
   
   
   
-  /// Order by user_id in ascending order
-  UsersModelQueryBuilder orderByUserIdAsc() {
-    _queryBuilder = _queryBuilder.order('user_id', ascending: true);
+  /// Order by id in ascending order
+  ProfileBaseModelQueryBuilder orderByIdAsc() {
+    _queryBuilder = _queryBuilder.order('id', ascending: true);
     return this;
   }
   
-  /// Order by user_id in descending order
-  UsersModelQueryBuilder orderByUserIdDesc() {
-    _queryBuilder = _queryBuilder.order('user_id', ascending: false);
+  /// Order by id in descending order
+  ProfileBaseModelQueryBuilder orderByIdDesc() {
+    _queryBuilder = _queryBuilder.order('id', ascending: false);
     return this;
   }
 
   /// Order by email in ascending order
-  UsersModelQueryBuilder orderByEmailAsc() {
+  ProfileBaseModelQueryBuilder orderByEmailAsc() {
     _queryBuilder = _queryBuilder.order('email', ascending: true);
     return this;
   }
   
   /// Order by email in descending order
-  UsersModelQueryBuilder orderByEmailDesc() {
+  ProfileBaseModelQueryBuilder orderByEmailDesc() {
     _queryBuilder = _queryBuilder.order('email', ascending: false);
     return this;
   }
 
   /// Order by full_name in ascending order
-  UsersModelQueryBuilder orderByFullNameAsc() {
+  ProfileBaseModelQueryBuilder orderByFullNameAsc() {
     _queryBuilder = _queryBuilder.order('full_name', ascending: true);
     return this;
   }
   
   /// Order by full_name in descending order
-  UsersModelQueryBuilder orderByFullNameDesc() {
+  ProfileBaseModelQueryBuilder orderByFullNameDesc() {
     _queryBuilder = _queryBuilder.order('full_name', ascending: false);
     return this;
   }
 
   /// Order by phone in ascending order
-  UsersModelQueryBuilder orderByPhoneAsc() {
+  ProfileBaseModelQueryBuilder orderByPhoneAsc() {
     _queryBuilder = _queryBuilder.order('phone', ascending: true);
     return this;
   }
   
   /// Order by phone in descending order
-  UsersModelQueryBuilder orderByPhoneDesc() {
+  ProfileBaseModelQueryBuilder orderByPhoneDesc() {
     _queryBuilder = _queryBuilder.order('phone', ascending: false);
     return this;
   }
 
   /// Order by profile_image_url in ascending order
-  UsersModelQueryBuilder orderByProfileImageUrlAsc() {
+  ProfileBaseModelQueryBuilder orderByProfileImageUrlAsc() {
     _queryBuilder = _queryBuilder.order('profile_image_url', ascending: true);
     return this;
   }
   
   /// Order by profile_image_url in descending order
-  UsersModelQueryBuilder orderByProfileImageUrlDesc() {
+  ProfileBaseModelQueryBuilder orderByProfileImageUrlDesc() {
     _queryBuilder = _queryBuilder.order('profile_image_url', ascending: false);
     return this;
   }
 
   /// Order by user_type in ascending order
-  UsersModelQueryBuilder orderByUserTypeAsc() {
+  ProfileBaseModelQueryBuilder orderByUserTypeAsc() {
     _queryBuilder = _queryBuilder.order('user_type', ascending: true);
     return this;
   }
   
   /// Order by user_type in descending order
-  UsersModelQueryBuilder orderByUserTypeDesc() {
+  ProfileBaseModelQueryBuilder orderByUserTypeDesc() {
     _queryBuilder = _queryBuilder.order('user_type', ascending: false);
     return this;
   }
 
   /// Order by created_at in ascending order
-  UsersModelQueryBuilder orderByCreatedAtAsc() {
+  ProfileBaseModelQueryBuilder orderByCreatedAtAsc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: true);
     return this;
   }
   
   /// Order by created_at in descending order
-  UsersModelQueryBuilder orderByCreatedAtDesc() {
+  ProfileBaseModelQueryBuilder orderByCreatedAtDesc() {
     _queryBuilder = _queryBuilder.order('created_at', ascending: false);
     return this;
   }
 
   /// Order by updated_at in ascending order
-  UsersModelQueryBuilder orderByUpdatedAtAsc() {
+  ProfileBaseModelQueryBuilder orderByUpdatedAtAsc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: true);
     return this;
   }
   
   /// Order by updated_at in descending order
-  UsersModelQueryBuilder orderByUpdatedAtDesc() {
+  ProfileBaseModelQueryBuilder orderByUpdatedAtDesc() {
     _queryBuilder = _queryBuilder.order('updated_at', ascending: false);
     return this;
   }
 
   /// Order by status in ascending order
-  UsersModelQueryBuilder orderByStatusAsc() {
+  ProfileBaseModelQueryBuilder orderByStatusAsc() {
     _queryBuilder = _queryBuilder.order('status', ascending: true);
     return this;
   }
   
   /// Order by status in descending order
-  UsersModelQueryBuilder orderByStatusDesc() {
+  ProfileBaseModelQueryBuilder orderByStatusDesc() {
     _queryBuilder = _queryBuilder.order('status', ascending: false);
     return this;
   }
   
-  /// Execute the query and return the results as a list of UsersModel
-  Future<List<UsersModel>> get() async {
+  /// Execute the query and return the results as a list of ProfileBaseModel
+  Future<List<ProfileBaseModel>> get() async {
     try {
       final response = await _queryBuilder;
       
       return (response as List<dynamic>)
-          .map((json) => UsersModel.fromJson(json as Map<String, dynamic>))
+          .map((json) => ProfileBaseModel.fromJson(json as Map<String, dynamic>))
           .toList();
     } catch (e) {
       print('Error executing query: $e');
@@ -344,13 +344,13 @@ class UsersModelQueryBuilder {
   }
   
   /// Execute the query and return a single result or null
-  Future<UsersModel?> getSingle() async {
+  Future<ProfileBaseModel?> getSingle() async {
     try {
       _queryBuilder = _queryBuilder.limit(1);
       final response = await _queryBuilder;
       
       if (response is List && response.isNotEmpty) {
-        return UsersModel.fromJson(response.first as Map<String, dynamic>);
+        return ProfileBaseModel.fromJson(response.first as Map<String, dynamic>);
       }
       
       return null;

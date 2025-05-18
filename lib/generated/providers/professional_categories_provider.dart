@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
 
-import '../models/professional_services_model.dart';
-import '../repositories/professional_services_repository.dart';
+import '../models/professional_categories_model.dart';
+import '../repositories/professional_categories_repository.dart';
 import '../shared/errors/app_exception.dart';
 import '../utils/app_logger.dart';
 import '../utils/app_cache.dart';
@@ -10,16 +10,16 @@ import '../utils/provider_logging.dart';
 import '../shared/errors/app_exception_handler.dart';
 
 // Repository provider
-final professionalServicesRepositoryProvider = Provider<ProfessionalServicesRepository>((ref) {
-  AppLogger.debug('Creating ProfessionalServicesRepository instance', loggerName: 'Provider');
-  return ProfessionalServicesRepository(Supabase.instance.client);
+final professionalCategoriesRepositoryProvider = Provider<ProfessionalCategoriesRepository>((ref) {
+  AppLogger.debug('Creating ProfessionalCategoriesRepository instance', loggerName: 'Provider');
+  return ProfessionalCategoriesRepository(Supabase.instance.client);
 });
 
-// Main provider for managing professional_services data
-final professionalServicesProvider = StateNotifierProvider<ProfessionalServicesNotifier, AsyncValue<List<ProfessionalServicesModel>>>((ref) {
-  final repository = ref.watch(professionalServicesRepositoryProvider);
-  AppLogger.debug('Creating ProfessionalServicesNotifier', loggerName: 'Provider');
-  return ProfessionalServicesNotifier(repository);
+// Main provider for managing professional_categories data
+final professionalCategoriesProvider = StateNotifierProvider<ProfessionalCategoriesNotifier, AsyncValue<List<ProfessionalCategoriesModel>>>((ref) {
+  final repository = ref.watch(professionalCategoriesRepositoryProvider);
+  AppLogger.debug('Creating ProfessionalCategoriesNotifier', loggerName: 'Provider');
+  return ProfessionalCategoriesNotifier(repository);
 });
 
 // Helper to create a stable cache key from filters
@@ -33,45 +33,45 @@ String _createCacheKey(Map<String, dynamic> filters) {
     parts.add('$key=${value?.toString() ?? 'null'}');
   }
   
-  return 'professional_services:${parts.join(',')}';
+  return 'professional_categories:${parts.join(',')}';
 }
 
-// Provider to get a single professional_services by ID with caching
-final professionalServicesByIdProvider = FutureProvider.family<ProfessionalServicesModel?, String>((ref, id) async {
+// Provider to get a single professional_categories by ID with caching
+final professionalCategoriesByIdProvider = FutureProvider.family<ProfessionalCategoriesModel?, String>((ref, id) async {
   // Create a stable cache key for this ID lookup
-  final cacheKey = 'professional_services:id:$id';
+  final cacheKey = 'professional_categories:id:$id';
   
-  AppLogger.debug('professionalServicesByIdProvider called with id: $id', loggerName: 'Provider');
-  final repository = ref.watch(professionalServicesRepositoryProvider);
+  AppLogger.debug('professionalCategoriesByIdProvider called with id: $id', loggerName: 'Provider');
+  final repository = ref.watch(professionalCategoriesRepositoryProvider);
   
   try {
     // Use the app cache to prevent redundant database calls
-    final result = await AppCache().getOrFetch<ProfessionalServicesModel?>(
+    final result = await AppCache().getOrFetch<ProfessionalCategoriesModel?>(
       cacheKey,
       () => repository.find(id),
       duration: const Duration(minutes: 2), // Cache items briefly
     );
     
     if (result == null) {
-      AppLogger.warning('No professional_servic found with ID: $id', loggerName: 'Provider');
+      AppLogger.warning('No professional_category found with ID: $id', loggerName: 'Provider');
     } else {
-      AppLogger.debug('Found professional_servic with ID: $id', loggerName: 'Provider');
+      AppLogger.debug('Found professional_category with ID: $id', loggerName: 'Provider');
     }
     
     return result;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServicesById');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategoriesById');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
 
-// Provider to get filtered professional_services with proper caching
-final filteredProfessionalServicesProvider = FutureProvider.family<List<ProfessionalServicesModel>, Map<String, dynamic>>((ref, filters) async {
+// Provider to get filtered professional_categories with proper caching
+final filteredProfessionalCategoriesProvider = FutureProvider.family<List<ProfessionalCategoriesModel>, Map<String, dynamic>>((ref, filters) async {
   // Create a stable cache key from the filters
   final cacheKey = _createCacheKey(filters);
   
-  AppLogger.debug('filteredProfessionalServicesProvider called with key: $cacheKey', loggerName: 'Provider');
-  final repository = ref.watch(professionalServicesRepositoryProvider);
+  AppLogger.debug('filteredProfessionalCategoriesProvider called with key: $cacheKey', loggerName: 'Provider');
+  final repository = ref.watch(professionalCategoriesRepositoryProvider);
   
   try {
     // Check if any filter contains a list of values
@@ -88,7 +88,7 @@ final filteredProfessionalServicesProvider = FutureProvider.family<List<Professi
       }
     });
     
-    final results = await AppCache().getOrFetch<List<ProfessionalServicesModel>>(
+    final results = await AppCache().getOrFetch<List<ProfessionalCategoriesModel>>(
       cacheKey,
       () async {
         // If we have a field with a list of values, use whereIn for better performance
@@ -120,10 +120,10 @@ final filteredProfessionalServicesProvider = FutureProvider.family<List<Professi
       duration: const Duration(seconds: 30), // Short cache time to stay fresh
     );
     
-    AppLogger.debug('filteredProfessionalServicesProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
+    AppLogger.debug('filteredProfessionalCategoriesProvider returned ${results.length} items for key: $cacheKey', loggerName: 'Provider');
     return results;
   } catch (e, stackTrace) {
-    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredProfessionalServices');
+    final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'FilteredProfessionalCategories');
     throw AppException(message: errorMsg, originalError: e);
   }
 });
@@ -160,33 +160,33 @@ dynamic _getFieldValue(dynamic model, String fieldName) {
   }
 }
 
-/// Notifier class that handles professional_services operations
-class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<ProfessionalServicesModel>>> {
-  final ProfessionalServicesRepository _repository;
+/// Notifier class that handles professional_categories operations
+class ProfessionalCategoriesNotifier extends StateNotifier<AsyncValue<List<ProfessionalCategoriesModel>>> {
+  final ProfessionalCategoriesRepository _repository;
 
-  ProfessionalServicesNotifier(this._repository) : super(const AsyncValue.loading()) {
+  ProfessionalCategoriesNotifier(this._repository) : super(const AsyncValue.loading()) {
     // Load initial data when created
     _loadInitialData();
   }
 
   Future<void> _loadInitialData() async {
     try {
-      AppLogger.debug('Loading initial professional_services data', loggerName: 'Provider');
+      AppLogger.debug('Loading initial professional_categories data', loggerName: 'Provider');
       final results = await _repository.findAll();
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Loaded initial data', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Loaded initial data', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Failed to load initial data', error: e, stackTrace: stackTrace);
       }
     }
   }
 
-  /// Fetch all professional_services with basic sorting and filtering
-  Future<List<ProfessionalServicesModel>> fetchAll({
+  /// Fetch all professional_categories with basic sorting and filtering
+  Future<List<ProfessionalCategoriesModel>> fetchAll({
     String? orderBy,
     bool ascending = true,
     Map<String, dynamic>? filters,
@@ -194,7 +194,7 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
     int? offset,
   }) async {
     try {
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Fetching data', 
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Fetching data', 
         details: 'filters: $filters, orderBy: $orderBy, limit: $limit, offset: $offset');
       
       // Create a cache key if filters are provided
@@ -207,9 +207,9 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
       state = const AsyncValue.loading();
       
       // Use cache if filters are provided, otherwise fetch directly
-      final List<ProfessionalServicesModel> results;
+      final List<ProfessionalCategoriesModel> results;
       if (cacheKey != null) {
-        results = await AppCache().getOrFetch<List<ProfessionalServicesModel>>(
+        results = await AppCache().getOrFetch<List<ProfessionalCategoriesModel>>(
           cacheKey,
           () => _repository.findAll(
             orderBy: orderBy,
@@ -232,7 +232,7 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Data fetched', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Data fetched', details: '${results.length} records');
       }
       
       return results;
@@ -241,78 +241,78 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
         state = AsyncValue.error(e, stackTrace);
       }
       
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServices');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategories');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Get a single record by ID with caching
-  Future<ProfessionalServicesModel?> getById(String id) async {
+  Future<ProfessionalCategoriesModel?> getById(String id) async {
     try {
       // Create a stable cache key
-      final cacheKey = 'professional_services:id:$id';
+      final cacheKey = 'professional_categories:id:$id';
       
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Getting record by ID', details: 'id: $id');
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Getting record by ID', details: 'id: $id');
       
       // Use app cache for efficient data access
-      final result = await AppCache().getOrFetch<ProfessionalServicesModel?>(
+      final result = await AppCache().getOrFetch<ProfessionalCategoriesModel?>(
         cacheKey,
         () => _repository.find(id),
         duration: const Duration(minutes: 2),
       );
       
       if (result == null) {
-        AppLogger.warning('No professional_servic found with ID: $id', loggerName: 'Provider');
+        AppLogger.warning('No professional_category found with ID: $id', loggerName: 'Provider');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServices');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategories');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Create a new record
-  Future<ProfessionalServicesModel> create(ProfessionalServicesModel model) async {
+  Future<ProfessionalCategoriesModel> create(ProfessionalCategoriesModel model) async {
     try {
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Creating record');
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Creating record');
       final result = await _repository.insert(model);
       
       // Clear any cached list results that might contain this entity
-      AppLogger.debug('Clearing professional_services list caches after create', loggerName: 'Provider');
+      AppLogger.debug('Clearing professional_categories list caches after create', loggerName: 'Provider');
       _clearRelatedCaches(result);
       
       // Update state with new data
       if (mounted) {
         final currentData = state.valueOrNull ?? [];
         state = AsyncValue.data([...currentData, result]);
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Record created', details: 'id: ${result.id}');
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Record created', details: 'id: ${result.id}');
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServices');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategories');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Update an existing record
-  Future<ProfessionalServicesModel?> update(ProfessionalServicesModel model) async {
+  Future<ProfessionalCategoriesModel?> update(ProfessionalCategoriesModel model) async {
     try {
       final modelId = model.id;
       if (modelId.isEmpty) {
-        const message = 'Cannot update professional_servic without ID';
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Update failed', details: message);
+        const message = 'Cannot update professional_category without ID';
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Update failed', details: message);
         throw AppException(message: message);
       }
       
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Updating record', details: 'id: $modelId');
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Updating record', details: 'id: $modelId');
       final result = await _repository.update(model);
       
       // Clear related caches
       if (result != null) {
         // Clear both the specific ID cache and list caches
-        final idCacheKey = 'professional_services:id:$modelId';
+        final idCacheKey = 'professional_categories:id:$modelId';
         AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
         AppCache().remove(idCacheKey);
         
@@ -329,13 +329,13 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
           final updated = [...currentList];
           updated[index] = result;
           state = AsyncValue.data(updated);
-          ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Record updated', details: 'id: $modelId');
+          ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Record updated', details: 'id: $modelId');
         }
       }
       
       return result;
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServices');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategories');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
@@ -343,16 +343,16 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
   /// Delete a record
   Future<void> delete(String id) async {
     try {
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Deleting record', details: 'id: $id');
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Deleting record', details: 'id: $id');
       await _repository.delete(id);
       
       // Clear cache entries for this ID
-      final idCacheKey = 'professional_services:id:$id';
+      final idCacheKey = 'professional_categories:id:$id';
       AppLogger.debug('Clearing cache for key: $idCacheKey', loggerName: 'Provider');
       AppCache().remove(idCacheKey);
       
       // Clear list caches that might contain this entity (using a prefix)
-      final prefix = 'professional_services:';
+      final prefix = 'professional_categories:';
       AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -367,17 +367,17 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
         state = AsyncValue.data(
           currentList.where((item) => item.id != id).toList(),
         );
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Record deleted', details: 'id: $id');
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Record deleted', details: 'id: $id');
       }
     } catch (e, stackTrace) {
-      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalServices');
+      final errorMsg = AppExceptionHandler.handleException(e, stackTrace, context: 'ProfessionalCategories');
       throw AppException(message: errorMsg, originalError: e);
     }
   }
   
   /// Clear caches related to this entity
-  void _clearRelatedCaches(ProfessionalServicesModel entity) {
-    final prefix = 'professional_services:';
+  void _clearRelatedCaches(ProfessionalCategoriesModel entity) {
+    final prefix = 'professional_categories:';
     AppLogger.debug('Clearing list caches with prefix: $prefix', loggerName: 'Provider');
     
     // Scan all keys in the cache
@@ -400,13 +400,13 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
   /// Refresh data from the server
   Future<void> refresh() async {
     try {
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Refreshing data');
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Refreshing data');
       if (mounted) {
         state = const AsyncValue.loading();
       }
       
       // Clear all caches related to this entity type
-      final prefix = 'professional_services:';
+      final prefix = 'professional_categories:';
       AppLogger.debug('Clearing all caches with prefix: $prefix', loggerName: 'Provider');
       final allExpirations = AppCache().expirations;
       for (final key in allExpirations.keys) {
@@ -419,13 +419,13 @@ class ProfessionalServicesNotifier extends StateNotifier<AsyncValue<List<Profess
       
       if (mounted) {
         state = AsyncValue.data(results);
-        ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Data refreshed', details: '${results.length} records');
+        ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Data refreshed', details: '${results.length} records');
       }
     } catch (e, stackTrace) {
       if (mounted) {
         state = AsyncValue.error(e, stackTrace);
       }
-      ProviderLogging.logStateChange('ProfessionalServicesNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
+      ProviderLogging.logStateChange('ProfessionalCategoriesNotifier', 'Refresh failed', error: e, stackTrace: stackTrace);
     }
   }
 }

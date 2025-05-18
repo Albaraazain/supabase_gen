@@ -5,11 +5,16 @@ import '../query_builders/conversations_query_builder.dart';
 
 
 class ConversationsRepository extends BaseRepository<ConversationsModel> {
-  ConversationsRepository(SupabaseClient client) : super(client, 'conversations');
+  ConversationsRepository(SupabaseClient client) : super(client, 'conversations', primaryKeyColumn: 'conversation_id');
   
   @override
   ConversationsModel fromJson(Map<String, dynamic> json) {
     return ConversationsModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ConversationsModel model) {
+    return model.conversationId;
   }
   
   /// Create a type-safe query builder for conversations

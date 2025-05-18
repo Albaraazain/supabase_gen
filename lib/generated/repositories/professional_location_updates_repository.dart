@@ -5,11 +5,16 @@ import '../query_builders/professional_location_updates_query_builder.dart';
 
 
 class ProfessionalLocationUpdatesRepository extends BaseRepository<ProfessionalLocationUpdatesModel> {
-  ProfessionalLocationUpdatesRepository(SupabaseClient client) : super(client, 'professional_location_updates');
+  ProfessionalLocationUpdatesRepository(SupabaseClient client) : super(client, 'professional_location_updates', primaryKeyColumn: 'id');
   
   @override
   ProfessionalLocationUpdatesModel fromJson(Map<String, dynamic> json) {
     return ProfessionalLocationUpdatesModel.fromJson(json);
+  }
+  
+  @override
+  String? getPrimaryKeyValue(ProfessionalLocationUpdatesModel model) {
+    return model.id;
   }
   
   /// Create a type-safe query builder for professional_location_updates

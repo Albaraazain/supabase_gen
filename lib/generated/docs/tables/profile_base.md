@@ -1,6 +1,6 @@
-# ProfessionalServicesModel Documentation
+# ProfileBaseModel Documentation
 
-## Table: professional_services
+## Table: profile_base
 
 No description available for this table.
 
@@ -8,15 +8,15 @@ No description available for this table.
 
 | Field | Type | Nullable | Default | Constraints |
 |-------|------|----------|---------|-------------|
-| `id` | `uuid` | No | uuid_generate_v4() | Primary Key, Not Null |
-| `professional_id` | `uuid` | Yes | None | Unique |
-| `service_id` | `uuid` | Yes | None | Unique |
-| `price_adjustment` | `numeric` | Yes | 0 | - |
-| `price_rate` | `numeric` | Yes | 0 | - |
-| `is_active` | `boolean` | Yes | true | - |
-| `is_available` | `boolean` | Yes | true | - |
+| `id` | `uuid` | No | auth.uid() | Primary Key, Not Null |
+| `email` | `text` | No | None | Unique, Not Null |
+| `full_name` | `text` | No | None | Not Null |
+| `phone` | `text` | Yes | None | - |
+| `profile_image_url` | `text` | Yes | None | - |
+| `user_type` | `text` | No | None | Not Null |
 | `created_at` | `timestamp with time zone` | Yes | now() | - |
 | `updated_at` | `timestamp with time zone` | Yes | now() | - |
+| `status` | `text` | Yes | None | - |
 
 ### One-to-Many Relationships
 
@@ -31,21 +31,20 @@ The following lookup methods are available in the repository:
 
 - `getById(id)` - Returns a single record(s)
 - `getById(id)` - Returns a single record(s)
-- `getByProfessionalId(professional_id)` - Returns a single record(s)
-- `getByServiceId(service_id)` - Returns a single record(s)
+- `getByEmail(email)` - Returns a single record(s)
 
 
 ## Usage Example
 
 ```dart
 // Create a new instance
-final professional_services = ProfessionalServicesModel(
+final profile_base = ProfileBaseModel(
   // Add required fields here
 );
 
 // Use the repository to save it
-final repository = Professional_servicesRepository(client);
-final savedId = await repository.create(professional_services);
+final repository = Profile_baseRepository(client);
+final savedId = await repository.create(profile_base);
 
 // Fetch by ID
 final fetched = await repository.getById(savedId);
