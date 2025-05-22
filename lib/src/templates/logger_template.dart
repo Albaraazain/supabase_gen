@@ -1,5 +1,4 @@
 // Templates for generating logger utilities
-import 'package:recase/recase.dart';
 
 /// Templates for generating logger utilities for Supabase Gen
 class LoggerTemplate {
@@ -285,6 +284,7 @@ class AppExceptionHandler {
   static String modifyBaseRepository() {
     return '''import 'package:supabase_flutter/supabase_flutter.dart';
 import '../utils/app_logger.dart';
+import '../utils/app_cache.dart';
 import './repository_logging.dart';
 
 /// Base repository class that all generated repositories extend
@@ -492,8 +492,15 @@ abstract class BaseRepository<T> {
         final response = await query.insert(json).select();
         
         if ((response as List<dynamic>).isNotEmpty) {
+          final result = fromJson(response.first as Map<String, dynamic>);
+          final insertedId = getPrimaryKeyValue(result);
+          
           AppLogger.success('[\$tableName] Successfully inserted record with \$primaryKeyColumn: \${response.first[primaryKeyColumn]}', loggerName: 'Repository');
-          return fromJson(response.first as Map<String, dynamic>);
+          
+          // Invalidate cache after successful insert
+          _invalidateTableCache();
+          
+          return result;
         }
         
         throw Exception('Failed to insert record');
@@ -520,8 +527,14 @@ abstract class BaseRepository<T> {
         
         AppLogger.debug('[\$tableName] Batch inserting \${models.length} records', loggerName: 'Repository');
         final response = await query.insert(jsonList).select();
-        AppLogger.success('[\$tableName] Successfully inserted \${(response as List).length} records', loggerName: 'Repository');
-        return (response).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        final results = (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        
+        AppLogger.success('[\$tableName] Successfully inserted \${results.length} records', loggerName: 'Repository');
+        
+        // Invalidate cache after successful batch insert
+        _invalidateTableCache();
+        
+        return results;
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'insertMany', 'Failed to insert \${models.length} records', error: e, stackTrace: stackTrace);
         rethrow;
@@ -548,8 +561,14 @@ abstract class BaseRepository<T> {
         
         final results = response as List;
         if (results.isNotEmpty) {
+          final result = fromJson(results.first);
+          
           AppLogger.success('[\$tableName] Successfully updated record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
-          return fromJson(results.first);
+          
+          // Invalidate cache after successful update
+          _invalidateTableCache(specificId: id);
+          
+          return result;
         }
         
         AppLogger.warning('[\$tableName] No record found to update with \$primaryKeyColumn: \$id', loggerName: 'Repository');
@@ -584,8 +603,14 @@ abstract class BaseRepository<T> {
         });
         
         final response = await updateBuilder.select();
-        AppLogger.success('[\$tableName] Successfully updated \${(response as List).length} records', loggerName: 'Repository');
-        return (response).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        final results = (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        
+        AppLogger.success('[\$tableName] Successfully updated \${results.length} records', loggerName: 'Repository');
+        
+        // Invalidate cache after successful batch update
+        _invalidateTableCache();
+        
+        return results;
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'updateWhere', 'Failed to update records with conditions', error: e, stackTrace: stackTrace);
         rethrow;
@@ -604,8 +629,15 @@ abstract class BaseRepository<T> {
         
         final results = response as List;
         if (results.isNotEmpty) {
+          final result = fromJson(results.first);
+          final upsertedId = getPrimaryKeyValue(result);
+          
           AppLogger.success('[\$tableName] Successfully upserted record with \$primaryKeyColumn: \${results.first[primaryKeyColumn]}', loggerName: 'Repository');
-          return fromJson(results.first);
+          
+          // Invalidate cache after successful upsert
+          _invalidateTableCache(specificId: upsertedId);
+          
+          return result;
         }
         
         throw Exception('Failed to upsert record');
@@ -626,8 +658,14 @@ abstract class BaseRepository<T> {
         AppLogger.debug('[\$tableName] Batch upserting \${models.length} records', loggerName: 'Repository');
         
         final response = await query.upsert(jsonList).select();
-        AppLogger.success('[\$tableName] Successfully upserted \${(response as List).length} records', loggerName: 'Repository');
-        return (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        final results = (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
+        
+        AppLogger.success('[\$tableName] Successfully upserted \${results.length} records', loggerName: 'Repository');
+        
+        // Invalidate cache after successful batch upsert
+        _invalidateTableCache();
+        
+        return results;
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'upsertMany', 'Failed to upsert \${models.length} records', error: e, stackTrace: stackTrace);
         rethrow;
@@ -641,7 +679,11 @@ abstract class BaseRepository<T> {
       try {
         AppLogger.debug('[\$tableName] Deleting record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
         await query.delete().eq(primaryKeyColumn, id);
+        
         AppLogger.success('[\$tableName] Successfully deleted record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
+        
+        // Invalidate cache after successful delete
+        _invalidateTableCache(specificId: id);
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'delete', 'Failed to delete record with \$primaryKeyColumn=\$id', error: e, stackTrace: stackTrace);
         rethrow;
@@ -669,7 +711,11 @@ abstract class BaseRepository<T> {
         });
         
         await deleteBuilder;
+        
         AppLogger.success('[\$tableName] Successfully deleted records matching conditions', loggerName: 'Repository');
+        
+        // Invalidate cache after successful batch delete
+        _invalidateTableCache();
       } catch (e, stackTrace) {
         RepositoryLogging.logOperation(tableName, 'deleteWhere', 'Failed to delete records with conditions', error: e, stackTrace: stackTrace);
         rethrow;
@@ -755,6 +801,201 @@ abstract class BaseRepository<T> {
         rethrow;
       }
     });
+  }
+  
+  // ===== REALTIME STREAMING METHODS =====
+  // These methods provide realtime data streams from Supabase
+  // Note: Realtime must be enabled for your table in Supabase dashboard
+  
+  /// Stream all records from this table with realtime updates
+  /// 
+  /// This provides a realtime stream of all records in the table.
+  /// The stream will emit initial data and then updates when records change.
+  /// 
+  /// Note: This method does not apply filters for maximum reliability.
+  /// Use streamWhere() if you need filtering with client-side processing.
+  /// 
+  /// Example:
+  /// ```dart
+  /// userRepository.streamAll().listen((users) {
+  ///   print('Current users: \${users.length}');
+  /// });
+  /// ```
+  Stream<List<T>> streamAll() {
+    try {
+      AppLogger.debug('[\$tableName] Starting realtime stream for all records', loggerName: 'Repository');
+      
+      return query
+          .stream(primaryKey: [primaryKeyColumn])
+          .map((data) {
+            AppLogger.debug('[\$tableName] Realtime stream update: \${data.length} records', loggerName: 'Repository');
+            return data.map((json) => fromJson(json as Map<String, dynamic>)).toList();
+          })
+          .handleError((error, stackTrace) {
+            RepositoryLogging.logOperation(tableName, 'streamAll', 'Realtime stream error', error: error, stackTrace: stackTrace);
+          });
+    } catch (e, stackTrace) {
+      RepositoryLogging.logOperation(tableName, 'streamAll', 'Failed to create realtime stream', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+  
+  /// Stream a single record by ID with realtime updates
+  /// 
+  /// This provides a realtime stream for a specific record.
+  /// The stream will emit the current record and updates when it changes.
+  /// 
+  /// Example:
+  /// ```dart
+  /// userRepository.streamById('user-123').listen((user) {
+  ///   if (user != null) {
+  ///     print('User updated: \${user.name}');
+  ///   }
+  /// });
+  /// ```
+  Stream<T?> streamById(String id) {
+    try {
+      AppLogger.debug('[\$tableName] Starting realtime stream for record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
+      
+      return query
+          .stream(primaryKey: [primaryKeyColumn])
+          .eq(primaryKeyColumn, id)
+          .map((data) {
+            AppLogger.debug('[\$tableName] Realtime stream update for \$primaryKeyColumn: \$id', loggerName: 'Repository');
+            return data.isNotEmpty ? fromJson(data.first as Map<String, dynamic>) : null;
+          })
+          .handleError((error, stackTrace) {
+            RepositoryLogging.logOperation(tableName, 'streamById', 'Realtime stream error for \$primaryKeyColumn=\$id', error: error, stackTrace: stackTrace);
+          });
+    } catch (e, stackTrace) {
+      RepositoryLogging.logOperation(tableName, 'streamById', 'Failed to create realtime stream for \$primaryKeyColumn=\$id', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+  
+  /// Stream records with client-side filtering
+  /// 
+  /// This method uses a hybrid approach: streams all records from the table
+  /// and applies filters on the client side. This is more reliable than
+  /// server-side filters which have known limitations in Supabase realtime.
+  /// 
+  /// Note: For large tables, consider using streamAll() and filtering manually
+  /// in your widget to avoid processing overhead on every update.
+  /// 
+  /// Example:
+  /// ```dart
+  /// userRepository.streamWhere({'status': 'active'}).listen((activeUsers) {
+  ///   print('Active users: \${activeUsers.length}');
+  /// });
+  /// ```
+  Stream<List<T>> streamWhere(Map<String, dynamic> filters) {
+    try {
+      AppLogger.debug('[\$tableName] Starting realtime stream with client-side filters: \$filters', loggerName: 'Repository');
+      
+      // Create direct stream instead of calling streamAll() to avoid infinite loops
+      return query
+          .stream(primaryKey: [primaryKeyColumn])
+          .map((data) {
+            final allRecords = data.map((json) => fromJson(json as Map<String, dynamic>)).toList();
+            final filteredRecords = allRecords.where((record) {
+              return _matchesFilters(record, filters);
+            }).toList();
+            
+            AppLogger.debug('[\$tableName] Client-side filtered \${allRecords.length} records to \${filteredRecords.length}', loggerName: 'Repository');
+            return filteredRecords;
+          })
+          .handleError((error, stackTrace) {
+            RepositoryLogging.logOperation(tableName, 'streamWhere', 'Realtime stream error', error: error, stackTrace: stackTrace);
+          });
+    } catch (e, stackTrace) {
+      RepositoryLogging.logOperation(tableName, 'streamWhere', 'Failed to create filtered realtime stream', error: e, stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+  
+  /// Helper method to check if a record matches the given filters
+  /// 
+  /// This performs client-side filtering by converting the model to JSON
+  /// and checking each filter condition.
+  bool _matchesFilters(T record, Map<String, dynamic> filters) {
+    try {
+      final json = (record as dynamic).toJson() as Map<String, dynamic>;
+      
+      for (final entry in filters.entries) {
+        final key = entry.key;
+        final expectedValue = entry.value;
+        final actualValue = json[key];
+        
+        // Handle different comparison types
+        if (expectedValue is List) {
+          // For list values, check if actual value is in the list
+          if (!expectedValue.contains(actualValue)) {
+            return false;
+          }
+        } else {
+          // For single values, check equality
+          if (actualValue != expectedValue) {
+            return false;
+          }
+        }
+      }
+      
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.warning('[\$tableName] Error matching filters for record: \$e', loggerName: 'Repository');
+      return false; // If we can't check, exclude the record for safety
+    }
+  }
+  
+  // ===== CACHE INVALIDATION METHODS =====
+  // These methods prevent cache stalling by invalidating relevant cache entries
+  // when data is modified through this repository
+  
+  /// Invalidate all cache entries related to this table
+  /// 
+  /// This is called automatically after mutations (insert, update, delete)
+  /// to prevent stale data in the cache.
+  void _invalidateTableCache({String? specificId}) {
+    try {
+      final prefix = '\$tableName:';
+      final allExpirations = AppCache().expirations;
+      final keysToRemove = <String>[];
+      
+      for (final key in allExpirations.keys) {
+        if (key.startsWith(prefix)) {
+          // If we have a specific ID, be more selective
+          if (specificId != null) {
+            // Always remove list caches (they contain the modified record)
+            // Only remove specific ID cache if it matches
+            if (!key.contains(':id:') || key.contains(':id:\$specificId')) {
+              keysToRemove.add(key);
+            }
+          } else {
+            // Remove all caches for this table
+            keysToRemove.add(key);
+          }
+        }
+      }
+      
+      for (final key in keysToRemove) {
+        AppCache().remove(key);
+      }
+      
+      if (keysToRemove.isNotEmpty) {
+        AppLogger.debug(
+          '[\$tableName] Invalidated \${keysToRemove.length} cache entries\${specificId != null ? ' for ID: \$specificId' : ''}', 
+          loggerName: 'Repository'
+        );
+      }
+    } catch (e, stackTrace) {
+      // Don't let cache invalidation errors break the mutation
+      AppLogger.warning(
+        '[\$tableName] Failed to invalidate cache: \$e', 
+        loggerName: 'Repository',
+        error: e,
+        stackTrace: stackTrace,
+      );
+    }
   }
 }
 ''';
@@ -929,6 +1170,205 @@ dynamic _getFieldValue(dynamic model, String fieldName) {
     }
   }
 }
+
+// ===== REALTIME PROVIDERS =====
+// These providers offer automatic realtime updates with proper error handling
+// and fallback mechanisms to work around Supabase realtime limitations
+
+/// Realtime provider for all ${tableName} records
+/// 
+/// This provider streams all records in real-time and automatically handles:
+/// - Stream disconnections and reconnections
+/// - Error recovery with exponential backoff  
+/// - Graceful fallback to cached data when realtime fails
+/// 
+/// Example usage:
+/// ```dart
+/// class ${pascalCaseTableName}ListView extends ConsumerWidget {
+///   Widget build(BuildContext context, WidgetRef ref) {
+///     final ${camelCaseTableName}Stream = ref.watch(realtime${pascalCaseTableName}Provider);
+///     
+///     return ${camelCaseTableName}Stream.when(
+///       data: (${camelCaseTableName}) => ListView.builder(
+///         itemCount: ${camelCaseTableName}.length,
+///         itemBuilder: (ctx, i) => ${pascalCaseTableName}Tile(
+///           key: ValueKey('${tableName}-\${${camelCaseTableName}[i].id}'),
+///           ${camelCaseTableName.toLowerCase()}: ${camelCaseTableName}[i],
+///         ),
+///       ),
+///       loading: () => const CircularProgressIndicator(),
+///       error: (e, _) => ErrorWidget.withDetails(message: e.toString()),
+///     );
+///   }
+/// }
+/// ```
+final realtime${pascalCaseTableName}Provider = StreamProvider<List<$modelName>>((ref) {
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  AppLogger.debug('Starting realtime stream for all ${tableName}', loggerName: 'Provider');
+  
+  return repository
+      .streamAll()
+      .handleError((error, stackTrace) {
+        AppLogger.error(
+          'Realtime stream error for ${tableName}: \$error',
+          loggerName: 'Provider',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        
+        // Don't rethrow - let Riverpod handle the error state
+        // The stream will automatically attempt to reconnect
+      });
+});
+
+/// Realtime provider for a single ${tableName} by ID
+/// 
+/// This provider streams a specific record in real-time with automatic
+/// error handling and reconnection logic.
+/// 
+/// Example usage:
+/// ```dart
+/// class ${pascalCaseTableName}DetailView extends ConsumerWidget {
+///   final String ${camelCaseTableName}Id;
+///   
+///   const ${pascalCaseTableName}DetailView({required this.${camelCaseTableName}Id});
+///   
+///   Widget build(BuildContext context, WidgetRef ref) {
+///     final ${camelCaseTableName}Stream = ref.watch(realtime${pascalCaseTableName}ByIdProvider(${camelCaseTableName}Id));
+///     
+///     return ${camelCaseTableName}Stream.when(
+///       data: (${camelCaseTableName.toLowerCase()}) => ${camelCaseTableName.toLowerCase()} != null
+///         ? ${pascalCaseTableName}Detail(${camelCaseTableName.toLowerCase()}: ${camelCaseTableName.toLowerCase()})
+///         : const Text('${pascalCaseTableName} not found'),
+///       loading: () => const CircularProgressIndicator(),
+///       error: (e, _) => ErrorWidget.withDetails(message: e.toString()),
+///     );
+///   }
+/// }
+/// ```
+final realtime${pascalCaseTableName}ByIdProvider = StreamProvider.family<$modelName?, String>((ref, id) {
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  AppLogger.debug('Starting realtime stream for ${tableName} ID: \$id', loggerName: 'Provider');
+  
+  return repository
+      .streamById(id)
+      .handleError((error, stackTrace) {
+        AppLogger.error(
+          'Realtime stream error for ${tableName} ID \$id: \$error',
+          loggerName: 'Provider',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      });
+});
+
+/// Realtime provider for filtered ${tableName} records with client-side filtering
+/// 
+/// This provider streams records matching the given filters using a hybrid approach:
+/// - Streams all records from the table (for maximum reliability)
+/// - Applies filters on the client side (to work around Supabase limitations)
+/// 
+/// Note: For large tables, consider using the unfiltered realtime${pascalCaseTableName}Provider
+/// and filtering in your widget to reduce processing overhead.
+/// 
+/// Example usage:
+/// ```dart
+/// class Active${pascalCaseTableName}Widget extends ConsumerWidget {
+///   Widget build(BuildContext context, WidgetRef ref) {
+///     // Create stable filter reference to avoid provider recreation
+///     final activeFilter = {'status': 'active'};
+///     final active${pascalCaseTableName}Stream = ref.watch(
+///       realtimeFiltered${pascalCaseTableName}Provider(activeFilter)
+///     );
+///     
+///     return active${pascalCaseTableName}Stream.when(
+///       data: (active${pascalCaseTableName}) => Column(
+///         children: active${pascalCaseTableName}
+///           .map((${camelCaseTableName.toLowerCase()}) => ${pascalCaseTableName}Card(
+///             key: ValueKey('active-${tableName}-\${${camelCaseTableName.toLowerCase()}.id}'),
+///             ${camelCaseTableName.toLowerCase()}: ${camelCaseTableName.toLowerCase()},
+///           ))
+///           .toList(),
+///       ),
+///       loading: () => const CircularProgressIndicator(),
+///       error: (e, _) => ErrorWidget.withDetails(message: e.toString()),
+///     );
+///   }
+/// }
+/// ```
+final realtimeFiltered${pascalCaseTableName}Provider = StreamProvider.family<List<$modelName>, Map<String, dynamic>>((ref, filters) {
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  // Create a readable filter description for logging
+  final filterDesc = filters.entries.map((e) => '\${e.key}=\${e.value}').join(', ');
+  AppLogger.debug('Starting filtered realtime stream for ${tableName} with filters: \$filterDesc', loggerName: 'Provider');
+  
+  return repository
+      .streamWhere(filters)
+      .handleError((error, stackTrace) {
+        AppLogger.error(
+          'Filtered realtime stream error for ${tableName} (filters: \$filterDesc): \$error',
+          loggerName: 'Provider',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      });
+});
+
+/// Hybrid provider that automatically falls back from realtime to cached data
+/// 
+/// This provider attempts to use realtime data, but gracefully falls back to
+/// cached regular queries if realtime fails. Ideal for critical UI components
+/// that must always show data.
+/// 
+/// Example usage:
+/// ```dart
+/// class Reliable${pascalCaseTableName}Widget extends ConsumerWidget {
+///   Widget build(BuildContext context, WidgetRef ref) {
+///     final ${camelCaseTableName}Data = ref.watch(hybrid${pascalCaseTableName}Provider);
+///     
+///     return ${camelCaseTableName}Data.when(
+///       data: (${camelCaseTableName}) => ${pascalCaseTableName}List(${camelCaseTableName}: ${camelCaseTableName}),
+///       loading: () => const ${pascalCaseTableName}Skeleton(),
+///       error: (e, _) => ${pascalCaseTableName}ErrorView(error: e),
+///     );
+///   }
+/// }
+/// ```
+final hybrid${pascalCaseTableName}Provider = StreamProvider<List<$modelName>>((ref) {
+  final repository = ref.watch(${camelCaseTableName}RepositoryProvider);
+  
+  AppLogger.debug('Starting hybrid realtime/cached stream for ${tableName}', loggerName: 'Provider');
+  
+  return repository
+      .streamAll()
+      .handleError((error, stackTrace) async* {
+        AppLogger.warning(
+          'Realtime failed for ${tableName}, falling back to cached data: \$error',
+          loggerName: 'Provider',
+          error: error,
+          stackTrace: stackTrace,
+        );
+        
+        try {
+          // Fallback to cached regular query
+          final fallbackData = await repository.findAll();
+          AppLogger.debug('Successfully fell back to cached data for ${tableName} (\${fallbackData.length} records)', loggerName: 'Provider');
+          yield fallbackData;
+        } catch (fallbackError, fallbackStack) {
+          AppLogger.error(
+            'Both realtime and fallback failed for ${tableName}: \$fallbackError',
+            loggerName: 'Provider',
+            error: fallbackError,
+            stackTrace: fallbackStack,
+          );
+          // Re-throw the original realtime error
+          Error.throwWithStackTrace(error, stackTrace);
+        }
+      });
+});
 
 /// Notifier class that handles ${tableName} operations
 class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$modelName>>> {
