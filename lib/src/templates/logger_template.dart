@@ -328,11 +328,9 @@ abstract class BaseRepository<T> {
           // Apply each filter as an equality condition
           filters.forEach((key, value) {
             if (value != null) {
-              // If value is a List, iterate through values with 'or' conditions
+              // If value is a List, use inFilter for proper SQL IN clause
               if (value is List) {
-                for (var item in value) {
-                  queryBuilder = queryBuilder.eq(key, item);
-                }
+                queryBuilder = queryBuilder.inFilter(key, value);
               } else {
                 queryBuilder = queryBuilder.eq(key, value);
               }
@@ -417,11 +415,9 @@ abstract class BaseRepository<T> {
         // Apply each condition as an equality filter
         conditions.forEach((key, value) {
           if (value != null) {
-            // If value is a List, iterate through values with 'or' conditions
+            // If value is a List, use inFilter for proper SQL IN clause
             if (value is List) {
-              for (var item in value) {
-                queryBuilder = queryBuilder.eq(key, item);
-              }
+              queryBuilder = queryBuilder.inFilter(key, value);
             } else {
               queryBuilder = queryBuilder.eq(key, value);
             }
@@ -451,11 +447,9 @@ abstract class BaseRepository<T> {
         if (filters != null) {
           filters.forEach((key, value) {
             if (value != null) {
-              // If value is a List, iterate through values with 'or' conditions
+              // If value is a List, use inFilter for proper SQL IN clause
               if (value is List) {
-                for (var item in value) {
-                  queryBuilder = queryBuilder.eq(key, item);
-                }
+                queryBuilder = queryBuilder.inFilter(key, value);
               } else {
                 queryBuilder = queryBuilder.eq(key, value);
               }
@@ -713,11 +707,9 @@ abstract class BaseRepository<T> {
         // Apply conditions
         conditions.forEach((key, value) {
           if (value != null) {
-            // If value is a List, iterate through values with 'or' conditions
+            // If value is a List, use inFilter for proper SQL IN clause
             if (value is List) {
-              for (var item in value) {
-                queryBuilder = queryBuilder.eq(key, item);
-              }
+              queryBuilder = queryBuilder.inFilter(key, value);
             } else {
               queryBuilder = queryBuilder.eq(key, value);
             }
@@ -753,14 +745,8 @@ abstract class BaseRepository<T> {
         
         AppLogger.debug('[\$tableName] Finding records where \$field in [\${values.join(", ")}]', loggerName: 'Repository');
         
-        dynamic queryBuilder = query.select();
-        
-        // Apply each value as an OR condition
-        for (var value in values) {
-          queryBuilder = queryBuilder.eq(field, value);
-        }
-        
-        final response = await queryBuilder;
+        // Use inFilter instead of multiple eq calls - it creates a proper SQL IN clause
+        final response = await query.select().inFilter(field, values);
         
         AppLogger.debug('[\$tableName] whereIn returned \${(response as List).length} records', loggerName: 'Repository');
         return (response).map((json) => fromJson(json as Map<String, dynamic>)).toList();
