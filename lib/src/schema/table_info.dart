@@ -13,6 +13,9 @@ class ColumnInfo {
   final String? comment;
   final int? maxLength;
   final int? ordinalPosition;
+  final bool isGenerated;
+  final String? generationExpression;
+  final bool excludeFromSerialization;
 
   ColumnInfo({
     required this.name,
@@ -26,11 +29,49 @@ class ColumnInfo {
     this.comment,
     this.maxLength,
     this.ordinalPosition,
+    this.isGenerated = false,
+    this.generationExpression,
+    this.excludeFromSerialization = false,
   });
+
+  /// Creates a copy of this ColumnInfo with updated values
+  ColumnInfo copyWith({
+    String? name,
+    String? type,
+    bool? isNullable,
+    bool? isPrimaryKey,
+    bool? isUnique,
+    String? defaultValue,
+    String? foreignKey,
+    String? foreignTable,
+    String? comment,
+    int? maxLength,
+    int? ordinalPosition,
+    bool? isGenerated,
+    String? generationExpression,
+    bool? excludeFromSerialization,
+  }) {
+    return ColumnInfo(
+      name: name ?? this.name,
+      type: type ?? this.type,
+      isNullable: isNullable ?? this.isNullable,
+      isPrimaryKey: isPrimaryKey ?? this.isPrimaryKey,
+      isUnique: isUnique ?? this.isUnique,
+      defaultValue: defaultValue ?? this.defaultValue,
+      foreignKey: foreignKey ?? this.foreignKey,
+      foreignTable: foreignTable ?? this.foreignTable,
+      comment: comment ?? this.comment,
+      maxLength: maxLength ?? this.maxLength,
+      ordinalPosition: ordinalPosition ?? this.ordinalPosition,
+      isGenerated: isGenerated ?? this.isGenerated,
+      generationExpression: generationExpression ?? this.generationExpression,
+      excludeFromSerialization: excludeFromSerialization ?? this.excludeFromSerialization,
+    );
+  }
 
   @override
   String toString() => 
-    'Column $name ($type, nullable: $isNullable, PK: $isPrimaryKey)';
+    'Column $name ($type, nullable: $isNullable, PK: $isPrimaryKey${isGenerated ? ', Generated' : ''}${excludeFromSerialization ? ', Excluded from serialization' : ''})';
 }
 
 /// Information about a database constraint

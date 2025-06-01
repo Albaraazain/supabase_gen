@@ -25,6 +25,10 @@ class SupabaseGenConfig {
   final List<String> probeTables; // Tables to probe when using remote connection
   final bool generateForAllTables;
   final bool useNullSafety;
+  
+  /// Generated column handling
+  final bool excludeGeneratedColumns;
+  final Map<String, List<String>> columnExclusions;
 
   /// Provider generation settings
   final bool generateProviders;
@@ -49,11 +53,21 @@ class SupabaseGenConfig {
     this.modelPrefix = '',
     this.modelSuffix = 'Model',
     this.repositorySuffix = 'Repository',
-    this.excludeTables = const ['migrations', 'schema_migrations'],
+    this.excludeTables = const [
+      'migrations', 
+      'schema_migrations',
+      'spatial_ref_sys',
+      'geography_columns', 
+      'geometry_columns',
+      'raster_columns',
+      'raster_overviews'
+    ],
     this.includeTables = const [],
     this.probeTables = const ['users', 'profiles', 'games'],
     this.generateForAllTables = true,
     this.useNullSafety = true,
+    this.excludeGeneratedColumns = false,
+    this.columnExclusions = const {},
     this.generateProviders = false,
     this.providerSuffix = 'Provider',
     this.stateManagementType = 'riverpod',
@@ -98,6 +112,10 @@ class SupabaseGenConfig {
       generateForAllTables: genConfig['generate_for_all_tables'] ?? true,
       useNullSafety: genConfig['use_null_safety'] ?? true,
       
+      // Generated column handling
+      excludeGeneratedColumns: genConfig['exclude_generated_columns'] ?? false,
+      columnExclusions: _parseColumnExclusions(genConfig['column_exclusions']),
+      
       // Provider generation options
       generateProviders: providerConfig['generate'] ?? false,
       providerSuffix: providerConfig['suffix'] ?? 'Provider',
@@ -107,6 +125,22 @@ class SupabaseGenConfig {
       invalidateOnChange: providerConfig['invalidate_on_change'] ?? true,
       generateAsyncValueWidget: providerConfig['generate_async_value_widget'] ?? true,
     );
+  }
+
+  /// Parse column exclusions from YAML configuration
+  static Map<String, List<String>> _parseColumnExclusions(dynamic exclusions) {
+    if (exclusions == null) return {};
+    
+    if (exclusions is! Map) return {};
+    
+    final Map<String, List<String>> result = {};
+    exclusions.forEach((table, columns) {
+      if (table is String && columns is List) {
+        result[table] = columns.map((col) => col.toString()).toList();
+      }
+    });
+    
+    return result;
   }
 
   /// Get the full model class name for a table

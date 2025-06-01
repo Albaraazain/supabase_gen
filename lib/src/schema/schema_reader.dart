@@ -287,11 +287,18 @@ class SchemaReader {
               ? <ConstraintInfo>[]
               : await _readConstraintsLocal(schema, name);
 
+      // Apply generated column settings for local connections
+      final finalColumns = await _applyGeneratedColumnSettingsLocal(
+        deduplicatedColumns,
+        schema,
+        name,
+      );
+
       tables.add(
         TableInfo(
           name: name,
           schema: schema,
-          columns: deduplicatedColumns,
+          columns: finalColumns,
           comment: comment,
           isView: isView,
           constraints: constraints,
@@ -712,10 +719,20 @@ class SchemaReader {
       // 4. Get table triggers using the get_table_triggers RPC function
       final triggers = await _getTableTriggers(tableName);
 
-      // 5. Enrich column information with constraint data (primary keys, foreign keys, etc.)
+      // 5. Get generated columns information
+      final generatedColumns = await _getGeneratedColumns(tableName);
+
+      // 6. Enrich column information with constraint data (primary keys, foreign keys, etc.)
       final enrichedColumns = _enrichColumnsWithConstraints(
         columns,
         constraints,
+      );
+
+      // 7. Apply generated column information and exclusion settings
+      final finalColumns = _applyGeneratedColumnSettings(
+        enrichedColumns,
+        generatedColumns,
+        tableName,
       );
 
       // Explicitly check if this is a view by querying information_schema
@@ -725,7 +742,7 @@ class SchemaReader {
       return TableInfo(
         name: tableName,
         schema: 'public', // Assume public schema for Supabase
-        columns: enrichedColumns,
+        columns: finalColumns,
         constraints: constraints,
         indexes: indexes,
         triggers: triggers,
@@ -1075,6 +1092,28 @@ class SchemaReader {
         .toList();
   }
 
+  /// Get generated columns using the get_generated_columns RPC function
+  Future<List<Map<String, dynamic>>> _getGeneratedColumns(String tableName) async {
+    final results = await _callRpcFunction('get_generated_columns', tableName);
+
+    return results
+        .map((generatedColumn) {
+          try {
+            return {
+              'column_name': generatedColumn['column_name'] as String? ?? '',
+              'is_generated': generatedColumn['is_generated'] as String? ?? 'NO',
+              'generation_expression': generatedColumn['generation_expression'] as String?,
+            };
+          } catch (e) {
+            _logger.warning('Error parsing generated column data: $e');
+            _logger.info('Problematic generated column data: $generatedColumn');
+            return null;
+          }
+        })
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
   /// Get table triggers using the get_table_triggers RPC function
   Future<List<TriggerInfo>> _getTableTriggers(String tableName) async {
     final results = await _callRpcFunction('get_table_triggers', tableName);
@@ -1321,9 +1360,258 @@ class SchemaReader {
     return enrichedColumns;
   }
 
+  /// Apply generated column information and exclusion settings
+  List<ColumnInfo> _applyGeneratedColumnSettings(
+    List<ColumnInfo> columns,
+    List<Map<String, dynamic>> generatedColumns,
+    String tableName,
+  ) {
+    // Create a map of generated column names for quick lookup
+    final generatedColumnMap = <String, Map<String, dynamic>>{};
+    for (final genCol in generatedColumns) {
+      final columnName = genCol['column_name'] as String;
+      if (columnName.isNotEmpty) {
+        generatedColumnMap[columnName] = genCol;
+      }
+    }
+
+    // Get manual exclusions for this table from config
+    final manualExclusions = config.columnExclusions[tableName] ?? <String>[];
+
+    final updatedColumns = <ColumnInfo>[];
+
+    for (final column in columns) {
+      // Check if this column is generated
+      final generatedInfo = generatedColumnMap[column.name];
+      final isGenerated = generatedInfo != null;
+      
+      // Determine if this column should be excluded from serialization
+      bool excludeFromSerialization = false;
+      
+      // Apply automatic exclusion for generated columns
+      if (isGenerated && config.excludeGeneratedColumns) {
+        excludeFromSerialization = true;
+      }
+      
+      // Apply automatic exclusion for spatial/geographic columns
+      if (_isSpatialColumn(column)) {
+        excludeFromSerialization = true;
+      }
+      
+      // Apply manual exclusions from config
+      if (manualExclusions.contains(column.name)) {
+        excludeFromSerialization = true;
+      }
+
+      // Create updated column with generated column information
+      final updatedColumn = column.copyWith(
+        isGenerated: isGenerated,
+        generationExpression: generatedInfo?['generation_expression'] as String?,
+        excludeFromSerialization: excludeFromSerialization,
+      );
+
+      updatedColumns.add(updatedColumn);
+
+      // Log generated column detection
+      if (isGenerated) {
+        _logger.info(
+          'Detected generated column: ${tableName}.${column.name} '
+          '(excluded from serialization: $excludeFromSerialization)',
+        );
+      }
+      
+      // Log manual exclusions
+      if (manualExclusions.contains(column.name) && !isGenerated) {
+        _logger.info(
+          'Manually excluded column: ${tableName}.${column.name}',
+        );
+      }
+    }
+
+    return updatedColumns;
+  }
+
+  /// Apply generated column settings for local database connections
+  Future<List<ColumnInfo>> _applyGeneratedColumnSettingsLocal(
+    List<ColumnInfo> columns,
+    String schema,
+    String tableName,
+  ) async {
+    if (_connection == null) {
+      // If no connection, just return columns as-is with manual exclusions applied
+      return _applyManualExclusions(columns, tableName);
+    }
+
+    try {
+      // Query information_schema for generated columns
+      final result = await _connection!.execute(
+        'SELECT column_name, is_generated, generation_expression '
+        'FROM information_schema.columns '
+        'WHERE table_schema = \$1 AND table_name = \$2 AND is_generated = \'ALWAYS\'',
+        parameters: [schema, tableName],
+      );
+
+      // Create a map of generated column names for quick lookup
+      final generatedColumnMap = <String, Map<String, dynamic>>{};
+      for (final row in result) {
+        final columnName = row[0] as String;
+        generatedColumnMap[columnName] = {
+          'column_name': columnName,
+          'is_generated': row[1] as String,
+          'generation_expression': row[2] as String?,
+        };
+      }
+
+      // Get manual exclusions for this table from config
+      final manualExclusions = config.columnExclusions[tableName] ?? <String>[];
+
+      final updatedColumns = <ColumnInfo>[];
+
+      for (final column in columns) {
+        // Check if this column is generated
+        final generatedInfo = generatedColumnMap[column.name];
+        final isGenerated = generatedInfo != null;
+        
+        // Determine if this column should be excluded from serialization
+        bool excludeFromSerialization = false;
+        
+        // Apply automatic exclusion for generated columns
+        if (isGenerated && config.excludeGeneratedColumns) {
+          excludeFromSerialization = true;
+        }
+        
+        // Apply automatic exclusion for spatial/geographic columns  
+        if (_isSpatialColumn(column)) {
+          excludeFromSerialization = true;
+        }
+        
+        // Apply manual exclusions from config
+        if (manualExclusions.contains(column.name)) {
+          excludeFromSerialization = true;
+        }
+
+        // Create updated column with generated column information
+        final updatedColumn = column.copyWith(
+          isGenerated: isGenerated,
+          generationExpression: generatedInfo?['generation_expression'] as String?,
+          excludeFromSerialization: excludeFromSerialization,
+        );
+
+        updatedColumns.add(updatedColumn);
+
+        // Log generated column detection
+        if (isGenerated) {
+          _logger.info(
+            'Detected generated column: ${tableName}.${column.name} '
+            '(excluded from serialization: $excludeFromSerialization)',
+          );
+        }
+        
+        // Log manual exclusions
+        if (manualExclusions.contains(column.name) && !isGenerated) {
+          _logger.info(
+            'Manually excluded column: ${tableName}.${column.name}',
+          );
+        }
+      }
+
+      return updatedColumns;
+    } catch (e) {
+      _logger.warning('Error detecting generated columns for $schema.$tableName: $e');
+      // Fallback to just applying manual exclusions
+      return _applyManualExclusions(columns, tableName);
+    }
+  }
+
+  /// Apply only manual exclusions (fallback method)
+  List<ColumnInfo> _applyManualExclusions(
+    List<ColumnInfo> columns,
+    String tableName,
+  ) {
+    final manualExclusions = config.columnExclusions[tableName] ?? <String>[];
+    
+    if (manualExclusions.isEmpty) {
+      return columns; // No changes needed
+    }
+
+    return columns.map((column) {
+      final shouldExclude = manualExclusions.contains(column.name);
+      
+      if (shouldExclude) {
+        _logger.info('Manually excluded column: ${tableName}.${column.name}');
+        return column.copyWith(excludeFromSerialization: true);
+      }
+      
+      // Check for spatial columns and exclude them automatically
+      if (_isSpatialColumn(column)) {
+        _logger.info('Spatial column excluded: ${tableName}.${column.name}');
+        return column.copyWith(excludeFromSerialization: true);
+      }
+      
+      return column;
+    }).toList();
+  }
+
+  /// Check if a column is a spatial/geographic column type
+  bool _isSpatialColumn(ColumnInfo column) {
+    final type = column.type.toLowerCase();
+    
+    // PostGIS spatial types
+    if (type == 'geometry' || 
+        type == 'geography' || 
+        type == 'point' ||
+        type == 'linestring' ||
+        type == 'polygon' ||
+        type == 'multipoint' ||
+        type == 'multilinestring' ||
+        type == 'multipolygon' ||
+        type == 'geometrycollection' ||
+        type.startsWith('geometry(') ||
+        type.startsWith('geography(')) {
+      return true;
+    }
+    
+    // Raster types
+    if (type == 'raster') {
+      return true;
+    }
+    
+    // Box types
+    if (type == 'box2d' || 
+        type == 'box3d' ||
+        type == 'box') {
+      return true;
+    }
+    
+    return false;
+  }
+
   /// Get SQL scripts for creating the required RPC functions
   static String getRpcFunctionScripts() {
     return '''
+-- Function to detect generated columns in a table
+CREATE OR REPLACE FUNCTION public.get_generated_columns(p_table_name text)
+RETURNS TABLE (
+    column_name text,
+    is_generated text,
+    generation_expression text
+) 
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS \$\$
+BEGIN
+    RETURN QUERY
+    SELECT
+        c.column_name::text,
+        c.is_generated::text,
+        c.generation_expression::text
+    FROM information_schema.columns c
+    WHERE c.table_name = p_table_name
+    AND c.table_schema = 'public'
+    AND c.is_generated = 'ALWAYS';
+END;
+\$\$;
+
 -- Simple lightweight function to get basic function info
 CREATE OR REPLACE FUNCTION public.get_function_simple_info(p_function_name text)
 RETURNS TABLE (
@@ -1886,6 +2174,24 @@ AS \$\$
   }
 
   bool _shouldProcessTable(String schema, String tableName) {
+    // First, check excludes - they take precedence over includes
+    if (config.excludeTables.isNotEmpty) {
+      for (final pattern in config.excludeTables) {
+        final parts = pattern.split('.');
+        if (parts.length == 2) {
+          final schemaPattern = parts[0];
+          final tablePattern = parts[1];
+          if (_matchesPattern(schema, schemaPattern) &&
+              _matchesPattern(tableName, tablePattern)) {
+            return false;
+          }
+        } else if (_matchesPattern(tableName, pattern)) {
+          return false;
+        }
+      }
+    }
+
+    // Then check includes
     if (config.includeTables.isNotEmpty) {
       for (final pattern in config.includeTables) {
         final parts = pattern.split('.');
@@ -1901,22 +2207,6 @@ AS \$\$
         }
       }
       return false;
-    }
-
-    if (config.excludeTables.isNotEmpty) {
-      for (final pattern in config.excludeTables) {
-        final parts = pattern.split('.');
-        if (parts.length == 2) {
-          final schemaPattern = parts[0];
-          final tablePattern = parts[1];
-          if (_matchesPattern(schema, schemaPattern) &&
-              _matchesPattern(tableName, tablePattern)) {
-            return false;
-          }
-        } else if (_matchesPattern(tableName, pattern)) {
-          return false;
-        }
-      }
     }
 
     return config.generateForAllTables;

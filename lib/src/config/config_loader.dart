@@ -51,6 +51,19 @@ generation:
   model_prefix: ''
   model_suffix: Model
   repository_suffix: Repository
+  
+  # Generated column handling
+  exclude_generated_columns: true  # Automatically exclude generated columns from serialization
+  # Note: Spatial/geographic columns (geometry, geography, point, etc.) are automatically excluded
+  
+  # Manual column exclusions per table
+  column_exclusions:
+    # Example: exclude specific columns from specific tables
+    # driver_locations:
+    #   - location_point  # Generated column or spatial column
+    # other_table:
+    #   - computed_field
+  
   exclude_tables:
     # Exclude system schemas
     - '_realtime.*'
@@ -63,6 +76,16 @@ generation:
     - 'vault.*'
     # Exclude views and system tables from public schema
     - 'public.*_view'
+    # Exclude PostGIS system tables
+    - 'spatial_ref_sys'
+    - 'geography_columns'
+    - 'geometry_columns'
+    - 'raster_columns'
+    - 'raster_overviews'
+    # Exclude other spatial system tables
+    - 'topology.*'
+    - 'tiger.*'
+    - 'tiger_data.*'
   include_tables: 
     - 'public.*'  # Include all tables from public schema
   generate_for_all_tables: false  # Only generate for explicitly included tables
