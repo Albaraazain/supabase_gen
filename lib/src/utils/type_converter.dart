@@ -251,14 +251,32 @@ class TypeConverter {
   ) {
     final lowerType = pgType.toLowerCase();
 
-    // Handle DateTime types
+    // Handle DateTime types with proper parsing based on PostgreSQL type
     if (lowerType.contains('timestamp') ||
         lowerType.contains('date') ||
         lowerType.contains('time')) {
-      if (isNullable) {
-        return 'json[\'$columnName\'] != null ? DateTime.parse(json[\'$columnName\'].toString()) : null';
+      
+      if (isDateType(pgType)) {
+        // Parse DATE format (YYYY-MM-DD)
+        if (isNullable) {
+          return 'json[\'$columnName\'] != null ? _parseDate(json[\'$columnName\'].toString()) : null';
+        } else {
+          return '_parseDate(json[\'$columnName\'].toString())';
+        }
+      } else if (isTimeType(pgType)) {
+        // Parse TIME format (HH:MM:SS)
+        if (isNullable) {
+          return 'json[\'$columnName\'] != null ? _parseTime(json[\'$columnName\'].toString()) : null';
+        } else {
+          return '_parseTime(json[\'$columnName\'].toString())';
+        }
       } else {
-        return 'DateTime.parse(json[\'$columnName\'].toString())';
+        // Parse TIMESTAMP format (ISO8601)
+        if (isNullable) {
+          return 'json[\'$columnName\'] != null ? DateTime.parse(json[\'$columnName\'].toString()) : null';
+        } else {
+          return 'DateTime.parse(json[\'$columnName\'].toString())';
+        }
       }
     }
 
@@ -357,6 +375,55 @@ class TypeConverter {
             'null!'; // Should never reach here for non-nullable types
       }
       return 'json[\'$columnName\'] ?? $defaultValue';
+    }
+  }
+
+  // Check if a PostgreSQL type is a DATE type (needs YYYY-MM-DD format)
+  static bool isDateType(String pgType) {
+    final lowerType = pgType.toLowerCase();
+    return lowerType == 'date';
+  }
+
+  // Check if a PostgreSQL type is a TIME type (needs HH:MM:SS format)
+  static bool isTimeType(String pgType) {
+    final lowerType = pgType.toLowerCase();
+    return lowerType == 'time' || 
+           lowerType == 'time without time zone' ||
+           lowerType == 'time with time zone';
+  }
+
+  // Check if a PostgreSQL type is a TIMESTAMP type (can use ISO8601 format)
+  static bool isTimestampType(String pgType) {
+    final lowerType = pgType.toLowerCase();
+    return lowerType == 'timestamp' ||
+           lowerType == 'timestamp without time zone' ||
+           lowerType == 'timestamp with time zone' ||
+           lowerType == 'timestamptz';
+  }
+
+  // Generate proper JSON serialization for date/time types
+  static String generateDateTimeJsonSerialization(String fieldName, String pgType, bool isNullable) {
+    if (isDateType(pgType)) {
+      // Format as YYYY-MM-DD for DATE type
+      if (isNullable) {
+        return '$fieldName != null ? "\${$fieldName!.year.toString().padLeft(4, \'0\')}-\${$fieldName!.month.toString().padLeft(2, \'0\')}-\${$fieldName!.day.toString().padLeft(2, \'0\')}" : null';
+      } else {
+        return '"\${$fieldName.year.toString().padLeft(4, \'0\')}-\${$fieldName.month.toString().padLeft(2, \'0\')}-\${$fieldName.day.toString().padLeft(2, \'0\')}"';
+      }
+    } else if (isTimeType(pgType)) {
+      // Format as HH:MM:SS for TIME type
+      if (isNullable) {
+        return '$fieldName != null ? "\${$fieldName!.hour.toString().padLeft(2, \'0\')}:\${$fieldName!.minute.toString().padLeft(2, \'0\')}:\${$fieldName!.second.toString().padLeft(2, \'0\')}" : null';
+      } else {
+        return '"\${$fieldName.hour.toString().padLeft(2, \'0\')}:\${$fieldName.minute.toString().padLeft(2, \'0\')}:\${$fieldName.second.toString().padLeft(2, \'0\')}"';
+      }
+    } else {
+      // Default to ISO8601 for TIMESTAMP types
+      if (isNullable) {
+        return '$fieldName?.toIso8601String()';
+      } else {
+        return '$fieldName.toIso8601String()';
+      }
     }
   }
 

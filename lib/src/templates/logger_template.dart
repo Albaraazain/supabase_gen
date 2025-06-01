@@ -483,12 +483,9 @@ abstract class BaseRepository<T> {
   Future<T> insert(T model) async {
     return await RepositoryLogging.timeOperation(tableName, 'insert', () async {
       try {
-        final dynamic json = (model as dynamic).toJson();
-        if (json is Map<String, dynamic> && json.containsKey(primaryKeyColumn) && json[primaryKeyColumn] == null) {
-          json.remove(primaryKeyColumn); // Remove null ID for auto-generation
-        }
+        final dynamic json = (model as dynamic).toJsonForInsert();
         
-        AppLogger.debug('[\$tableName] Inserting new record', loggerName: 'Repository');
+        AppLogger.debug('[\$tableName] Inserting new record (excluded generated columns)', loggerName: 'Repository');
         final response = await query.insert(json).select();
         
         if ((response as List<dynamic>).isNotEmpty) {
@@ -518,11 +515,7 @@ abstract class BaseRepository<T> {
         if (models.isEmpty) return [];
         
         final jsonList = models.map((model) {
-          final dynamic json = (model as dynamic).toJson();
-          if (json is Map<String, dynamic> && json.containsKey(primaryKeyColumn) && json[primaryKeyColumn] == null) {
-            json.remove(primaryKeyColumn); // Remove null ID for auto-generation
-          }
-          return json;
+          return (model as dynamic).toJsonForInsert();
         }).toList();
         
         AppLogger.debug('[\$tableName] Batch inserting \${models.length} records', loggerName: 'Repository');
@@ -551,8 +544,8 @@ abstract class BaseRepository<T> {
           throw Exception('Cannot update record without primary key value');
         }
         
-        final dynamic json = (model as dynamic).toJson();
-        AppLogger.debug('[\$tableName] Updating record with \$primaryKeyColumn: \$id', loggerName: 'Repository');
+        final dynamic json = (model as dynamic).toJsonForUpdate();
+        AppLogger.debug('[\$tableName] Updating record with \$primaryKeyColumn: \$id (excluded generated columns)', loggerName: 'Repository');
         
         final response = await query
             .update(json)
@@ -622,8 +615,8 @@ abstract class BaseRepository<T> {
   Future<T> upsert(T model) async {
     return await RepositoryLogging.timeOperation(tableName, 'upsert', () async {
       try {
-        final dynamic json = (model as dynamic).toJson();
-        AppLogger.debug('[\$tableName] Upserting record', loggerName: 'Repository');
+        final dynamic json = (model as dynamic).toJsonForUpdate();
+        AppLogger.debug('[\$tableName] Upserting record (excluded generated columns)', loggerName: 'Repository');
         
         final response = await query.upsert(json).select();
         
@@ -654,8 +647,8 @@ abstract class BaseRepository<T> {
       try {
         if (models.isEmpty) return [];
         
-        final jsonList = models.map((model) => (model as dynamic).toJson()).toList();
-        AppLogger.debug('[\$tableName] Batch upserting \${models.length} records', loggerName: 'Repository');
+        final jsonList = models.map((model) => (model as dynamic).toJsonForUpdate()).toList();
+        AppLogger.debug('[\$tableName] Batch upserting \${models.length} records (excluded generated columns)', loggerName: 'Repository');
         
         final response = await query.upsert(jsonList).select();
         final results = (response as List).map((json) => fromJson(json as Map<String, dynamic>)).toList();
