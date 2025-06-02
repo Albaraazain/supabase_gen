@@ -693,6 +693,33 @@ Point? _toPoint(dynamic value) {
   }''');
     }
     
+    if (shouldIncludeDateHelper) {
+      helperMethodsList.add('''
+  /// Helper function to parse DATE format (YYYY-MM-DD)
+  DateTime _parseDate(String dateStr) {
+    final parts = dateStr.split('-');
+    return DateTime(
+      int.parse(parts[0]), // year
+      int.parse(parts[1]), // month
+      int.parse(parts[2])  // day
+    );
+  }''');
+    }
+    
+    if (shouldIncludeTimeHelper) {
+      helperMethodsList.add('''
+  /// Helper function to parse TIME format (HH:MM:SS)
+  DateTime _parseTime(String timeStr) {
+    final parts = timeStr.split(':');
+    return DateTime(
+      1970, 1, 1, // epoch date
+      int.parse(parts[0]), // hour
+      int.parse(parts[1]), // minute
+      int.parse(parts[2])  // second
+    );
+  }''');
+    }
+    
     final helperMethods = helperMethodsList.join('\n\n');
 
     // Generate toString method
