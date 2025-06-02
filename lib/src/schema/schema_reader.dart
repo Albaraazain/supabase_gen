@@ -6,6 +6,7 @@ import 'package:dio/dio.dart';
 import '../utils/logger.dart';
 import '../config/config_model.dart';
 import 'table_info.dart';
+import 'rpc_info.dart';
 
 class SchemaReader {
   final SupabaseGenConfig config;
@@ -225,6 +226,15 @@ class SchemaReader {
       return _readTablesLocal();
     } else {
       return _readTablesRemote();
+    }
+  }
+
+  /// Read RPC functions from the database
+  Future<List<RpcFunctionInfo>> readRpcFunctions() async {
+    if (config.connectionType == ConnectionType.local) {
+      return _readRpcFunctionsLocal();
+    } else {
+      return _readRpcFunctionsRemote();
     }
   }
 
@@ -686,6 +696,342 @@ class SchemaReader {
     } catch (e, stackTrace) {
       _logger.severe('Error reading remote tables: $e');
       _logger.severe('Stack trace: $stackTrace');
+      return [];
+    }
+  }
+
+  /// Read RPC functions from local database
+  Future<List<RpcFunctionInfo>> _readRpcFunctionsLocal() async {
+    if (_connection == null) {
+      throw StateError(
+        'Local database connection not initialized. Call connect() first.',
+      );
+    }
+
+    _logger.info('Reading RPC functions from local database');
+
+    try {
+      final functions = <RpcFunctionInfo>[];
+
+      // Get all user-defined functions
+      final functionsResult = await _connection!.execute('''
+        SELECT
+          p.proname AS function_name,
+          n.nspname AS schema_name,
+          l.lanname AS language_name,
+          CASE 
+            WHEN p.proretset THEN 
+              CASE 
+                WHEN t.typname = 'record' THEN 'TABLE'
+                ELSE 'SETOF ' || t.typname
+              END
+            ELSE t.typname
+          END AS return_type,
+          p.prosecdef AS is_security_definer,
+          CASE p.provolatile
+            WHEN 'i' THEN 'IMMUTABLE'
+            WHEN 's' THEN 'STABLE'
+            WHEN 'v' THEN 'VOLATILE'
+          END AS volatility,
+          p.proisstrict AS is_strict,
+          p.procost AS cost,
+          CASE WHEN p.proretset THEN p.prorows ELSE NULL END AS estimated_rows,
+          obj_description(p.oid, 'pg_proc') AS function_description,
+          p.prosrc AS function_source,
+          p.proretset AS is_set_returning,
+          p.pronargs AS parameter_count
+        FROM 
+          pg_proc p
+          JOIN pg_namespace n ON p.pronamespace = n.oid
+          JOIN pg_language l ON p.prolang = l.oid
+          JOIN pg_type t ON p.prorettype = t.oid
+        WHERE 
+          n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+          AND NOT p.proisagg
+          AND l.lanname != 'internal'
+        ORDER BY 
+          n.nspname, p.proname
+      ''');
+
+      for (final functionRow in functionsResult) {
+        final functionName = functionRow[0] as String;
+        final schemaName = functionRow[1] as String;
+        final languageName = functionRow[2] as String;
+        final returnType = functionRow[3] as String;
+        final isSecurityDefiner = functionRow[4] as bool;
+        final volatility = functionRow[5] as String;
+        final isStrict = functionRow[6] as bool;
+        final cost = functionRow[7] as int?;
+        final estimatedRows = functionRow[8] as int?;
+        final description = functionRow[9] as String?;
+        final functionSource = functionRow[10] as String?;
+        final isSetReturning = functionRow[11] as bool;
+        final parameterCount = functionRow[12] as int;
+
+        // Get parameters for this function
+        final parameters = await _readFunctionParametersLocal(functionName);
+
+        // Create return type info
+        final rpcReturnType = RpcReturnType(
+          type: returnType,
+          isTable: returnType.toUpperCase() == 'TABLE',
+          isArray: returnType.toUpperCase().startsWith('SETOF'),
+          isVoid: returnType.toUpperCase() == 'VOID',
+          description: 'Returns $returnType',
+        );
+
+        functions.add(RpcFunctionInfo(
+          name: functionName,
+          schema: schemaName,
+          parameters: parameters,
+          returnType: rpcReturnType,
+          description: description,
+          isSecurityDefiner: isSecurityDefiner,
+          language: languageName,
+          functionBody: functionSource,
+          isStrict: isStrict,
+          cost: cost?.toString(),
+          rows: estimatedRows?.toString(),
+          isVolatile: volatility == 'VOLATILE',
+          volatility: volatility,
+        ));
+      }
+
+      _logger.info('Read ${functions.length} RPC functions from local database');
+      return functions;
+    } catch (e) {
+      _logger.severe('Error reading RPC functions from local database: $e');
+      return [];
+    }
+  }
+
+  /// Read function parameters from local database
+  Future<List<RpcParameter>> _readFunctionParametersLocal(String functionName) async {
+    try {
+      final parametersResult = await _connection!.execute('''
+        SELECT
+          p.proname AS function_name,
+          CASE 
+            WHEN p.proargnames IS NOT NULL AND array_length(p.proargnames, 1) >= pos.i 
+            THEN p.proargnames[pos.i]
+            ELSE 'param_' || pos.i::text
+          END AS parameter_name,
+          format_type(unnest_types.arg_type, NULL) AS parameter_type,
+          CASE 
+            WHEN p.proargmodes IS NOT NULL AND array_length(p.proargmodes, 1) >= pos.i THEN
+              CASE p.proargmodes[pos.i]
+                WHEN 'i' THEN 'IN'
+                WHEN 'o' THEN 'OUT'
+                WHEN 'b' THEN 'INOUT'
+                WHEN 'v' THEN 'VARIADIC'
+                WHEN 't' THEN 'TABLE'
+                ELSE 'IN'
+              END
+            ELSE 'IN'
+          END AS parameter_mode,
+          pos.i AS parameter_position,
+          (p.pronargdefaults > 0 AND pos.i > (p.pronargs - p.pronargdefaults)) AS has_default,
+          NOT (p.pronargdefaults > 0 AND pos.i > (p.pronargs - p.pronargdefaults)) AS is_required
+        FROM 
+          pg_proc p
+          JOIN pg_namespace n ON p.pronamespace = n.oid,
+          LATERAL (SELECT unnest(p.proargtypes) AS arg_type, generate_series(1, p.pronargs) AS i) AS unnest_types(arg_type, i),
+          LATERAL (SELECT unnest_types.i) AS pos(i)
+        WHERE 
+          p.proname = \$1
+          AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+          AND NOT p.proisagg
+          AND unnest_types.i <= p.pronargs
+        ORDER BY 
+          p.proname, pos.i
+      ''', parameters: [functionName]);
+
+      final parameters = <RpcParameter>[];
+      for (final paramRow in parametersResult) {
+        final paramName = paramRow[1] as String;
+        final paramType = paramRow[2] as String;
+        final paramMode = paramRow[3] as String;
+        final position = paramRow[4] as int;
+        final hasDefault = paramRow[5] as bool;
+        final isRequired = paramRow[6] as bool;
+
+        parameters.add(RpcParameter(
+          name: paramName,
+          type: paramType,
+          mode: paramMode,
+          isRequired: isRequired,
+          defaultValue: hasDefault ? 'DEFAULT' : null,
+          position: position,
+        ));
+      }
+
+      return parameters;
+    } catch (e) {
+      _logger.warning('Error reading parameters for function $functionName: $e');
+      return [];
+    }
+  }
+
+  /// Read RPC functions from remote Supabase database
+  Future<List<RpcFunctionInfo>> _readRpcFunctionsRemote() async {
+    if (_dioClient == null) {
+      throw StateError(
+        'Remote connection not initialized. Call connect() first.',
+      );
+    }
+
+    _logger.info('Reading RPC functions from remote Supabase database');
+
+    try {
+      final functions = <RpcFunctionInfo>[];
+
+      // Call the list_rpc_functions RPC to get all functions
+      final response = await _dioClient!.post(
+        '/rest/v1/rpc/list_rpc_functions',
+        data: {},
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        final functionList = response.data as List;
+        _logger.info('Found ${functionList.length} RPC functions');
+
+        for (final functionData in functionList) {
+          if (functionData is Map<String, dynamic>) {
+            final functionName = functionData['function_name'] as String?;
+            if (functionName == null) continue;
+
+            try {
+              // Get detailed information for this function
+              final functionInfo = await _getRpcFunctionDetailsRemote(functionName);
+              if (functionInfo != null) {
+                functions.add(functionInfo);
+              }
+            } catch (e) {
+              _logger.warning('Error processing RPC function $functionName: $e');
+            }
+          }
+        }
+      } else {
+        _logger.warning('Failed to fetch RPC functions list: ${response.statusCode}');
+      }
+
+      _logger.info('Successfully read ${functions.length} RPC functions from remote database');
+      return functions;
+    } catch (e, stackTrace) {
+      _logger.severe('Error reading RPC functions from remote database: $e');
+      _logger.severe('Stack trace: $stackTrace');
+      return [];
+    }
+  }
+
+  /// Get detailed information for a specific RPC function from remote database
+  Future<RpcFunctionInfo?> _getRpcFunctionDetailsRemote(String functionName) async {
+    try {
+      // Get function details
+      final detailsResponse = await _dioClient!.post(
+        '/rest/v1/rpc/get_rpc_function_details',
+        data: {'p_function_name': functionName},
+      );
+
+      if (detailsResponse.statusCode != 200 || detailsResponse.data is! List) {
+        _logger.warning('Failed to get details for function $functionName');
+        return null;
+      }
+
+      final detailsList = detailsResponse.data as List;
+      if (detailsList.isEmpty) {
+        _logger.warning('No details found for function $functionName');
+        return null;
+      }
+
+      final details = detailsList.first as Map<String, dynamic>;
+
+      // Get parameters for this function
+      final parameters = await _getRpcFunctionParametersRemote(functionName);
+
+      // Extract function information
+      final schemaName = details['schema_name'] as String? ?? 'public';
+      final languageName = details['language_name'] as String? ?? 'unknown';
+      final returnType = details['return_type'] as String? ?? 'void';
+      final isSecurityDefiner = details['is_security_definer'] as bool? ?? false;
+      final volatility = details['volatility'] as String? ?? 'VOLATILE';
+      final isStrict = details['is_strict'] as bool? ?? false;
+      final cost = details['cost']?.toString();
+      final estimatedRows = details['estimated_rows']?.toString();
+      final description = details['function_description'] as String?;
+      final functionSource = details['function_source'] as String?;
+      final isSetReturning = details['is_set_returning'] as bool? ?? false;
+
+      // Create return type info
+      final rpcReturnType = RpcReturnType(
+        type: returnType,
+        isTable: returnType.toUpperCase() == 'TABLE',
+        isArray: returnType.toUpperCase().startsWith('SETOF'),
+        isVoid: returnType.toUpperCase() == 'VOID',
+        description: 'Returns $returnType',
+      );
+
+      return RpcFunctionInfo(
+        name: functionName,
+        schema: schemaName,
+        parameters: parameters,
+        returnType: rpcReturnType,
+        description: description,
+        isSecurityDefiner: isSecurityDefiner,
+        language: languageName,
+        functionBody: functionSource,
+        isStrict: isStrict,
+        cost: cost,
+        rows: estimatedRows,
+        isVolatile: volatility == 'VOLATILE',
+        volatility: volatility,
+      );
+    } catch (e) {
+      _logger.warning('Error getting details for function $functionName: $e');
+      return null;
+    }
+  }
+
+  /// Get parameters for a specific RPC function from remote database
+  Future<List<RpcParameter>> _getRpcFunctionParametersRemote(String functionName) async {
+    try {
+      final response = await _dioClient!.post(
+        '/rest/v1/rpc/get_rpc_function_parameters',
+        data: {'p_function_name': functionName},
+      );
+
+      if (response.statusCode == 200 && response.data is List) {
+        final parametersList = response.data as List;
+        final parameters = <RpcParameter>[];
+
+        for (final paramData in parametersList) {
+          if (paramData is Map<String, dynamic>) {
+            final paramName = paramData['parameter_name'] as String? ?? 'unknown';
+            final paramType = paramData['parameter_type'] as String? ?? 'text';
+            final paramMode = paramData['parameter_mode'] as String? ?? 'IN';
+            final position = paramData['parameter_position'] as int? ?? 1;
+            final hasDefault = paramData['has_default'] as bool? ?? false;
+            final isRequired = paramData['is_required'] as bool? ?? true;
+            final defaultValue = paramData['default_value'] as String?;
+
+            parameters.add(RpcParameter(
+              name: paramName,
+              type: paramType,
+              mode: paramMode,
+              isRequired: isRequired,
+              defaultValue: hasDefault ? defaultValue : null,
+              position: position,
+            ));
+          }
+        }
+
+        return parameters;
+      } else {
+        _logger.warning('Failed to get parameters for function $functionName');
+        return [];
+      }
+    } catch (e) {
+      _logger.warning('Error getting parameters for function $functionName: $e');
       return [];
     }
   }
@@ -1797,6 +2143,254 @@ AS \$\$
     AND event_object_table = p_table_name
   ORDER BY
     trigger_name;
+\$\$;
+
+-- Function to list all user-defined RPC functions
+CREATE OR REPLACE FUNCTION public.list_rpc_functions()
+RETURNS TABLE (
+  function_name text,
+  schema_name text,
+  language_name text,
+  return_type text,
+  is_security_definer boolean,
+  volatility text,
+  is_strict boolean,
+  cost integer,
+  estimated_rows integer,
+  function_description text
+)
+SECURITY DEFINER
+LANGUAGE sql
+AS \$\$
+  SELECT
+    p.proname::text AS function_name,
+    n.nspname::text AS schema_name,
+    l.lanname::text AS language_name,
+    CASE 
+      WHEN p.proretset THEN 
+        CASE 
+          WHEN t.typname = 'record' THEN 'TABLE'
+          ELSE 'SETOF ' || t.typname::text
+        END
+      ELSE t.typname::text
+    END AS return_type,
+    p.prosecdef AS is_security_definer,
+    CASE p.provolatile
+      WHEN 'i' THEN 'IMMUTABLE'
+      WHEN 's' THEN 'STABLE'
+      WHEN 'v' THEN 'VOLATILE'
+    END AS volatility,
+    p.proisstrict AS is_strict,
+    p.procost::integer AS cost,
+    CASE WHEN p.proretset THEN p.prorows::integer ELSE NULL END AS estimated_rows,
+    obj_description(p.oid, 'pg_proc')::text AS function_description
+  FROM 
+    pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    JOIN pg_language l ON p.prolang = l.oid
+    JOIN pg_type t ON p.prorettype = t.oid
+  WHERE 
+    n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND NOT p.proisagg  -- Exclude aggregate functions
+    AND l.lanname != 'internal'  -- Exclude internal functions
+  ORDER BY 
+    n.nspname, p.proname;
+\$\$;
+
+-- Function to get detailed information about a specific RPC function
+CREATE OR REPLACE FUNCTION public.get_rpc_function_details(p_function_name text)
+RETURNS TABLE (
+  function_name text,
+  schema_name text,
+  language_name text,
+  return_type text,
+  return_type_category text,
+  is_security_definer boolean,
+  volatility text,
+  is_strict boolean,
+  cost integer,
+  estimated_rows integer,
+  function_description text,
+  function_source text,
+  is_set_returning boolean,
+  parameter_count integer
+)
+SECURITY DEFINER
+LANGUAGE sql
+AS \$\$
+  SELECT
+    p.proname::text AS function_name,
+    n.nspname::text AS schema_name,
+    l.lanname::text AS language_name,
+    CASE 
+      WHEN p.proretset THEN 
+        CASE 
+          WHEN t.typname = 'record' THEN 'TABLE'
+          ELSE 'SETOF ' || t.typname::text
+        END
+      ELSE t.typname::text
+    END AS return_type,
+    CASE t.typcategory
+      WHEN 'A' THEN 'Array'
+      WHEN 'B' THEN 'Boolean'
+      WHEN 'C' THEN 'Composite'
+      WHEN 'D' THEN 'Date/time'
+      WHEN 'E' THEN 'Enum'
+      WHEN 'G' THEN 'Geometric'
+      WHEN 'I' THEN 'Network address'
+      WHEN 'N' THEN 'Numeric'
+      WHEN 'P' THEN 'Pseudo-type'
+      WHEN 'S' THEN 'String'
+      WHEN 'T' THEN 'Timespan'
+      WHEN 'U' THEN 'User-defined'
+      WHEN 'V' THEN 'Bit-string'
+      WHEN 'X' THEN 'Unknown'
+      ELSE 'Other'
+    END AS return_type_category,
+    p.prosecdef AS is_security_definer,
+    CASE p.provolatile
+      WHEN 'i' THEN 'IMMUTABLE'
+      WHEN 's' THEN 'STABLE'
+      WHEN 'v' THEN 'VOLATILE'
+    END AS volatility,
+    p.proisstrict AS is_strict,
+    p.procost::integer AS cost,
+    CASE WHEN p.proretset THEN p.prorows::integer ELSE NULL END AS estimated_rows,
+    obj_description(p.oid, 'pg_proc')::text AS function_description,
+    p.prosrc::text AS function_source,
+    p.proretset AS is_set_returning,
+    p.pronargs::integer AS parameter_count
+  FROM 
+    pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    JOIN pg_language l ON p.prolang = l.oid
+    JOIN pg_type t ON p.prorettype = t.oid
+  WHERE 
+    p.proname = p_function_name
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND NOT p.proisagg  -- Exclude aggregate functions
+    AND l.lanname != 'internal'  -- Exclude internal functions
+  ORDER BY 
+    n.nspname, p.proname;
+\$\$;
+
+-- Function to get parameter information for a specific RPC function
+CREATE OR REPLACE FUNCTION public.get_rpc_function_parameters(p_function_name text)
+RETURNS TABLE (
+  function_name text,
+  parameter_name text,
+  parameter_type text,
+  parameter_mode text,
+  parameter_position integer,
+  has_default boolean,
+  default_value text,
+  is_required boolean
+)
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS \$\$
+BEGIN
+  RETURN QUERY
+  SELECT
+    p.proname::text AS function_name,
+    CASE 
+      WHEN p.proargnames IS NOT NULL AND array_length(p.proargnames, 1) >= pos.i 
+      THEN p.proargnames[pos.i]
+      ELSE 'param_' || pos.i::text
+    END AS parameter_name,
+    format_type(unnest_types.arg_type, NULL)::text AS parameter_type,
+    CASE 
+      WHEN p.proargmodes IS NOT NULL AND array_length(p.proargmodes, 1) >= pos.i THEN
+        CASE p.proargmodes[pos.i]
+          WHEN 'i' THEN 'IN'
+          WHEN 'o' THEN 'OUT'
+          WHEN 'b' THEN 'INOUT'
+          WHEN 'v' THEN 'VARIADIC'
+          WHEN 't' THEN 'TABLE'
+          ELSE 'IN'
+        END
+      ELSE 'IN'
+    END AS parameter_mode,
+    pos.i AS parameter_position,
+    (p.pronargdefaults > 0 AND pos.i > (p.pronargs - p.pronargdefaults)) AS has_default,
+    CASE 
+      WHEN p.pronargdefaults > 0 AND pos.i > (p.pronargs - p.pronargdefaults) THEN
+        'DEFAULT'  -- We can't easily extract the actual default value
+      ELSE NULL
+    END AS default_value,
+    NOT (p.pronargdefaults > 0 AND pos.i > (p.pronargs - p.pronargdefaults)) AS is_required
+  FROM 
+    pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid,
+    LATERAL (SELECT unnest(p.proargtypes) AS arg_type, generate_series(1, p.pronargs) AS i) AS unnest_types(arg_type, i),
+    LATERAL (SELECT unnest_types.i) AS pos(i)
+  WHERE 
+    p.proname = p_function_name
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND NOT p.proisagg  -- Exclude aggregate functions
+    AND unnest_types.i <= p.pronargs
+  ORDER BY 
+    p.proname, pos.i;
+END;
+\$\$;
+
+-- Function to get return type information for table-returning functions
+CREATE OR REPLACE FUNCTION public.get_rpc_function_return_columns(p_function_name text)
+RETURNS TABLE (
+  function_name text,
+  column_name text,
+  column_type text,
+  column_position integer
+)
+SECURITY DEFINER
+LANGUAGE plpgsql
+AS \$\$
+BEGIN
+  -- This function tries to extract column information for functions that return TABLE
+  -- It's complex because PostgreSQL doesn't store this information directly
+  RETURN QUERY
+  SELECT
+    p.proname::text AS function_name,
+    CASE 
+      WHEN p.proargnames IS NOT NULL AND array_length(p.proargnames, 1) >= pos.i 
+      THEN p.proargnames[pos.i]
+      ELSE 'column_' || pos.i::text
+    END AS column_name,
+    format_type(out_types.arg_type, NULL)::text AS column_type,
+    pos.i AS column_position
+  FROM 
+    pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid,
+    LATERAL (
+      SELECT 
+        unnest(
+          CASE 
+            WHEN p.proargmodes IS NOT NULL THEN 
+              -- Filter to only OUT and TABLE parameters
+              (SELECT array_agg(p.proargtypes[i-1]) 
+               FROM generate_series(1, array_length(p.proargmodes, 1)) i
+               WHERE p.proargmodes[i] IN ('o', 't'))
+            ELSE ARRAY[]::oid[]
+          END
+        ) AS arg_type, 
+        generate_series(1, 
+          CASE 
+            WHEN p.proargmodes IS NOT NULL THEN 
+              (SELECT count(*) FROM unnest(p.proargmodes) mode WHERE mode IN ('o', 't'))::integer
+            ELSE 0
+          END
+        ) AS i
+    ) AS out_types(arg_type, i),
+    LATERAL (SELECT out_types.i) AS pos(i)
+  WHERE 
+    p.proname = p_function_name
+    AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'pg_toast')
+    AND NOT p.proisagg  -- Exclude aggregate functions
+    AND p.proretset  -- Only set-returning functions
+    AND out_types.arg_type IS NOT NULL
+  ORDER BY 
+    p.proname, pos.i;
+END;
 \$\$;
 ''';
   }

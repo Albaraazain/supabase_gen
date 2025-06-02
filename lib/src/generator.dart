@@ -9,6 +9,7 @@ import 'config/config_model.dart';
 import 'generators/model_generator.dart';
 import 'generators/repository_generator.dart';
 import 'generators/provider_generator.dart';
+import 'generators/rpc_service_generator.dart';
 import 'schema/schema_reader.dart';
 import 'utils/logger.dart';
 import 'templates/logger_template.dart';
@@ -210,6 +211,10 @@ The SQL code is available in the accompanying `rpc_functions_setup.sql` file.
       final tables = await schemaReader.readTables();
       _logger.info('Read schema for ${tables.length} tables');
 
+      // Read RPC functions if enabled
+      final functions = await schemaReader.readRpcFunctions();
+      _logger.info('Read ${functions.length} RPC functions');
+
       // Generate constraint-based documentation
       await generateConstraintDocumentation(tables);
 
@@ -231,6 +236,13 @@ The SQL code is available in the accompanying `rpc_functions_setup.sql` file.
       // Generate type-safe query builders if repositories are enabled
       _logger.info('Generating type-safe query builders...');
       await generateQueryBuilders(tables);
+
+      // Generate RPC services if enabled
+      if (config.generateRpcServices && functions.isNotEmpty) {
+        _logger.info('Generating RPC services...');
+        final rpcGenerator = RpcServiceGenerator(config);
+        await rpcGenerator.generateRpcServices(functions);
+      }
 
       // Create utilities directory
       final utilsDir = Directory(path.join(config.outputDirectory, 'utils'));

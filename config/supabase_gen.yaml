@@ -1,8 +1,8 @@
 # Remote database configuration - uncomment and fill in details to use remote mode
 database:
   connection_type: remote
-  supabase_url: https://zfqpbxhkebliqlcggdhl.supabase.co
-  supabase_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpmcXBieGhrZWJsaXFsY2dnZGhsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0MDY4MjEwOCwiZXhwIjoyMDU2MjU4MTA4fQ.ZFMVZzKDmfArqePKbvEywomqxfXLr992lmGLyC-JlrA
+  supabase_url: https://jrapyqjujstyqswqfeqw.supabase.co
+  supabase_key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpyYXB5cWp1anN0eXFzd3FmZXF3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODU0NTU1MywiZXhwIjoyMDY0MTIxNTUzfQ.pmkEzjdrQFTBRL_6rPUP3szYFSONunCP-q6CTZvqmbI
   database: postgres  # Database name is still required even for remote connection
 
 
@@ -12,70 +12,14 @@ generation:
   model_suffix: Model
   repository_suffix: Repository
   
-  # Generated column handling
-  exclude_generated_columns: true  # Automatically exclude generated columns from serialization
-  # Note: Spatial/geographic columns (geometry, geography, point, etc.) are automatically excluded
+  # Exclude generated columns from model serialization
+  exclude_generated_columns: true
   
-  # Manual column exclusions per table
+  # Custom column exclusions for specific tables
   column_exclusions:
-    # Example: exclude specific columns from specific tables
-    # driver_locations:
-    #   - location_point  # Generated column or spatial column
-    # other_table:
-    #   - computed_field
+    driver_locations:
+      - location_point  # Generated column that should not be in toJson()
   
-  # Tables to probe when using remote connection
-  probe_tables:
-    # Application tables
-      - 'active_jobs'
-      - 'conversations'
-      - 'diagnosis_findings'
-      - 'diagnosis_findings_with_photos'
-      - 'diagnosis_phase'
-      - 'en_route_phase'
-      - 'error_logs'
-      - 'finding_photos'
-      - 'homeowner_location_updates'
-      - 'homeowner_profiles'
-      - 'job_broadcasts'
-      - 'job_stage_history'
-      - 'job_tasks'
-      - 'jobs'
-      - 'location_bookmarks'
-      - 'location_map_settings'
-      - 'location_verification_attempts'
-      - 'location_verification_summary'
-      - 'location_verifications'
-      - 'material_usage'
-      - 'messages'
-      - 'pause_periods'
-      - 'payment_methods'
-      - 'preparation_checks'
-      - 'professional_earnings'
-      - 'professional_location_updates'
-      - 'professional_profiles'
-      - 'professional_responses'
-      - 'professional_services'
-      - 'quote_history'
-      - 'quote_line_items'
-      - 'quote_phase'
-      - 'quote_summaries'
-      - 'safety_checks'
-      - 'service_categories'
-      - 'service_quotes'
-      - 'services'
-      - 'session_pause_reasons'
-      - 'site_photos'
-      - 'task_photos'
-      - 'task_progress_summary'
-      - 'test_jobs'
-      - 'users'
-      - 'work_sessions'
-      - 'work_tasks'
-      - 'work_timeline_events'
-      - 'work_updates'
-      - 'working_phase'
-    
   exclude_tables: 
     # Exclude system schemas
     - '_realtime.*'
@@ -88,16 +32,12 @@ generation:
     - 'vault.*'
     # Exclude views and system tables from public schema
     - 'public.*_view'
-    # Exclude PostGIS system tables
+    # Exclude postgis system tables
     - 'spatial_ref_sys'
     - 'geography_columns'
     - 'geometry_columns'
-    - 'raster_columns'
-    - 'raster_overviews'
-    # Exclude other spatial system tables
-    - 'topology.*'
-    - 'tiger.*'
-    - 'tiger_data.*'
+    - 'spatial_ref_sys'
+    
     
   include_tables: 
     - 'public.*'  # Include all tables from public schema
@@ -131,3 +71,42 @@ generation:
     # Generate AsyncValueWidget for easy UI consumption
     # Creates a standard widget for handling async states in shared/widgets/
     generate_async_value_widget: true
+
+  # RPC function generation options
+  rpc:
+    # Enable RPC service generation
+    generate_services: true
+    
+    # Enable RPC model generation for complex return types
+    generate_models: true
+    
+    # Enable RPC provider generation (if providers are enabled)
+    generate_providers: true
+    
+    # Enable RPC documentation generation
+    generate_documentation: true
+    
+    # RPC service naming conventions
+    service_suffix: RpcService
+    model_suffix: Result
+    
+    # Function grouping strategy: 'category', 'schema', or 'alphabetical'
+    grouping_strategy: category
+    
+    # Function categories for automatic categorization
+    categories:
+      auth: ['auth_*', 'login_*', 'register_*', 'verify_*', 'reset_*']
+      analytics: ['analytics_*', 'stats_*', 'report_*', 'metrics_*']
+      business: ['business_*', 'calculate_*', 'find_*', 'search_*']
+      admin: ['admin_*', 'manage_*', 'system_*']
+      utility: ['utility_*', 'validate_*', 'generate_*', 'cleanup_*']
+    
+    # Functions to include (empty = include all)
+    include_functions: []
+    
+    # Functions to exclude
+    exclude_functions: []
+    
+    # Logging and caching settings
+    enable_logging: true
+    enable_caching: true
