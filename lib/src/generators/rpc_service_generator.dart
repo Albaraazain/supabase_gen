@@ -169,7 +169,7 @@ class RpcServiceGenerator {
   Future<String?> _generateCategoryService(String category, List<RpcFunctionInfo> functions) async {
     try {
       final className = config.getRpcServiceClassName(category);
-      final fileName = '${category}_rpc_service.dart';
+      final fileName = '${StringUtils.toFileName(category)}_rpc_service.dart';
       final filePath = path.join(config.outputDirectory, 'rpc', 'services', fileName);
 
       // Generate comprehensive service class with type-safe methods
@@ -200,8 +200,9 @@ class RpcServiceGenerator {
     // Import statements
     buffer.writeln("import 'package:supabase_flutter/supabase_flutter.dart';");
     buffer.writeln("import '../base_rpc_service.dart';");
-    buffer.writeln("import '../models/models.dart';");
-    buffer.writeln("import '../../schema/rpc_info.dart';");
+    if (config.generateRpcModels && _hasComplexReturnTypes(functions)) {
+      buffer.writeln("import '../models/models.dart';");
+    }
     buffer.writeln();
 
     // Class documentation
@@ -462,7 +463,7 @@ class RpcServiceGenerator {
   Future<void> _generateBarrelFiles(List<String> serviceFiles, List<String> modelFiles) async {
     // Services barrel file
     final servicesBarrelPath = path.join(config.outputDirectory, 'rpc', 'services', 'services.dart');
-    final servicesBarrelContent = RpcTemplate.rpcServicesBarrel(serviceFiles);
+    final servicesBarrelContent = RpcTemplate.rpcServicesBarrelNoBase(serviceFiles);
     await File(servicesBarrelPath).writeAsString(servicesBarrelContent);
     _logger.info('Generated services barrel file: $servicesBarrelPath');
 
@@ -488,10 +489,164 @@ ${config.generateRpcProviders ? "export 'providers/providers.dart';" : ""}
     _logger.info('Generated main RPC barrel file: $mainBarrelPath');
   }
 
-  /// Generate RPC providers (placeholder for now)
+  /// Generate RPC providers for state management integration
   Future<void> _generateRpcProviders(Map<String, List<RpcFunctionInfo>> groupedFunctions) async {
-    _logger.info('RPC provider generation is not yet implemented');
-    // TODO: Implement RPC provider generation in a future task
+    _logger.info('Generating RPC providers for ${groupedFunctions.length} categories...');
+    
+    final providersDir = Directory(path.join(config.outputDirectory, 'rpc', 'providers'));
+    if (!providersDir.existsSync()) {
+      providersDir.createSync(recursive: true);
+    }
+
+    final generatedProviderFiles = <String>[];
+
+    for (final entry in groupedFunctions.entries) {
+      final category = entry.key;
+      final functions = entry.value;
+      
+      final providerFileName = '${StringUtils.toFileName(category)}_rpc_provider.dart';
+      final providerFilePath = path.join(providersDir.path, providerFileName);
+      
+      final content = _generateRpcProviderClass(category, functions);
+      await File(providerFilePath).writeAsString(content);
+      
+      generatedProviderFiles.add(providerFileName);
+      _logger.info('Generated RPC provider for $category: $providerFilePath');
+    }
+
+    // Generate providers barrel file
+    final barrelContent = '''// Generated barrel file for RPC providers
+// Do not modify by hand
+
+${generatedProviderFiles.map((f) => "export '$f';").join('\n')}
+''';
+
+    final barrelPath = path.join(providersDir.path, 'providers.dart');
+    await File(barrelPath).writeAsString(barrelContent);
+    _logger.info('Generated RPC providers barrel file: $barrelPath');
+  }
+
+  /// Generate an RPC provider class for a category
+  String _generateRpcProviderClass(String category, List<RpcFunctionInfo> functions) {
+    final serviceClassName = config.getRpcServiceClassName(category);
+    
+    final buffer = StringBuffer();
+    
+    // Import statements
+    buffer.writeln("import 'package:flutter_riverpod/flutter_riverpod.dart';");
+    buffer.writeln("import 'package:supabase_flutter/supabase_flutter.dart';");
+    buffer.writeln("import '../services/services.dart';");
+    buffer.writeln("import '../../shared/errors/app_exception.dart';");
+    if (config.generateRpcModels && _hasComplexReturnTypes(functions)) {
+      buffer.writeln("import '../models/models.dart';");
+    }
+    buffer.writeln();
+    
+    // Service provider
+    buffer.writeln('/// Provider for $category RPC service');
+    buffer.writeln('/// ');
+    buffer.writeln('/// This provider gives access to the following RPC functions:');
+    for (final function in functions) {
+      buffer.writeln('/// - ${function.name}: ${function.description ?? 'No description'}');
+    }
+    buffer.writeln('final ${StringUtils.toCamelCase(category)}RpcServiceProvider = Provider<$serviceClassName>((ref) {');
+    buffer.writeln('  final supabase = Supabase.instance.client;');
+    buffer.writeln('  return $serviceClassName(supabase);');
+    buffer.writeln('});');
+    buffer.writeln();
+
+    // Generate providers for individual functions
+    for (final function in functions) {
+      final methodName = function.getDartMethodName();
+      final providerName = '${StringUtils.toCamelCase(category)}${_toPascalCase(methodName)}';
+      final returnType = _getDartReturnType(function);
+
+      buffer.writeln('/// Provider for ${function.name} RPC function');
+      buffer.writeln('/// ${function.description ?? 'No description available'}');
+      
+      if (function.inputParameters.isEmpty) {
+        // No parameters - simple FutureProvider
+        buffer.writeln('final ${providerName}Provider = FutureProvider<$returnType>((ref) async {');
+        buffer.writeln('  try {');
+        buffer.writeln('    final service = ref.read(${StringUtils.toCamelCase(category)}RpcServiceProvider);');
+        buffer.writeln('    return await service.$methodName();');
+        buffer.writeln('  } catch (e) {');
+        buffer.writeln('    throw AppException(message: e.toString(), originalError: e);');
+        buffer.writeln('  }');
+        buffer.writeln('});');
+      } else {
+        // Has parameters - family provider
+        buffer.writeln('class ${_toPascalCase(providerName)}Params {');
+        
+        // Generate parameter class
+        for (final param in function.inputParameters) {
+          final dartType = param.getDartType();
+          final fieldName = StringUtils.toCamelCase(param.name);
+          final nullable = param.isRequired ? '' : '?';
+          buffer.writeln('  final $dartType$nullable $fieldName;');
+        }
+        
+        buffer.writeln();
+        buffer.writeln('  const ${_toPascalCase(providerName)}Params({');
+        for (final param in function.inputParameters) {
+          final fieldName = StringUtils.toCamelCase(param.name);
+          final required = param.isRequired ? 'required ' : '';
+          buffer.writeln('    ${required}this.$fieldName,');
+        }
+        buffer.writeln('  });');
+        
+        // Add equality and hashCode
+        buffer.writeln();
+        buffer.writeln('  @override');
+        buffer.writeln('  bool operator ==(Object other) {');
+        buffer.writeln('    if (identical(this, other)) return true;');
+        buffer.writeln('    return other is ${_toPascalCase(providerName)}Params &&');
+        final equalityChecks = function.inputParameters.map((p) => 
+          '           other.${StringUtils.toCamelCase(p.name)} == ${StringUtils.toCamelCase(p.name)}'
+        ).join(' &&\n');
+        buffer.writeln('$equalityChecks;');
+        buffer.writeln('  }');
+        
+        buffer.writeln();
+        buffer.writeln('  @override');
+        final hashParts = function.inputParameters.map((p) => 
+          '${StringUtils.toCamelCase(p.name)}.hashCode'
+        ).join(' ^ ');
+        buffer.writeln('  int get hashCode => $hashParts;');
+        buffer.writeln('}');
+        buffer.writeln();
+        
+        // Family provider
+        buffer.writeln('final ${providerName}Provider = FutureProvider.family<$returnType, ${_toPascalCase(providerName)}Params>((ref, params) async {');
+        buffer.writeln('  try {');
+        buffer.writeln('    final service = ref.read(${StringUtils.toCamelCase(category)}RpcServiceProvider);');
+        buffer.writeln('    return await service.$methodName(');
+        
+        final paramCalls = function.inputParameters.map((p) => 
+          '      ${StringUtils.toCamelCase(p.name)}: params.${StringUtils.toCamelCase(p.name)}'
+        ).join(',\n');
+        buffer.writeln(paramCalls);
+        buffer.writeln('    );');
+        buffer.writeln('  } catch (e) {');
+        buffer.writeln('    throw AppException(message: e.toString(), originalError: e);');
+        buffer.writeln('  }');
+        buffer.writeln('});');
+      }
+      buffer.writeln();
+    }
+
+    return buffer.toString();
+  }
+
+  /// Helper to convert to PascalCase
+  String _toPascalCase(String input) {
+    if (input.isEmpty) return input;
+    
+    // Handle categories like 'instant_rides' properly
+    final parts = input.split('_');
+    return parts.map((part) => part.isNotEmpty 
+        ? part.substring(0, 1).toUpperCase() + part.substring(1).toLowerCase()
+        : '').join('');
   }
 
   /// Generate RPC documentation
@@ -569,5 +724,10 @@ ${config.generateRpcProviders ? "export 'providers/providers.dart';" : ""}
       return regex.hasMatch(text);
     }
     return text == pattern;
+  }
+
+  /// Check if any function in the list has complex return types that need models
+  bool _hasComplexReturnTypes(List<RpcFunctionInfo> functions) {
+    return functions.any((function) => _shouldGenerateModel(function));
   }
 }

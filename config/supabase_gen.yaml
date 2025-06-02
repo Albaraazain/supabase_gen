@@ -72,10 +72,11 @@ generation:
     # Creates a standard widget for handling async states in shared/widgets/
     generate_async_value_widget: true
 
+
   # RPC function generation options
-  rpc:
+  rpc_functions:
     # Enable RPC service generation
-    generate_services: true
+    generate: true
     
     # Enable RPC model generation for complex return types
     generate_models: true
@@ -93,19 +94,71 @@ generation:
     # Function grouping strategy: 'category', 'schema', or 'alphabetical'
     grouping_strategy: category
     
-    # Function categories for automatic categorization
+    # Function categories for OnYourWay ride-sharing platform
     categories:
-      auth: ['auth_*', 'login_*', 'register_*', 'verify_*', 'reset_*']
-      analytics: ['analytics_*', 'stats_*', 'report_*', 'metrics_*']
-      business: ['business_*', 'calculate_*', 'find_*', 'search_*']
-      admin: ['admin_*', 'manage_*', 'system_*']
-      utility: ['utility_*', 'validate_*', 'generate_*', 'cleanup_*']
+      # Trip and ride management functions
+      trips: ['create_scheduled_trip', 'start_trip', 'complete_trip', '*trip*']
+      
+      # Ride requests and booking functions  
+      bookings: ['create_ride_request', 'accept_ride_request', 'reject_ride_request', 
+                'create_booking_from_request', 'create_instant_ride_booking', 
+                'cancel_booking', 'confirm_passenger_pickup', '*booking*', '*request*']
+      
+      # Instant ride specific functions
+      instant_rides: ['*instant_ride*', 'match_driver_to_instant_ride', 
+                     'accept_instant_ride_request', 'reject_instant_ride_request',
+                     'cleanup_expired_instant_ride_requests']
+      
+      # Payment and financial functions
+      payments: ['process_payment', 'calculate_instant_ride_fare', '*payment*', 
+                '*fare*', '*price*', '*cost*']
+      
+      # Review and rating functions
+      reviews: ['submit_review', '*review*', '*rating*']
+      
+      # Driver and location functions
+      drivers: ['get_nearby_online_drivers', 'find_available_drivers_for_instant_ride',
+               '*driver*', '*location*']
+      
+      # Statistics and analytics functions
+      analytics: ['get_user_trip_stats', 'get_current_surge_multiplier', '*stats*', 
+                 '*analytics*', '*metrics*', '*report*']
+      
+      # Search and discovery functions
+      search: ['get_nearby_trips', 'search_*', 'find_*', '*lookup*', 'filter_*']
+      
+      # User and authentication functions (for future use)
+      auth: ['login_*', 'register_*', 'verify_*', '*_auth*', '*user*']
+      
+      # Admin and system functions
+      admin: ['*_admin*', 'manage_*', '*_system*', '*_config*', 'cleanup_*']
     
     # Functions to include (empty = include all)
     include_functions: []
     
-    # Functions to exclude
-    exclude_functions: []
+    # Functions to exclude (schema introspection, utility, and remaining PostGIS functions)
+    exclude_functions: [
+      # Schema introspection functions (used by generator, not for app)
+      'get_function_details',
+      'get_generated_columns', 
+      'get_rpc_function_details',
+      'get_rpc_function_parameters',
+      'get_table_columns',
+      'get_table_constraints',
+      'get_table_indexes',
+      'get_table_triggers',
+      'get_table_type',
+      'get_function_simple_info',
+      'list_rpc_functions',
+      'list_tables',
+      
+      # Remaining PostGIS functions
+      'addgeometrycolumn',
+      'get_proj4_from_srid',
+      
+      # Utility functions
+      'update_expired_requests'
+    ]
     
     # Logging and caching settings
     enable_logging: true

@@ -5,20 +5,39 @@ class RpcTemplate {
   /// Generate the base RPC service class that all RPC services extend
   static String baseRpcService() {
     return '''import 'package:supabase_flutter/supabase_flutter.dart';
-import '../utils/app_logger.dart';✻ Thinking…
+import '../utils/app_logger.dart';
 
-  Now I need to create the BaseRpcService template. Let me think about what this needs to include:
+/// Exception thrown when RPC operations fail
+class RpcException implements Exception {
+  final String message;
+  final String? functionName;
+  final dynamic originalError;
 
-  1. First, I should check if there's already a templates directory for RPC-specific templates
-  2. The BaseRpcService template should:
-    - Provide error handling with RpcException
-    - Include logging capabilities
-    - Support type-safe method calls
-    - Handle different return types (void, single values, lists, complex objects)
-    - Support caching if enabled
-    - Work with the Supabase client
-    - Be extensible for different RPC service categories
-import '../schema/rpc_info.dart';
+  const RpcException(
+    this.message, {
+    this.functionName,
+    this.originalError,
+  });
+
+  @override
+  String toString() {
+    final funcInfo = functionName != null ? ' in function \$functionName' : '';
+    return 'RpcException: \$message\$funcInfo';
+  }
+}
+
+/// Represents a parameter for RPC function validation
+class RpcParameter {
+  final String name;
+  final String type;
+  final bool isRequired;
+
+  const RpcParameter({
+    required this.name,
+    required this.type,
+    this.isRequired = true,
+  });
+}
 
 /// Base class for all RPC services providing common functionality
 abstract class BaseRpcService {
@@ -595,6 +614,17 @@ $exports
     final exports = modelFiles.map((file) => "export '$file';").join('\n');
     
     return '''// Generated barrel file for RPC models
+// Do not modify by hand
+
+$exports
+''';
+  }
+
+  /// Generate barrel file for RPC services (no base_rpc_service.dart export)
+  static String rpcServicesBarrelNoBase(List<String> serviceFiles) {
+    final exports = serviceFiles.map((file) => "export '$file';").join('\n');
+    
+    return '''// Generated barrel file for RPC services
 // Do not modify by hand
 
 $exports

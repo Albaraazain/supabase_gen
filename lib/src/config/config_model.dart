@@ -267,8 +267,14 @@ class SupabaseGenConfig {
 
   /// Get the RPC service class name for a category
   String getRpcServiceClassName(String category) {
-    final capitalizedCategory = category.substring(0, 1).toUpperCase() + category.substring(1);
-    return '$capitalizedCategory${rpcServiceSuffix}';
+    // Convert snake_case to PascalCase properly
+    final pascalCase = category
+        .split('_')
+        .map((part) => part.isNotEmpty 
+            ? part.substring(0, 1).toUpperCase() + part.substring(1).toLowerCase()
+            : '')
+        .join('');
+    return '$pascalCase$rpcServiceSuffix';
   }
 
   /// Get the RPC model class name for a function
@@ -286,14 +292,26 @@ class SupabaseGenConfig {
 
   /// Get the RPC provider class name for a category
   String getRpcProviderClassName(String category) {
-    final capitalizedCategory = category.substring(0, 1).toUpperCase() + category.substring(1);
-    return '$capitalizedCategory$rpcProviderSuffix';
+    // Convert snake_case to PascalCase properly
+    final pascalCase = category
+        .split('_')
+        .map((part) => part.isNotEmpty 
+            ? part.substring(0, 1).toUpperCase() + part.substring(1).toLowerCase()
+            : '')
+        .join('');
+    return '$pascalCase$rpcProviderSuffix';
   }
 
   /// Get the RPC notifier class name for a category
   String getRpcNotifierClassName(String category) {
-    final capitalizedCategory = category.substring(0, 1).toUpperCase() + category.substring(1);
-    return '${capitalizedCategory}RpcNotifier';
+    // Convert snake_case to PascalCase properly
+    final pascalCase = category
+        .split('_')
+        .map((part) => part.isNotEmpty 
+            ? part.substring(0, 1).toUpperCase() + part.substring(1).toLowerCase()
+            : '')
+        .join('');
+    return '${pascalCase}RpcNotifier';
   }
 
   /// Check if RPC function should be excluded based on patterns
