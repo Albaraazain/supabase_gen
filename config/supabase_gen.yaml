@@ -163,3 +163,14 @@ generation:
     # Logging and caching settings
     enable_logging: true
     enable_caching: true
+    
+    # Function-specific type overrides for JSON return types
+    # 🚀 AUTO-DETECTION: The generator now automatically detects JSON structure!
+    #     No manual overrides needed - system detects arrays vs objects automatically
+    type_overrides: {}
+      
+      # Only add overrides if you want more specific types than auto-detected:
+      # get_nearby_online_drivers: 'List<Map<String, dynamic>>'  # More specific than List<dynamic>
+      
+      # Or for edge cases where auto-detection doesn't work:
+      # some_complex_function: 'dynamic'

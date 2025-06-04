@@ -359,6 +359,12 @@ class RpcServiceGenerator {
 
   /// Get the Dart return type for a function
   String _getDartReturnType(RpcFunctionInfo function) {
+    // Check for explicit type override first
+    final override = config.getRpcReturnTypeOverride(function.name);
+    if (override != null) {
+      return override;
+    }
+    
     if (function.returnsVoid) {
       return 'void';
     }

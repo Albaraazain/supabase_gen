@@ -60,7 +60,9 @@ class RpcParameter {
         return 'bool';
       case 'jsonb':
       case 'json':
-        return 'Map<String, dynamic>';
+        // For JSON types, we need to inspect the actual function to determine structure
+        // Default to dynamic and let the developer specify the correct type via config
+        return 'dynamic';
       case 'timestamp with time zone':
       case 'timestamp without time zone':
       case 'timestamptz':
@@ -109,12 +111,14 @@ class RpcReturnType {
   final bool isArray; // Returns array of values
   final bool isVoid; // Returns void
   final String? description;
+  final String? detectedJsonStructure; // 'array', 'object', 'string', 'number', 'boolean', 'unknown'
 
   RpcReturnType({
     required this.type,
     this.isTable = false,
     this.tableColumns,
     this.isArray = false,
+    this.detectedJsonStructure,
     this.isVoid = false,
     this.description,
   });
@@ -170,7 +174,26 @@ class RpcReturnType {
         return 'bool';
       case 'jsonb':
       case 'json':
-        return 'Map<String, dynamic>';
+        // Use detected JSON structure if available
+        if (detectedJsonStructure != null) {
+          switch (detectedJsonStructure!) {
+            case 'array':
+              return 'List<dynamic>';
+            case 'object':
+              return 'Map<String, dynamic>';
+            case 'string':
+              return 'String';
+            case 'number':
+              return 'num';
+            case 'boolean':
+              return 'bool';
+            case 'unknown':
+            default:
+              return 'dynamic';
+          }
+        }
+        // Fallback to dynamic if no detection available
+        return 'dynamic';
       case 'timestamp with time zone':
       case 'timestamp without time zone':
       case 'timestamptz':

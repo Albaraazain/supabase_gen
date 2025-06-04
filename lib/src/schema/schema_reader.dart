@@ -924,6 +924,58 @@ class SchemaReader {
     }
   }
 
+  /// Detect JSON return type structure by analyzing function body
+  String _detectJsonReturnStructure(String functionBody, String returnType) {
+    if (returnType.toLowerCase() != 'json' && returnType.toLowerCase() != 'jsonb') {
+      return 'object'; // Not JSON, keep existing behavior
+    }
+
+    final lowerBody = functionBody.toLowerCase();
+    
+    // Strong indicators of array returns
+    if (lowerBody.contains('json_agg(') || 
+        lowerBody.contains('array_to_json(') ||
+        lowerBody.contains('to_jsonb(array') ||
+        lowerBody.contains('jsonb_agg(') ||
+        lowerBody.contains('json_build_array(') ||
+        lowerBody.contains('select array[') ||
+        lowerBody.contains('array(select') ||
+        lowerBody.contains('coalesce(json_agg(') ||
+        lowerBody.contains('coalesce(jsonb_agg(')) {
+      return 'array';
+    }
+    
+    // Strong indicators of object returns  
+    if (lowerBody.contains('json_build_object(') ||
+        lowerBody.contains('jsonb_build_object(') ||
+        lowerBody.contains('to_json(row(') ||
+        lowerBody.contains('to_jsonb(row(') ||
+        lowerBody.contains('row_to_json(') ||
+        lowerBody.contains('to_json(select') ||
+        lowerBody.contains('to_jsonb(select') ||
+        lowerBody.contains('json_object(')) {
+      return 'object';
+    }
+    
+    // Check for simple value returns
+    if (lowerBody.contains('return ') && 
+        (lowerBody.contains('::json') || lowerBody.contains('::jsonb'))) {
+      // Look for patterns like 'return 42::json' or 'return $1::json'
+      if (lowerBody.contains('return true') || lowerBody.contains('return false')) {
+        return 'boolean';
+      }
+      if (lowerBody.contains('return \'') || lowerBody.contains('return "')) {
+        return 'string';
+      }
+      if (RegExp(r'return\s+\d+').hasMatch(lowerBody)) {
+        return 'number';
+      }
+    }
+    
+    // Default to unknown for manual override
+    return 'unknown';
+  }
+
   /// Get detailed information for a specific RPC function from remote database
   Future<RpcFunctionInfo?> _getRpcFunctionDetailsRemote(String functionName) async {
     try {
@@ -962,6 +1014,12 @@ class SchemaReader {
       final functionSource = details['function_source'] as String?;
       final isSetReturning = details['is_set_returning'] as bool? ?? false;
 
+      // Detect JSON structure if function source is available
+      String? detectedStructure;
+      if (functionSource != null && functionSource.isNotEmpty) {
+        detectedStructure = _detectJsonReturnStructure(functionSource, returnType);
+      }
+
       // Create return type info
       final rpcReturnType = RpcReturnType(
         type: returnType,
@@ -969,6 +1027,7 @@ class SchemaReader {
         isArray: returnType.toUpperCase().startsWith('SETOF'),
         isVoid: returnType.toUpperCase() == 'VOID',
         description: 'Returns $returnType',
+        detectedJsonStructure: detectedStructure,
       );
 
       return RpcFunctionInfo(

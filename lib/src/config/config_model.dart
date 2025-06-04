@@ -48,6 +48,9 @@ class SupabaseGenConfig {
   final bool generateRpcProviders;
   final bool generateRpcModels;
   final String rpcServiceSuffix;
+  
+  /// Function-specific type overrides for JSON return types
+  final Map<String, String> rpcReturnTypeOverrides;
   final String rpcModelSuffix;
   final String rpcProviderSuffix;
   final bool enableRpcLogging;
@@ -115,6 +118,7 @@ class SupabaseGenConfig {
     this.generateRpcProviders = false,
     this.generateRpcModels = true,
     this.rpcServiceSuffix = 'RpcService',
+    this.rpcReturnTypeOverrides = const {},
     this.rpcModelSuffix = 'Result',
     this.rpcProviderSuffix = 'RpcProvider',
     this.enableRpcLogging = true,
@@ -180,6 +184,7 @@ class SupabaseGenConfig {
       generateRpcProviders: rpcConfig['generate_providers'] ?? false,
       generateRpcModels: rpcConfig['generate_models'] ?? true,
       rpcServiceSuffix: rpcConfig['service_suffix'] ?? 'RpcService',
+      rpcReturnTypeOverrides: _parseTypeOverrides(rpcConfig['type_overrides']),
       rpcModelSuffix: rpcConfig['model_suffix'] ?? 'Result',
       rpcProviderSuffix: rpcConfig['provider_suffix'] ?? 'RpcProvider',
       enableRpcLogging: rpcConfig['enable_logging'] ?? true,
@@ -198,6 +203,22 @@ class SupabaseGenConfig {
     exclusions.forEach((table, columns) {
       if (table is String && columns is List) {
         result[table] = columns.map((col) => col.toString()).toList();
+      }
+    });
+    
+    return result;
+  }
+
+  /// Parse RPC return type overrides from YAML configuration
+  static Map<String, String> _parseTypeOverrides(dynamic overrides) {
+    if (overrides == null) return {};
+    
+    if (overrides is! Map) return {};
+    
+    final Map<String, String> result = {};
+    overrides.forEach((functionName, returnType) {
+      if (functionName is String && returnType is String) {
+        result[functionName] = returnType;
       }
     });
     
@@ -312,6 +333,11 @@ class SupabaseGenConfig {
             : '')
         .join('');
     return '${pascalCase}RpcNotifier';
+  }
+
+  /// Get return type override for a specific RPC function
+  String? getRpcReturnTypeOverride(String functionName) {
+    return rpcReturnTypeOverrides[functionName];
   }
 
   /// Check if RPC function should be excluded based on patterns
