@@ -298,10 +298,10 @@ class TypeConverter {
     // Handle List/Array types
     if (lowerType.startsWith('_') || lowerType.endsWith('[]')) {
       String dartType = postgresTypeToDart(lowerType);
-      String innerType = dartType.substring(
-        5,
-        dartType.length - (isNullable ? 2 : 1),
-      ); // Extract inner type from List<Type>
+      // Extract inner type from List<Type> by finding the content between < and >
+      int startIndex = dartType.indexOf('<') + 1;
+      int endIndex = dartType.indexOf('>');
+      String innerType = dartType.substring(startIndex, endIndex);
 
       if (isNullable) {
         return 'json[\'$columnName\'] != null ? (json[\'$columnName\'] as List).cast<$innerType>() : null';
