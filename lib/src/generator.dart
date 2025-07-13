@@ -97,11 +97,7 @@ ${tables.map((t) => '- [${config.getModelClassName(t.name)}](./tables/${t.name}.
     }
 
     for (final table in tables) {
-      if (table.isView) {
-        // Skip views as they don't support all operations
-        continue;
-      }
-
+      // Generate query builders for both tables and views
       final modelClassName = config.getModelClassName(table.name);
       final constraintMetadata = TableConstraintMetadata.fromTableInfo(table);
       final queryBuilderContent = QueryBuilderTemplate.generateQueryBuilder(
@@ -115,9 +111,8 @@ ${tables.map((t) => '- [${config.getModelClassName(t.name)}](./tables/${t.name}.
       _logger.info('Generated query builder: $filePath');
     }
 
-    // Generate barrel file
+    // Generate barrel file - include all tables and views
     final barrelContent = tables
-        .where((t) => !t.isView)
         .map((t) => "export '${t.name}_query_builder.dart';")
         .join('\n');
 
