@@ -1503,7 +1503,7 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
   Future<$modelName?> update($modelName model) async {
     try {
       final modelId = model.id;
-      if (modelId.isEmpty) {
+      if (modelId == null || modelId.isEmpty) {
         const message = 'Cannot update ${_singularize(tableName)} without ID';
         ProviderLogging.logStateChange('${pascalCaseTableName}Notifier', 'Update failed', details: message);
         throw AppException(message: message);

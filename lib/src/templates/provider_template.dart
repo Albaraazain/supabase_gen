@@ -26,7 +26,7 @@ class ProviderTemplate {
     final nullableMark = useNullSafety ? '?' : '';
 
     return '''import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide Provider;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/${tableName}_model.dart';
 import '../repositories/${tableName}_repository.dart';
@@ -220,7 +220,7 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
   Future<$modelName$nullableMark> update($modelName model) async {
     try {
       final modelId = model.id;
-      if (modelId.isEmpty) {
+      if (modelId == null) {
         throw $exceptionType(
           ${useAppException ? 'message: ' : ''}'Cannot update ${_singularize(tableName)} without ID',
         );
@@ -256,8 +256,9 @@ class ${pascalCaseTableName}Notifier extends StateNotifier<AsyncValue<List<$mode
       // Update state if successful
       if (state.hasValue) {
         final currentList = state.value!;
+        final idValue = int.tryParse(id) ?? id;
         state = AsyncValue.data(
-          currentList.where((item) => item.id != id).toList(),
+          currentList.where((item) => item.id.toString() != id).toList(),
         );
       }
     } catch (e) {

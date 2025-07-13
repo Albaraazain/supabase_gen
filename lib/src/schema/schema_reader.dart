@@ -1177,7 +1177,7 @@ class SchemaReader {
       // Setup a timeout to prevent hanging
       final response = await _dioClient!.post(
         '/rest/v1/rpc/get_table_columns',
-        data: {'p_table_name': tableName},
+        data: {'p_schema_name': 'public', 'p_table_name': tableName},
         options: Options(
           receiveTimeout: const Duration(seconds: 10),
           sendTimeout: const Duration(seconds: 10),
@@ -1418,7 +1418,7 @@ class SchemaReader {
     try {
       _logger.info('Calling $functionName RPC for table: $tableName');
 
-      final params = <String, dynamic>{'p_table_name': tableName};
+      final params = <String, dynamic>{'p_schema_name': 'public', 'p_table_name': tableName};
       if (additionalParams != null) {
         params.addAll(additionalParams);
       }

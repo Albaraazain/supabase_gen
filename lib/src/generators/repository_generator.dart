@@ -89,6 +89,21 @@ class RepositoryGenerator {
     // Default to 'id' if no primary key is explicitly defined
     return 'id';
   }
+  
+  /// Get the primary key column info for a table
+  ColumnInfo? _getPrimaryKeyColumnInfo(TableInfo table) {
+    // Get all primary key columns
+    final primaryKeys = table.primaryKeys;
+    if (primaryKeys.isNotEmpty) {
+      // Return the first primary key column info
+      return primaryKeys.first;
+    }
+    // Try to find 'id' column if no primary key is explicitly defined
+    return table.columns.firstWhere(
+      (col) => col.name == 'id',
+      orElse: () => table.columns.first, // Fallback to first column
+    );
+  }
 
   String _generateRepositoryClass(
     TableInfo table, 
@@ -134,7 +149,8 @@ class $className extends BaseRepository<$modelClassName> {
   
   @override
   String? getPrimaryKeyValue($modelClassName model) {
-    return model.${StringUtils.toCamelCase(_getPrimaryKeyColumn(table))};
+    final pkValue = model.${StringUtils.toCamelCase(_getPrimaryKeyColumn(table))};
+    return pkValue?.toString();
   }
 ${triggersDoc.isNotEmpty ? '\n$triggersDoc\n' : ''}  
   /// Create a type-safe query builder for ${table.name}

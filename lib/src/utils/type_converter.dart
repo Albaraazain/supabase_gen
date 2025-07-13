@@ -60,6 +60,11 @@ class TypeConverter {
       return 'String$nullableSuffix'; // UUID is typically represented as String
     }
 
+    // Interval type (PostgreSQL duration)
+    if (lowerType == 'interval') {
+      return 'String$nullableSuffix'; // Interval is represented as String
+    }
+
     // JSON types
     if (lowerType == 'jsonb' || lowerType == 'json') {
       return 'Map<String, dynamic>$nullableSuffix';
@@ -144,7 +149,7 @@ class TypeConverter {
 
     if (defaultValue.toLowerCase() == 'now()' ||
         defaultValue.toLowerCase() == 'current_timestamp') {
-      return 'DateTime.now()';
+      return 'DateTime.now()'; // Local time - automatic conversion will handle UTC storage
     }
 
     if (defaultValue.toLowerCase() == 'true') {
@@ -271,11 +276,11 @@ class TypeConverter {
           return '_parseTime(json[\'$columnName\'].toString())';
         }
       } else {
-        // Parse TIMESTAMP format (ISO8601)
+        // Parse TIMESTAMP format (ISO8601) and convert from UTC to local time
         if (isNullable) {
-          return 'json[\'$columnName\'] != null ? DateTime.parse(json[\'$columnName\'].toString()) : null';
+          return 'json[\'$columnName\'] != null ? DateTime.parse(json[\'$columnName\'].toString()).toLocal() : null';
         } else {
-          return 'DateTime.parse(json[\'$columnName\'].toString())';
+          return 'DateTime.parse(json[\'$columnName\'].toString()).toLocal()';
         }
       }
     }
@@ -418,11 +423,11 @@ class TypeConverter {
         return '"\${$fieldName.hour.toString().padLeft(2, \'0\')}:\${$fieldName.minute.toString().padLeft(2, \'0\')}:\${$fieldName.second.toString().padLeft(2, \'0\')}"';
       }
     } else {
-      // Default to ISO8601 for TIMESTAMP types
+      // Default to ISO8601 for TIMESTAMP types - convert to UTC before storing
       if (isNullable) {
-        return '$fieldName?.toIso8601String()';
+        return '$fieldName?.toUtc().toIso8601String()';
       } else {
-        return '$fieldName.toIso8601String()';
+        return '$fieldName.toUtc().toIso8601String()';
       }
     }
   }
